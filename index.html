@@ -131,7 +131,17 @@
   </div>
 
   <script>
-    const savedUrl = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : '');
+    // ฝัง Google Apps Script URL ลงไปในโค้ดโดยตรง
+    const HARDCODED_API_URL = 'https://script.google.com/macros/s/AKfycbwQxedoFI8ntnX3RJX40KA9Bt9ZAKu5zSOfQsoUV5m8w3zaO3fdrDE5G96FfumX3jiU/exec';
+    
+    // ตั้งค่าลงใน LocalStorage ทันที เพื่อให้หน้าสแกน (scan.html) และลงทะเบียน (register.html) ใช้งานได้อัตโนมัติ
+    if (!localStorage.getItem('gasApiUrl') || localStorage.getItem('gasApiUrl') !== HARDCODED_API_URL) {
+        localStorage.setItem('gasApiUrl', HARDCODED_API_URL);
+    }
+
+    const savedUrl = localStorage.getItem('gasApiUrl');
+    
+    // หากไม่มี URL (ซึ่งเป็นไปไม่ได้แล้วเพราะเราฝังไว้) ค่อยแสดงป้ายเตือน
     if (!savedUrl || savedUrl.trim() === '') {
       document.getElementById('apiWarning').style.display = 'block';
     }
