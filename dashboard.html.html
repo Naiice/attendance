@@ -183,6 +183,7 @@
             { label: 'สาย', color: 'text-orange-500', bg: 'bg-[#f97316]' },
             { label: 'ลาป่วย', color: 'text-slate-400', bg: 'bg-[#94a3b8]' },
             { label: 'ลากิจ', color: 'text-fuchsia-500', bg: 'bg-[#d946ef]' },
+            { label: 'ลาพักร้อน', color: 'text-purple-500', bg: 'bg-[#a855f7]' }, // เพิ่มลาพักร้อน
             { label: 'ลาอื่นๆ', color: 'text-blue-500', bg: 'bg-[#3b82f6]' },
             { label: 'ขาดงาน', color: 'text-red-500', bg: 'bg-[#ef4444]' },
             { label: 'ลาออก', color: 'text-slate-800', bg: 'bg-[#1e293b]' }
@@ -718,7 +719,7 @@
             };
 
             // Anomaly Alert Logic (แจ้งเตือนพนักงานขาด/ลางานผิดปกติ เกิน 10%)
-            const absentCount = filtered.filter(e => ['ขาดงาน', 'ลาป่วย', 'ลากิจ', 'ลาอื่นๆ'].includes(e.status)).length;
+            const absentCount = filtered.filter(e => ['ขาดงาน', 'ลาป่วย', 'ลากิจ', 'ลาพักร้อน', 'ลาอื่นๆ'].includes(e.status)).length;
             const absentRate = stats.total > 0 ? (absentCount / stats.total) * 100 : 0;
             const isAnomaly = absentRate >= 10;
 
@@ -1031,7 +1032,7 @@
                         if (status !== 'ไม่มีข้อมูล' || otValue > 0) {
                             if(status === 'มาปกติ') stats.normal++;
                             else if(status === 'สาย') stats.late++;
-                            else if(status.includes('ลา')) stats.leave++;
+                            else if(status.includes('ลา')) stats.leave++; // นับรวม 'ลาพักร้อน' อยู่ในนี้แล้ว
                             else if(status === 'ขาดงาน') stats.absent++;
                             
                             // ตรวจสอบและนับจำนวนกะการทำงาน (กะเช้า/กะดึก) ในวันที่นั้นๆ
@@ -1150,7 +1151,7 @@
                                         <p className="text-4xl font-black text-orange-500 leading-none mb-1">{getStats.late} <span className="text-xs text-slate-400">วัน</span></p>
                                     </div>
                                     <div className="bg-white border border-slate-100 p-6 rounded-[2rem] text-center shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">ลาหยุด/ลากิจ/ลาป่วย</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">ลาหยุด/ลากิจ/ลาป่วย/พักร้อน</p>
                                         <p className="text-4xl font-black text-slate-300 leading-none mb-1">{getStats.leave} <span className="text-xs text-slate-400">วัน</span></p>
                                     </div>
                                     <div className="bg-white border border-slate-100 p-6 rounded-[2rem] text-center shadow-sm">
@@ -1904,6 +1905,7 @@
                                 if (sStatus.includes('ขาด') || sStatus.includes('absent')) fStatus = 'ขาดงาน';
                                 else if (sStatus.includes('ป่วย') || sStatus.includes('sick')) fStatus = 'ลาป่วย';
                                 else if (sStatus.includes('กิจ') || sStatus.includes('personal')) fStatus = 'ลากิจ';
+                                else if (sStatus.includes('พักร้อน') || sStatus.includes('vacation')) fStatus = 'ลาพักร้อน';
                                 else if (sStatus.includes('สาย') || sStatus.includes('late')) fStatus = 'สาย';
                                 else if (sStatus.includes('ออก') || sStatus.includes('resigned')) fStatus = 'ลาออก';
                                 else if (sStatus.includes('อื่น') || sStatus.includes('other')) fStatus = 'ลาอื่นๆ';
