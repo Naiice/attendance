@@ -730,8 +730,8 @@
             const absentRate = stats.total > 0 ? (absentCount / stats.total) * 100 : 0;
             const isAnomaly = absentRate >= 10;
 
-            // กรองพนักงานที่ "ไม่ได้มาทำงาน" (เพื่อแสดงใน Modal)
-            const nonPresentEmployees = filtered.filter(e => !['มาปกติ', 'สาย', 'ลาออก'].includes(e.status));
+            // กรองพนักงานที่ "ไม่ได้มาทำงาน" (เพื่อแสดงใน Modal) โดยปลดการซ่อน 'ลาออก' ออกไปแล้ว
+            const nonPresentEmployees = filtered.filter(e => !['มาปกติ', 'สาย'].includes(e.status));
             
             // สรุปยอดตามสถานะที่ไม่ได้มาทำงาน
             const absenceSummary = nonPresentEmployees.reduce((acc, curr) => {
