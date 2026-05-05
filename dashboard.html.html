@@ -861,26 +861,26 @@
                                 <p className="text-xs font-bold text-slate-500 mt-1">ข้อมูล: {selectedLine} | กะการทำงาน: {activeShift}</p>
                             </div>
 
-                            <div className="flex items-center gap-2 ml-2 print-hidden">
+                            <div className="flex flex-wrap items-center gap-2.5 sm:ml-auto print-hidden shrink-0 mt-4 sm:mt-0">
                                 {/* ปุ่มเปิด Modal ผู้ขาด/ลาเกิน 3 วัน (Warning) */}
-                                <div onClick={() => setShowWarningModal(true)} className="bg-rose-600 text-white w-auto px-4 h-10 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-sm font-bold relative" title="เฝ้าระวังพนักงานที่ขาด/ลาเกิน 3 วัน">
-                                    <i className="fa-solid fa-triangle-exclamation"></i> <span className="hidden sm:inline">เฝ้าระวัง</span>
+                                <button onClick={() => setShowWarningModal(true)} className="shrink-0 bg-rose-600 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold relative border-none outline-none" title="เฝ้าระวังพนักงานที่ขาด/ลาเกิน 3 วัน">
+                                    <i className="fa-solid fa-triangle-exclamation"></i> <span className="whitespace-nowrap hidden sm:inline">เฝ้าระวัง</span>
                                     {warningEmployees.length > 0 && (
-                                        <span className="absolute -top-2 -right-2 bg-rose-900 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-rose-600 shadow-sm">{warningEmployees.length}</span>
+                                        <span className="absolute -top-2 -right-2 bg-rose-900 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border border-rose-400 shadow-sm">{warningEmployees.length}</span>
                                     )}
-                                </div>
+                                </button>
 
                                 {/* ปุ่มเปิด Modal ดูผู้ขาดลา */}
-                                <div onClick={() => setShowAbsentModal(true)} className="bg-amber-500 text-white w-auto px-4 h-10 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-sm font-bold" title="ดูรายชื่อผู้ขาด/ลา">
-                                    <i className="fa-solid fa-user-slash"></i> <span className="hidden sm:inline">ดูผู้ขาด/ลา</span>
-                                </div>
+                                <button onClick={() => setShowAbsentModal(true)} className="shrink-0 bg-amber-500 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold border-none outline-none" title="ดูรายชื่อผู้ขาด/ลา">
+                                    <i className="fa-solid fa-user-slash"></i> <span className="whitespace-nowrap hidden sm:inline">ดูผู้ขาด/ลา</span>
+                                </button>
 
-                                <div onClick={handleDownloadCSV} className="bg-emerald-500 text-white w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 active:scale-90 transition-all cursor-pointer" title="ดาวน์โหลด CSV">
+                                <button onClick={handleDownloadCSV} className="shrink-0 bg-emerald-500 text-white w-10 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer border-none outline-none" title="ดาวน์โหลด CSV">
                                     <i className="fa-solid fa-file-csv text-sm"></i>
-                                </div>
-                                <div onClick={() => window.print()} className="bg-rose-500 text-white w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 active:scale-90 transition-all cursor-pointer" title="พิมพ์รายงาน (PDF)">
+                                </button>
+                                <button onClick={() => window.print()} className="shrink-0 bg-slate-700 text-white w-10 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer border-none outline-none" title="พิมพ์รายงาน (PDF)">
                                     <i className="fa-solid fa-file-pdf text-sm"></i>
-                                </div>
+                                </button>
                             </div>
                         </div>
 
