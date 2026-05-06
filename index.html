@@ -6,7 +6,8 @@
   <title>ระบบบันทึกเวลาเข้างาน</title>
   <!-- ใช้ Relative Path รองรับ GitHub Pages -->
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <script src="./js/api-config.js"></script>
+  <!-- ✨ แก้ไขเส้นทางไฟล์ตรงนี้เอา js/ ออก -->
+  <script src="./api-config.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -144,8 +145,8 @@
   </div>
 
   <script>
-    // ฝัง Google Apps Script URL ลงไปในโค้ดโดยตรง
-    const HARDCODED_API_URL = 'https://script.google.com/macros/s/AKfycbwQxedoFI8ntnX3RJX40KA9Bt9ZAKu5zSOfQsoUV5m8w3zaO3fdrDE5G96FfumX3jiU/exec';
+    // ✨ แก้ไขเป็น URL ใหม่ที่เพิ่ง Deploy มา
+    const HARDCODED_API_URL = 'https://script.google.com/macros/s/AKfycbzAOpv9g2Y4Ig9hpEUY5vPcaWqdIcTmyEyWZQlCI7dYxwY8vAxe8eAsVfuvRS5H7q8q/exec';
     
     // ตั้งค่าลงใน LocalStorage ทันที เพื่อให้หน้าสแกน (scan.html) และลงทะเบียน (register.html) ใช้งานได้อัตโนมัติ
     if (!localStorage.getItem('gasApiUrl') || localStorage.getItem('gasApiUrl') !== HARDCODED_API_URL) {
