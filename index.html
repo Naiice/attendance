@@ -65,10 +65,13 @@
       display: flex; justify-content: center; align-items: center;
       font-size: 24px; margin-right: 16px; flex-shrink: 0;
     }
+    
+    /* สีกำหนดแยกตามปุ่ม */
     .btn-register .card-icon { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
     .btn-scan .card-icon { background: rgba(16, 185, 129, 0.2); color: #34d399; }
     .btn-config .card-icon { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
     .btn-dashboard .card-icon { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .btn-faresult .card-icon { background: rgba(236, 72, 153, 0.2); color: #f472b6; } /* สีสำหรับปุ่มใหม่ */
 
     .card-text { flex-grow: 1; }
     .card-title { font-size: 1.1em; font-weight: 600; margin-bottom: 4px; }
@@ -119,12 +122,22 @@
       <span class="card-arrow">›</span>
     </a>
 
-    <!-- เพิ่มปุ่มลัดเข้า Dashboard ไว้ในเมนูให้ด้วยเลย -->
+    <!-- ปุ่มลัดเข้า Dashboard -->
     <a href="./dashboard.html" class="btn-menu btn-dashboard">
       <div class="card-icon">📊</div>
       <div class="card-text">
         <div class="card-title">แดชบอร์ด & OT</div>
         <div class="card-desc">ดูข้อมูลภาพรวมสรุปผล</div>
+      </div>
+      <span class="card-arrow">›</span>
+    </a>
+
+    <!-- ปุ่มใหม่ Production Plan VS Result -->
+    <a href="./faresult.html" class="btn-menu btn-faresult">
+      <div class="card-icon">📈</div>
+      <div class="card-text">
+        <div class="card-title">Production Plan VS Result</div>
+        <div class="card-desc">แผนการผลิตและผลลัพธ์การทำงาน</div>
       </div>
       <span class="card-arrow">›</span>
     </a>
