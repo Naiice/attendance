@@ -144,7 +144,6 @@
             };
 
             console.log(`บันทึกการสแกนหน้า: รหัส ${employeeId} เวลา ${timeStr} ➡️ ${statusResult}`);
-            // await fetch("YOUR_API_URL", { method: 'POST', body: JSON.stringify(payload) });
             return { success: true, message: statusResult, data: payload };
         };
 
@@ -160,9 +159,9 @@
         // ============================================================================
         const fetchWithFallback = async (url) => {
             const proxyList = [
-                url, // 1. ลองดึงโดยตรงก่อน
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, // 2. สำรองด้วย AllOrigins
-                `https://corsproxy.io/?${encodeURIComponent(url)}` // 3. สำรองด้วย CorsProxy
+                url, 
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, 
+                `https://corsproxy.io/?${encodeURIComponent(url)}` 
             ];
 
             let lastError;
@@ -187,11 +186,11 @@
             { label: 'สาย', color: 'text-orange-500', bg: 'bg-[#f97316]' },
             { label: 'ลาป่วย', color: 'text-slate-400', bg: 'bg-[#94a3b8]' },
             { label: 'ลากิจ', color: 'text-fuchsia-500', bg: 'bg-[#d946ef]' },
-            { label: 'ลาพักร้อน', color: 'text-purple-500', bg: 'bg-[#a855f7]' }, // เพิ่มลาพักร้อน
+            { label: 'ลาพักร้อน', color: 'text-purple-500', bg: 'bg-[#a855f7]' }, 
             { label: 'ลาอื่นๆ', color: 'text-blue-500', bg: 'bg-[#3b82f6]' },
             { label: 'ขาดงาน', color: 'text-red-500', bg: 'bg-[#ef4444]' },
             { label: 'ลาออก', color: 'text-slate-800', bg: 'bg-[#1e293b]' },
-            { label: 'ไม่มีข้อมูล', color: 'text-slate-400', bg: 'bg-slate-200' } // เพิ่มเพื่อใช้ในหน้าต่าง Modal
+            { label: 'ไม่มีข้อมูล', color: 'text-slate-400', bg: 'bg-slate-200' }
         ];
 
         const SECTIONS = [
@@ -686,6 +685,17 @@
             const [showAbsentModal, setShowAbsentModal] = useState(false);
             const [showWarningModal, setShowWarningModal] = useState(false);
 
+            // ระบบสำหรับ Checkbox เปลี่ยนสถานะ
+            const [absentUpdates, setAbsentUpdates] = useState({});
+            const [isSavingAbsent, setIsSavingAbsent] = useState(false);
+            const [absentSaveStatus, setAbsentSaveStatus] = useState(null);
+
+            // รีเซ็ตการเลือกเมื่อเปลี่ยนวัน หรือปิดหน้าต่าง
+            useEffect(() => {
+                setAbsentUpdates({});
+                setAbsentSaveStatus(null);
+            }, [rawDate, showAbsentModal]);
+
             const availableDates = useMemo(() => {
                 if (!employees.length || !employees[0].statusesByDate) return new Set();
                 return new Set(Object.keys(employees[0].statusesByDate));
@@ -725,15 +735,12 @@
                 rate: filtered.length > 0 ? ((filtered.filter(e => e.status === 'มาปกติ' || e.status === 'สาย').length / filtered.length) * 100).toFixed(1) : 0
             };
 
-            // Anomaly Alert Logic (แจ้งเตือนพนักงานขาด/ลางานผิดปกติ เกิน 10%)
             const absentCount = filtered.filter(e => ['ขาดงาน', 'ลาป่วย', 'ลากิจ', 'ลาพักร้อน', 'ลาอื่นๆ'].includes(e.status)).length;
             const absentRate = stats.total > 0 ? (absentCount / stats.total) * 100 : 0;
             const isAnomaly = absentRate >= 10;
 
-            // กรองพนักงานที่ "ไม่ได้มาทำงาน" (เพื่อแสดงใน Modal) โดยปลดการซ่อน 'ลาออก' ออกไปแล้ว
             const nonPresentEmployees = filtered.filter(e => !['มาปกติ', 'สาย'].includes(e.status));
             
-            // สรุปยอดตามสถานะที่ไม่ได้มาทำงาน
             const absenceSummary = nonPresentEmployees.reduce((acc, curr) => {
                 acc[curr.status] = (acc[curr.status] || 0) + 1;
                 return acc;
@@ -756,7 +763,7 @@
                             absent7DayCount++;
                         }
                     });
-                    return absent7DayCount > 3; // ขาด/ลาเกิน 3 วัน (4 วันขึ้นไป)
+                    return absent7DayCount > 3;
                 }).map(emp => {
                     let absent7DayCount = 0;
                     last7Dates.forEach(d => {
@@ -769,7 +776,6 @@
                 }).sort((a, b) => b.absentCount7Days - a.absentCount7Days);
             }, [filtered, last7Dates]);
 
-            // เพิ่มฟังก์ชันสำหรับ Download CSV
             const handleDownloadCSV = () => {
                 const headers = ['รหัสพนักงาน', 'ชื่อ-นามสกุล', 'ไลน์', 'กลุ่ม', 'ตำแหน่ง', 'สถานะ'];
                 const rows = filtered.map(e => [
@@ -792,7 +798,89 @@
                 document.body.removeChild(link);
             };
 
-            // Skeleton Loading (โหลดข้อมูลแบบโครงร่าง)
+            // ==========================================
+            // ระบบบันทึกสถานะผู้ขาดลา
+            // ==========================================
+            const formatThaiDate = (dateStr) => {
+                if (!dateStr) return '';
+                const [year, month, day] = dateStr.split('-');
+                return `${parseInt(day, 10)}/${parseInt(month, 10)}/${parseInt(year, 10) + 543}`;
+            };
+
+            const toggleAbsentCheck = (empId, currentStatus) => {
+                setAbsentUpdates(prev => {
+                    const next = { ...prev };
+                    if (next[empId]?.checked) {
+                        delete next[empId];
+                    } else {
+                        next[empId] = { checked: true, status: currentStatus === 'ไม่มีข้อมูล' ? 'มาปกติ' : currentStatus };
+                    }
+                    return next;
+                });
+            };
+
+            const changeAbsentStatus = (empId, newStatus) => {
+                setAbsentUpdates(prev => ({
+                    ...prev,
+                    [empId]: { status: newStatus, checked: true }
+                }));
+            };
+
+            const handleSelectAllAbsent = (e) => {
+                const checked = e.target.checked;
+                const newUpdates = {};
+                if (checked) {
+                    nonPresentEmployees.forEach(emp => {
+                        newUpdates[emp.id] = { checked: true, status: emp.status === 'ไม่มีข้อมูล' ? 'มาปกติ' : emp.status };
+                    });
+                }
+                setAbsentUpdates(newUpdates);
+            };
+
+            const handleSaveAbsentStatus = async () => {
+                const itemsToSave = Object.entries(absentUpdates).filter(([id, data]) => data.checked);
+                if(itemsToSave.length === 0) return;
+
+                setIsSavingAbsent(true);
+                setAbsentSaveStatus(null);
+                
+                // ใช้รูปแบบ Payload เพื่อส่งให้ Google Sheets
+                const payload = itemsToSave.map(([id, data]) => {
+                    const emp = employees.find(e => e.id === id);
+                    return {
+                        action: 'UPDATE_ATTENDANCE', // ตัวระบุคำสั่งให้ Google Apps Script
+                        date: formatThaiDate(rawDate),
+                        shift: activeShift,
+                        line: selectedLine,
+                        id: id,
+                        name: emp?.name || '',
+                        groupName: emp?.group || '',
+                        status: data.status
+                    };
+                });
+
+                try {
+                    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySQvnwrMOPd9FtOR43vb5O9P_rILTws36qI71bKTp1SP5aK2RmhsTZGMeLIia882X6/exec";
+                    await fetch(SCRIPT_URL, { 
+                        method: 'POST', 
+                        mode: 'no-cors', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify(payload) 
+                    });
+                    
+                    setAbsentSaveStatus({ type: 'success', msg: `บันทึกข้อมูลสำเร็จ (${payload.length} คน)` });
+                    
+                    setTimeout(() => {
+                        setAbsentSaveStatus(null);
+                        setShowAbsentModal(false);
+                        setAbsentUpdates({});
+                    }, 2000);
+                } catch(e) {
+                    setAbsentSaveStatus({ type: 'error', msg: 'บันทึกไม่สำเร็จ โปรดลองอีกครั้ง' });
+                    setIsSavingAbsent(false);
+                }
+            };
+
             if (isSyncing) {
                 return (
                     <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-200 animate-pulse w-full print-hidden">
@@ -887,7 +975,7 @@
                         <div className="flex flex-wrap justify-end items-center gap-5 xl:gap-8">
                             <div className="flex flex-wrap gap-3 items-center print-hidden">
                                 {STATUS_LEGEND.map(l => {
-                                    if(l.label === 'ไม่มีข้อมูล') return null; // ซ่อนคำว่าไม่มีข้อมูลบนแถบข้างบนสุด
+                                    if(l.label === 'ไม่มีข้อมูล') return null;
                                     return (
                                         <div key={l.label} className="flex items-center gap-1.5">
                                             <div className={`w-[20px] h-[20px] rounded ${l.bg} flex items-center justify-center shadow-sm`}>
@@ -1062,7 +1150,6 @@
                                     </button>
                                 </div>
                                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
-                                    {/* กล่องสรุปสถิติ */}
                                     <div className="flex flex-wrap gap-3 mb-6">
                                         <div className="bg-rose-600 text-white px-4 py-2.5 rounded-xl shadow-sm text-sm font-black flex items-center gap-2">
                                             พบกลุ่มเสี่ยงทั้งหมด <span className="bg-white/20 px-2.5 py-0.5 rounded-md">{warningEmployees.length}</span> คน
@@ -1072,7 +1159,6 @@
                                         </div>
                                     </div>
                                     
-                                    {/* ตารางรายชื่อ */}
                                     <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                                         <table className="w-full text-left text-sm">
                                             <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-widest border-b border-slate-200">
@@ -1116,16 +1202,16 @@
                         </div>
                     )}
 
-                    {/* Modal รายชื่อคนขาด/ลางาน */}
+                    {/* Modal รายชื่อคนขาด/ลางาน พร้อมระบบบันทึกสถานะ */}
                     {showAbsentModal && (
                         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+                            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
                                 <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
                                         <div className="w-10 h-10 bg-amber-100 text-amber-500 rounded-xl flex items-center justify-center">
                                             <i className="fa-solid fa-user-slash"></i>
                                         </div>
-                                        รายชื่อพนักงานที่ไม่ได้มาทำงาน
+                                        จัดการรายชื่อพนักงานที่ไม่ได้มาทำงาน
                                     </h3>
                                     <button onClick={() => setShowAbsentModal(false)} className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors shadow-sm">
                                         <i className="fa-solid fa-xmark text-lg"></i>
@@ -1152,35 +1238,66 @@
                                         <table className="w-full text-left text-sm">
                                             <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-widest border-b border-slate-200">
                                                 <tr>
-                                                    <th className="px-6 py-4">รหัสพนักงาน</th>
-                                                    <th className="px-6 py-4">ชื่อ-นามสกุล</th>
-                                                    <th className="px-6 py-4">สายการผลิต / กลุ่ม</th>
-                                                    <th className="px-6 py-4">สถานะล่าสุด</th>
+                                                    <th className="px-4 py-4 w-12 text-center">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            onChange={handleSelectAllAbsent} 
+                                                            checked={nonPresentEmployees.length > 0 && Object.values(absentUpdates).filter(u => u.checked).length === nonPresentEmployees.length}
+                                                            className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer" 
+                                                        />
+                                                    </th>
+                                                    <th className="px-4 py-4">รหัสพนักงาน</th>
+                                                    <th className="px-4 py-4">ชื่อ-นามสกุล</th>
+                                                    <th className="px-4 py-4">สายการผลิต / กลุ่ม</th>
+                                                    <th className="px-4 py-4">สถานะเดิม</th>
+                                                    <th className="px-4 py-4">เปลี่ยนสถานะใหม่</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 font-bold text-slate-600">
                                                 {nonPresentEmployees.length > 0 ? (
                                                     nonPresentEmployees.map((emp, idx) => {
                                                         const config = STATUS_LEGEND.find(l => emp.status.includes(l.label)) || { bg: 'bg-slate-200', color: 'text-slate-500' };
+                                                        const updateData = absentUpdates[emp.id] || { checked: false, status: emp.status === 'ไม่มีข้อมูล' ? 'มาปกติ' : emp.status };
+                                                        
                                                         return (
-                                                            <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                                                                <td className="px-6 py-4 text-[12px]">{emp.id}</td>
-                                                                <td className="px-6 py-4">{emp.name || 'ไม่ระบุ'}</td>
-                                                                <td className="px-6 py-4">
-                                                                    <span className="text-blue-600 font-black bg-blue-50 px-2.5 py-1 rounded-md text-[10px] mr-2 uppercase tracking-wider">{emp.line}</span>
-                                                                    <span className="text-[12px]">{emp.group}</span>
+                                                            <tr key={idx} className={`transition-colors ${updateData.checked ? 'bg-amber-50/40' : 'hover:bg-slate-50/50'}`}>
+                                                                <td className="px-4 py-4 text-center">
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        checked={updateData.checked} 
+                                                                        onChange={() => toggleAbsentCheck(emp.id, emp.status)} 
+                                                                        className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer" 
+                                                                    />
                                                                 </td>
-                                                                <td className="px-6 py-4">
-                                                                    <span className={`${config.bg} text-white px-3.5 py-1 rounded-full text-[11px] font-black shadow-sm inline-block`}>
+                                                                <td className="px-4 py-4 text-[12px]">{emp.id}</td>
+                                                                <td className="px-4 py-4">{emp.name || 'ไม่ระบุ'}</td>
+                                                                <td className="px-4 py-4">
+                                                                    <span className="text-blue-600 font-black bg-blue-50 px-2.5 py-1 rounded-md text-[10px] mr-2 uppercase tracking-wider">{emp.line}</span>
+                                                                    <span className="text-[11px]">{emp.group}</span>
+                                                                </td>
+                                                                <td className="px-4 py-4">
+                                                                    <span className={`${config.bg} text-white px-3 py-1 rounded-full text-[10px] font-black shadow-sm inline-block`}>
                                                                         {emp.status}
                                                                     </span>
+                                                                </td>
+                                                                <td className="px-4 py-4">
+                                                                    <select 
+                                                                        value={updateData.status} 
+                                                                        onChange={(e) => changeAbsentStatus(emp.id, e.target.value)}
+                                                                        className={`text-[12px] font-bold border rounded-lg px-2 py-1.5 outline-none cursor-pointer shadow-sm w-full max-w-[120px] transition-colors
+                                                                            ${updateData.checked ? 'border-amber-400 bg-white text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}
+                                                                    >
+                                                                        {STATUS_LEGEND.filter(l => l.label !== 'ไม่มีข้อมูล').map(l => (
+                                                                            <option key={l.label} value={l.label}>{l.label}</option>
+                                                                        ))}
+                                                                    </select>
                                                                 </td>
                                                             </tr>
                                                         );
                                                     })
                                                 ) : (
                                                     <tr>
-                                                        <td colSpan="4" className="px-6 py-12 text-center text-slate-400 italic font-bold">
+                                                        <td colSpan="6" className="px-6 py-12 text-center text-slate-400 italic font-bold">
                                                             <i className="fa-regular fa-face-smile text-2xl block mb-2 opacity-50"></i>
                                                             มาครบทุกคน ไม่มีผู้ขาด/ลางาน
                                                         </td>
@@ -1188,6 +1305,26 @@
                                                 )}
                                             </tbody>
                                         </table>
+                                    </div>
+                                </div>
+                                <div className="p-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <div className="text-sm font-bold text-slate-600">
+                                        เลือกเพื่ออัปเดต <span className="text-amber-600 font-black bg-white px-2 py-0.5 rounded border border-amber-100 shadow-sm mx-1">{Object.values(absentUpdates).filter(u => u.checked).length}</span> รายการ
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
+                                        {absentSaveStatus && (
+                                            <span className={`text-[12px] font-black px-3 py-1.5 rounded-full bg-white shadow-sm border ${absentSaveStatus.type === 'success' ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100'}`}>
+                                                {absentSaveStatus.msg}
+                                            </span>
+                                        )}
+                                        <button 
+                                            onClick={handleSaveAbsentStatus}
+                                            disabled={isSavingAbsent || Object.values(absentUpdates).filter(u => u.checked).length === 0}
+                                            className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-[1rem] font-black text-sm transition-all shadow-md flex items-center justify-center gap-2"
+                                        >
+                                            {isSavingAbsent ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-floppy-disk"></i>}
+                                            บันทึกสถานะลง Google Sheets
+                                        </button>
                                     </div>
                                 </div>
                             </div>
