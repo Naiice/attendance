@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>สแกนเข้างาน</title>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <script src="js/api-config.js"></script>
+  <!-- ✨ แก้ไขตรงนี้: เอา js/ ออกเพื่อให้ดึงไฟล์จากโฟลเดอร์หลัก -->
+  <script src="./api-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -353,7 +354,7 @@
 </div>
 
 <script>
-  const API_URL        = localStorage.getItem('gasApiUrl') || GAS_API_URL;
+  const API_URL        = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : '');
   const video          = document.getElementById('video');
   const mainStatus     = document.getElementById('main-status');
   const overlayStatus  = document.getElementById('overlay-status');
