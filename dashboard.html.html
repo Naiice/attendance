@@ -803,10 +803,27 @@
             // ==========================================
             // ระบบบันทึกสถานะผู้ขาดลา
             // ==========================================
-            const formatThaiDate = (dateStr) => {
+            
+            // 1. ฟังก์ชันแปลงสถานะจาก ไทย -> อังกฤษ (ให้ตรงกับ Google Sheets)
+            const mapStatusToEnglish = (thaiStatus) => {
+                const mapping = {
+                    'มาปกติ': 'Present',
+                    'สาย': 'Late',
+                    'ลาป่วย': 'Sick',
+                    'ลากิจ': 'Personal',
+                    'ลาพักร้อน': 'Vacation',
+                    'ลาอื่นๆ': 'Other',
+                    'ขาดงาน': 'Absent',
+                    'ลาออก': 'Resigned'
+                };
+                return mapping[thaiStatus] || thaiStatus;
+            };
+
+            // 2. ฟังก์ชันแปลงวันที่ให้ตรงกับ Google Sheets (เดือน/วัน/ปี ค.ศ.) เช่น 5/5/2026
+            const formatSheetDate = (dateStr) => {
                 if (!dateStr) return '';
                 const [year, month, day] = dateStr.split('-');
-                return `${parseInt(day, 10)}/${parseInt(month, 10)}/${parseInt(year, 10) + 543}`;
+                return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
             };
 
             const toggleAbsentCheck = (empId, currentStatus) => {
@@ -851,13 +868,13 @@
                     const emp = employees.find(e => e.id === id);
                     return {
                         action: 'UPDATE_ATTENDANCE', // ตัวระบุคำสั่งให้ Google Apps Script
-                        date: formatThaiDate(rawDate),
+                        date: formatSheetDate(rawDate), // <-- ใช้วันที่รูปแบบ เดือน/วัน/ค.ศ.
                         shift: activeShift,
                         line: selectedLine,
                         id: id,
                         name: emp?.name || '',
                         groupName: emp?.group || '',
-                        status: data.status
+                        status: mapStatusToEnglish(data.status) // <-- แปลงสถานะเป็นภาษาอังกฤษ
                     };
                 });
 
@@ -2123,7 +2140,7 @@
                     </nav>
 
                     <main className="flex-1 w-full bg-slate-50">
-                        {view === 'dashboard' && <div className="max-w-[1440px] mx-auto p-8 w-full"><DashboardView employees={employees} selectedLine={selectedLine} activeShift={activeShift} isSyncing={loading} /></div>}
+                        {view === 'dashboard' && <div className="max-w-[1440px] mx-auto p-8 w-full"><DashboardView employees={employees} selectedLine={selectedLine} activeShift={activeShift} isSyncing={loading} onRefresh={fetchDashboardData} /></div>}
                         {view === 'attendance' && <div className="max-w-[1440px] mx-auto p-8 w-full"><AttendanceView employees={employees} /></div>}
                         
                         {view === 'ot' && (
