@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ลงทะเบียนใบหน้า</title>
+  <!-- รองรับการรันบน GitHub Pages ด้วย Relative Paths -->
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <script src="js/api-config.js"></script>
+  <!-- ✨ แก้ไขตรงนี้: เอา js/ ออกเพื่อให้ดึงไฟล์จากโฟลเดอร์หลัก -->
+  <script src="./api-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -296,7 +298,7 @@
   let saveCounter = 0;
 
   if (!API_URL) {
-    statusDiv.innerHTML = '<span style="color:#f87171">❌ ยังไม่ได้ตั้งค่า API URL — <a href="config.html" style="color:#fbbf24">ไปตั้งค่า</a></span>';
+    statusDiv.innerHTML = '<span style="color:#f87171">❌ ยังไม่ได้ตั้งค่า API URL — <a href="./config.html" style="color:#fbbf24">ไปตั้งค่า</a></span>';
   } else {
     window.addEventListener('load', initModels);
   }
