@@ -6,6 +6,8 @@
     <title>Haier A01 - WOR MAP & OT System</title>
     
     <!-- Libraries -->
+    <!-- ดึงไฟล์ตั้งค่า API มาใช้งาน -->
+    <script src="./api-config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -677,7 +679,7 @@
             );
         };
 
-        const DashboardView = ({ employees, selectedLine, activeShift, isSyncing }) => {
+        const DashboardView = ({ employees, selectedLine, activeShift, isSyncing, onRefresh }) => {
             const [rawDate, setRawDate] = useState(() => {
                 const d = new Date();
                 return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -860,7 +862,7 @@
                 });
 
                 try {
-                    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQxedoFI8ntnX3RJX40KA9Bt9ZAKu5zSOfQsoUV5m8w3zaO3fdrDE5G96FfumX3jiU/exec";
+                    const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbzAOpv9g2Y4Ig9hpEUY5vPcaWqdIcTmyEyWZQlCI7dYxwY8vAxe8eAsVfuvRS5H7q8q/exec');
                     await fetch(SCRIPT_URL, { 
                         method: 'POST', 
                         mode: 'no-cors', 
@@ -874,6 +876,7 @@
                         setAbsentSaveStatus(null);
                         setShowAbsentModal(false);
                         setAbsentUpdates({});
+                        if (onRefresh) onRefresh(true);
                     }, 2000);
                 } catch(e) {
                     setAbsentSaveStatus({ type: 'error', msg: 'บันทึกไม่สำเร็จ โปรดลองอีกครั้ง' });
@@ -1348,7 +1351,7 @@
           const [searchTerm, setSearchTerm] = useState('');
           const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, groupId: null, groupName: '' });
           
-          const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySQvnwrMOPd9FtOR43vb5O9P_rILTws36qI71bKTp1SP5aK2RmhsTZGMeLIia882X6/exec"; 
+          const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbzAOpv9g2Y4Ig9hpEUY5vPcaWqdIcTmyEyWZQlCI7dYxwY8vAxe8eAsVfuvRS5H7q8q/exec'); 
           const SHEET_ID = '1R3-R-HsrfGBt1L2wMFrsIBZnCz20YNRhVTWnb4Ygxto';
           const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
 
