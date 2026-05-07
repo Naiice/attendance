@@ -841,11 +841,11 @@
                 return mapping[thaiStatus] || thaiStatus;
             };
 
-            // 2. ฟังก์ชันแปลงวันที่ให้ตรงกับ Google Sheets ให้ตรงกับ Format ทั่วไป (เช่น 7/5/2569)
+            // 2. ฟังก์ชันแปลงวันที่ให้ตรงกับ Google Sheets ให้ตรงกับ Format ทั่วไป (เดือน/วัน/ค.ศ.)
             const formatSheetDate = (dateStr) => {
                 if (!dateStr) return '';
                 const [year, month, day] = dateStr.split('-');
-                return `${parseInt(day, 10)}/${parseInt(month, 10)}/${parseInt(year, 10) + 543}`;
+                return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
             };
 
             const toggleAbsentCheck = (empId, currentStatus) => {
@@ -889,14 +889,14 @@
                 const payload = itemsToSave.map(([id, data]) => {
                     const emp = employees.find(e => e.id === id);
                     return {
-                        action: 'UPDATE_ATTENDANCE',
-                        date: formatSheetDate(rawDate), 
+                        action: 'UPDATE_ATTENDANCE', // ตัวระบุคำสั่งให้ Google Apps Script
+                        date: formatSheetDate(rawDate), // <-- ใช้วันที่รูปแบบ เดือน/วัน/ค.ศ.
                         shift: activeShift,
                         line: selectedLine,
                         id: id,
                         name: emp?.name || '',
                         groupName: emp?.group || '',
-                        status: mapStatusToEnglish(data.status) 
+                        status: mapStatusToEnglish(data.status) // <-- แปลงสถานะเป็นภาษาอังกฤษ
                     };
                 });
 
@@ -905,7 +905,7 @@
                     await fetch(SCRIPT_URL, { 
                         method: 'POST', 
                         mode: 'no-cors', 
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                        headers: { 'Content-Type': 'application/json' }, 
                         body: JSON.stringify(payload) 
                     });
                     
@@ -915,11 +915,11 @@
                         setAbsentSaveStatus(null);
                         setShowAbsentModal(false);
                         setAbsentUpdates({});
-                        setIsSavingAbsent(false);
                         if (onRefresh) onRefresh(true);
                     }, 2000);
                 } catch(e) {
                     setAbsentSaveStatus({ type: 'error', msg: 'บันทึกไม่สำเร็จ โปรดลองอีกครั้ง' });
+                } finally {
                     setIsSavingAbsent(false);
                 }
             };
@@ -980,7 +980,7 @@
                     await fetch(SCRIPT_URL, { 
                         method: 'POST', 
                         mode: 'no-cors', 
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                        headers: { 'Content-Type': 'application/json' }, 
                         body: JSON.stringify(payload) 
                     });
                     
@@ -990,11 +990,11 @@
                         setPresentSaveStatus(null);
                         setShowPresentModal(false);
                         setPresentUpdates({});
-                        setIsSavingPresent(false);
                         if (onRefresh) onRefresh(true);
                     }, 2000);
                 } catch(e) {
                     setPresentSaveStatus({ type: 'error', msg: 'บันทึกไม่สำเร็จ โปรดลองอีกครั้ง' });
+                } finally {
                     setIsSavingPresent(false);
                 }
             };
@@ -1922,10 +1922,11 @@
             cost: { defaultHours: 2.5, selectedIds: [] }
           });
 
+          // เปลี่ยน format กลับเป็นแบบสากล (เดือน/วัน/ค.ศ.) เพื่อไม่ให้สร้างคอลัมน์ซ้ำซ้อนใน Google Sheet
           const formatThaiDate = (dateStr) => {
             if (!dateStr) return '';
             const [year, month, day] = dateStr.split('-');
-            return `${parseInt(day, 10)}/${parseInt(month, 10)}/${parseInt(year, 10) + 543}`;
+            return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
           };
 
           useEffect(() => {
@@ -2063,7 +2064,7 @@
               await fetch(SCRIPT_URL, { 
                 method: 'POST', 
                 mode: 'no-cors', 
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify(payload) 
               });
               
