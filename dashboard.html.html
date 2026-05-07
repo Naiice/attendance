@@ -704,11 +704,13 @@
             useEffect(() => {
                 setAbsentUpdates({});
                 setAbsentSaveStatus(null);
+                setIsSavingAbsent(false);
             }, [rawDate, showAbsentModal]);
 
             useEffect(() => {
                 setPresentUpdates({});
                 setPresentSaveStatus(null);
+                setIsSavingPresent(false);
             }, [rawDate, showPresentModal]);
 
             const availableDates = useMemo(() => {
@@ -887,6 +889,7 @@
                         setAbsentSaveStatus(null);
                         setShowAbsentModal(false);
                         setAbsentUpdates({});
+                        setIsSavingAbsent(false);
                         if (onRefresh) onRefresh(true);
                     }, 2000);
                 } catch(e) {
@@ -961,6 +964,7 @@
                         setPresentSaveStatus(null);
                         setShowPresentModal(false);
                         setPresentUpdates({});
+                        setIsSavingPresent(false);
                         if (onRefresh) onRefresh(true);
                     }, 2000);
                 } catch(e) {
@@ -1322,7 +1326,7 @@
                                     {/* กล่องสรุปสถิติ */}
                                     <div className="flex flex-wrap gap-3 mb-6">
                                         <div className="bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-sm text-sm font-black flex items-center gap-2">
-                                            รวมทั้งหมด <span className="bg-white/20 px-2.5 py-0.5 rounded-md">{absentCount}</span>
+                                            รวมทั้งหมด <span className="bg-white/20 px-2.5 py-0.5 rounded-md">{nonPresentEmployees.length}</span>
                                         </div>
                                         {Object.entries(absenceSummary).map(([status, count]) => {
                                             const config = STATUS_LEGEND.find(l => status.includes(l.label)) || { bg: 'bg-slate-200', color: 'text-slate-500' };
@@ -2370,7 +2374,7 @@
                         }
                         
                         // 2. รองรับกรณีพิมพ์วันที่เป็นเดือนภาษาไทย (เช่น "18 เม.ย. 2569" หรือ "18 เมษายน 2026")
-                        const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+                        const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กร ফারหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
                         for (let i = 0; i < thaiMonths.length; i++) {
                             if (trimmed.includes(thaiMonths[i])) {
                                 const m = (i % 12) + 1;
