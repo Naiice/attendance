@@ -822,6 +822,32 @@
                 document.body.removeChild(link);
             };
 
+            // ==========================================
+            // ระบบบันทึกสถานะ
+            // ==========================================
+            
+            // 1. ฟังก์ชันแปลงสถานะจาก ไทย -> อังกฤษ (ให้ตรงกับ Google Sheets)
+            const mapStatusToEnglish = (thaiStatus) => {
+                const mapping = {
+                    'มาปกติ': 'Present',
+                    'สาย': 'Late',
+                    'ลาป่วย': 'Sick',
+                    'ลากิจ': 'Personal',
+                    'ลาพักร้อน': 'Vacation',
+                    'ลาอื่นๆ': 'Other',
+                    'ขาดงาน': 'Absent',
+                    'ลาออก': 'Resigned'
+                };
+                return mapping[thaiStatus] || thaiStatus;
+            };
+
+            // 2. ฟังก์ชันแปลงวันที่ให้ตรงกับ Google Sheets ให้ตรงกับ Format ทั่วไป (เช่น 7/5/2569)
+            const formatSheetDate = (dateStr) => {
+                if (!dateStr) return '';
+                const [year, month, day] = dateStr.split('-');
+                return `${parseInt(day, 10)}/${parseInt(month, 10)}/${parseInt(year, 10) + 543}`;
+            };
+
             const toggleAbsentCheck = (empId, currentStatus) => {
                 setAbsentUpdates(prev => {
                     const next = { ...prev };
@@ -863,14 +889,14 @@
                 const payload = itemsToSave.map(([id, data]) => {
                     const emp = employees.find(e => e.id === id);
                     return {
-                        action: 'UPDATE_ATTENDANCE', // ตัวระบุคำสั่งให้ Google Apps Script
-                        date: formatSheetDate(rawDate), // <-- ใช้วันที่รูปแบบ เดือน/วัน/ค.ศ.
+                        action: 'UPDATE_ATTENDANCE',
+                        date: formatSheetDate(rawDate), 
                         shift: activeShift,
                         line: selectedLine,
                         id: id,
                         name: emp?.name || '',
                         groupName: emp?.group || '',
-                        status: mapStatusToEnglish(data.status) // <-- แปลงสถานะเป็นภาษาอังกฤษ
+                        status: mapStatusToEnglish(data.status) 
                     };
                 });
 
@@ -879,7 +905,7 @@
                     await fetch(SCRIPT_URL, { 
                         method: 'POST', 
                         mode: 'no-cors', 
-                        headers: { 'Content-Type': 'application/json' }, 
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
                         body: JSON.stringify(payload) 
                     });
                     
@@ -954,7 +980,7 @@
                     await fetch(SCRIPT_URL, { 
                         method: 'POST', 
                         mode: 'no-cors', 
-                        headers: { 'Content-Type': 'application/json' }, 
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
                         body: JSON.stringify(payload) 
                     });
                     
@@ -2037,7 +2063,7 @@
               await fetch(SCRIPT_URL, { 
                 method: 'POST', 
                 mode: 'no-cors', 
-                headers: { 'Content-Type': 'application/json' }, 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
                 body: JSON.stringify(payload) 
               });
               
