@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Haier A01 - WOR MAP & OT System</title>
+    
     <!-- ดึงไฟล์ตั้งค่า API มาใช้งาน -->
     <script src="./api-config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -109,17 +110,49 @@
             const m = dateObj.getMinutes();
             const s = dateObj.getSeconds();
             
+            // แปลงเวลาให้เป็นวินาทีรวมทั้งหมดใน 1 วัน เพื่อง่ายต่อการตรวจสอบช่วงเวลา
             const timeInSeconds = (h * 3600) + (m * 60) + s;
 
             if (timeInSeconds >= 18000 && timeInSeconds <= 28800) {
+                // 05:00:00 ถึง 08:00:00 (18000 ถึง 28800 วินาที)
                 return "Present Day (กะเช้า มาปกติ)";
             } else if (timeInSeconds >= 28801 && timeInSeconds <= 61199) {
+                // 08:00:01 ถึง 16:59:59 (28801 ถึง 61199 วินาที)
                 return "Late Day (กะเช้า มาสาย)";
             } else if (timeInSeconds >= 61200 && timeInSeconds <= 72000) {
+                // 17:00:00 ถึง 20:00:00 (61200 ถึง 72000 วินาที)
                 return "Present Night (กะดึก มาปกติ)";
             } else {
+                // 20:00:01 ถึง 04:59:59 (เวลาอื่นๆ ที่เหลือในวันใหม่)
                 return "Late Night (กะดึก มาสาย)";
             }
+        };
+
+        // ============================================================================
+        // [ ฟังก์ชันบันทึกและอ่านข้อมูลเมื่อสแกนหน้าเสร็จ ]
+        // ============================================================================
+        const saveFaceScanData = async (employeeId, scanDate = new Date()) => {
+            const statusResult = checkScanTimeStatus(scanDate);
+            const timeStr = scanDate.toLocaleTimeString('th-TH', { hour12: false });
+            const dateStr = getOriginalLocalDateString();
+
+            const payload = {
+                action: 'SAVE_SCAN',
+                id: employeeId,
+                date: dateStr,
+                time: timeStr,
+                status: statusResult
+            };
+
+            console.log(`บันทึกการสแกนหน้า: รหัส ${employeeId} เวลา ${timeStr} ➡️ ${statusResult}`);
+            return { success: true, message: statusResult, data: payload };
+        };
+
+        const readFaceScanData = async (employeeId) => {
+            console.log(`อ่านข้อมูลการสแกนหน้าของ: ${employeeId}`);
+            const mockDate = new Date();
+            const statusResult = checkScanTimeStatus(mockDate);
+            return { success: true, id: employeeId, displayMessage: statusResult };
         };
 
         // ============================================================================
@@ -405,7 +438,7 @@
                 });
                 const pres = dayEmps.filter(e => {
                     const s = e.statusesByDate?.[date] || 'ไม่มีข้อมูล';
-                    return s === 'มาปกติ' || s === 'สาย';
+                    return s === 'มาปกติ' || s === 'สาย'; 
                 }).length;
 
                 const resigns = employees.filter(e => {
@@ -652,17 +685,28 @@
             });
             const [showAbsentModal, setShowAbsentModal] = useState(false);
             const [showWarningModal, setShowWarningModal] = useState(false);
+            const [showPresentModal, setShowPresentModal] = useState(false);
 
             // ระบบสำหรับ Checkbox เปลี่ยนสถานะ
             const [absentUpdates, setAbsentUpdates] = useState({});
             const [isSavingAbsent, setIsSavingAbsent] = useState(false);
             const [absentSaveStatus, setAbsentSaveStatus] = useState(null);
 
+            // ระบบสำหรับ Checkbox เปลี่ยนสถานะคนมาทำงาน
+            const [presentUpdates, setPresentUpdates] = useState({});
+            const [isSavingPresent, setIsSavingPresent] = useState(false);
+            const [presentSaveStatus, setPresentSaveStatus] = useState(null);
+
             // รีเซ็ตการเลือกเมื่อเปลี่ยนวัน หรือปิดหน้าต่าง
             useEffect(() => {
                 setAbsentUpdates({});
                 setAbsentSaveStatus(null);
             }, [rawDate, showAbsentModal]);
+
+            useEffect(() => {
+                setPresentUpdates({});
+                setPresentSaveStatus(null);
+            }, [rawDate, showPresentModal]);
 
             const availableDates = useMemo(() => {
                 if (!employees.length || !employees[0].statusesByDate) return new Set();
@@ -710,6 +754,13 @@
             const nonPresentEmployees = filtered.filter(e => !['มาปกติ', 'สาย'].includes(e.status));
             
             const absenceSummary = nonPresentEmployees.reduce((acc, curr) => {
+                acc[curr.status] = (acc[curr.status] || 0) + 1;
+                return acc;
+            }, {});
+
+            const presentEmployees = filtered.filter(e => ['มาปกติ', 'สาย'].includes(e.status));
+            
+            const presenceSummary = presentEmployees.reduce((acc, curr) => {
                 acc[curr.status] = (acc[curr.status] || 0) + 1;
                 return acc;
             }, {});
@@ -867,6 +918,80 @@
                 }
             };
 
+            const togglePresentCheck = (empId, currentStatus) => {
+                setPresentUpdates(prev => {
+                    const next = { ...prev };
+                    if (next[empId]?.checked) {
+                        delete next[empId];
+                    } else {
+                        next[empId] = { checked: true, status: currentStatus === 'ไม่มีข้อมูล' ? 'มาปกติ' : currentStatus };
+                    }
+                    return next;
+                });
+            };
+
+            const changePresentStatus = (empId, newStatus) => {
+                setPresentUpdates(prev => ({
+                    ...prev,
+                    [empId]: { status: newStatus, checked: true }
+                }));
+            };
+
+            const handleSelectAllPresent = (e) => {
+                const checked = e.target.checked;
+                const newUpdates = {};
+                if (checked) {
+                    presentEmployees.forEach(emp => {
+                        newUpdates[emp.id] = { checked: true, status: emp.status === 'ไม่มีข้อมูล' ? 'มาปกติ' : emp.status };
+                    });
+                }
+                setPresentUpdates(newUpdates);
+            };
+
+            const handleSavePresentStatus = async () => {
+                const itemsToSave = Object.entries(presentUpdates).filter(([id, data]) => data.checked);
+                if(itemsToSave.length === 0) return;
+
+                setIsSavingPresent(true);
+                setPresentSaveStatus(null);
+                
+                const payload = itemsToSave.map(([id, data]) => {
+                    const emp = employees.find(e => e.id === id);
+                    return {
+                        action: 'UPDATE_ATTENDANCE',
+                        date: formatSheetDate(rawDate),
+                        shift: activeShift,
+                        line: selectedLine,
+                        id: id,
+                        name: emp?.name || '',
+                        groupName: emp?.group || '',
+                        status: mapStatusToEnglish(data.status)
+                    };
+                });
+
+                try {
+                    const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbzAOpv9g2Y4Ig9hpEUY5vPcaWqdIcTmyEyWZQlCI7dYxwY8vAxe8eAsVfuvRS5H7q8q/exec');
+                    await fetch(SCRIPT_URL, { 
+                        method: 'POST', 
+                        mode: 'no-cors', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify(payload) 
+                    });
+                    
+                    setPresentSaveStatus({ type: 'success', msg: `บันทึกข้อมูลสำเร็จ (${payload.length} คน)` });
+                    
+                    setTimeout(() => {
+                        setPresentSaveStatus(null);
+                        setShowPresentModal(false);
+                        setPresentUpdates({});
+                        if (onRefresh) onRefresh(true);
+                    }, 2000);
+                } catch(e) {
+                    setPresentSaveStatus({ type: 'error', msg: 'บันทึกไม่สำเร็จ โปรดลองอีกครั้ง' });
+                    setIsSavingPresent(false);
+                }
+            };
+
             if (isSyncing) {
                 return (
                     <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-200 animate-pulse w-full print-hidden">
@@ -942,6 +1067,11 @@
                                     {warningEmployees.length > 0 && (
                                         <span className="absolute -top-2 -right-2 bg-rose-900 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border border-rose-400 shadow-sm">{warningEmployees.length}</span>
                                     )}
+                                </button>
+
+                                {/* ปุ่มเปิด Modal ดูคนมาทำงาน */}
+                                <button onClick={() => setShowPresentModal(true)} className="shrink-0 bg-emerald-500 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold border-none outline-none" title="คนมาทำงาน">
+                                    <i className="fa-solid fa-user-check"></i> <span className="whitespace-nowrap hidden sm:inline">คนมาทำงาน</span>
                                 </button>
 
                                 {/* ปุ่มเปิด Modal ดูผู้ขาดลา */}
@@ -1316,264 +1446,136 @@
                             </div>
                         </div>
                     )}
-                </div>
-            );
-        };
 
-        const AttendanceView = ({ employees }) => {
-            const [searchId, setSearchId] = useState('');
-            const [searchedEmp, setSearchedEmp] = useState(null);
-            const [selectedCycle, setSelectedCycle] = useState('2026-03-21');
-
-            const payrollCycles = [
-                { start: '2026-01-21', end: '2026-02-20', label: 'รอบ 21 ม.ค. 2026 - 20 ก.พ. 2026' },
-                { start: '2026-02-21', end: '2026-03-20', label: 'รอบ 21 ก.พ. 2026 - 20 มี.ค. 2026' },
-                { start: '2026-03-21', end: '2026-04-20', label: 'รอบ 21 มี.ค. 2026 - 20 เม.ย. 2026' },
-                { start: '2026-04-21', end: '2026-05-20', label: 'รอบ 21 เม.ย. 2026 - 20 พ.ค. 2026' }
-            ];
-
-            const handleSearch = (e) => {
-                if(e) e.preventDefault();
-                if (!searchId.trim()) return;
-                
-                // ค้นหาโดยแปลงรหัสให้เป็น String และลบช่องว่างออกทั้งคู่ ป้องกันข้อผิดพลาดจากการพิมพ์
-                const emp = employees.find(e => String(e.id).trim() === String(searchId).trim());
-                setSearchedEmp(emp || null);
-            };
-
-            const getStats = useMemo(() => {
-                if(!searchedEmp) return { normal: 0, late: 0, leave: 0, absent: 0, ot: 0, dayShiftCount: 0, nightShiftCount: 0, details: [] };
-                
-                const cycle = payrollCycles.find(c => c.start === selectedCycle);
-                const start = new Date(cycle.start);
-                const end = new Date(cycle.end);
-                
-                let stats = { normal: 0, late: 0, leave: 0, absent: 0, ot: 0, dayShiftCount: 0, nightShiftCount: 0, details: [] };
-                
-                const allDates = new Set([
-                    ...Object.keys(searchedEmp.statusesByDate || {}),
-                    ...Object.keys(searchedEmp.otByDate || {})
-                ]);
-
-                allDates.forEach(dateStr => {
-                    const d = new Date(dateStr);
-                    if(d >= start && d <= end) {
-                        if (searchedEmp.resignedDate && d > new Date(searchedEmp.resignedDate)) {
-                            return;
-                        }
-                        
-                        const status = searchedEmp.statusesByDate?.[dateStr] || 'ไม่มีข้อมูล';
-                        const otValue = parseFloat(searchedEmp.otByDate?.[dateStr]) || 0;
-                        
-                        if (status !== 'ไม่มีข้อมูล' || otValue > 0) {
-                            if(status === 'มาปกติ') stats.normal++;
-                            else if(status === 'สาย') stats.late++;
-                            else if(status.includes('ลา')) stats.leave++; // นับรวม 'ลาพักร้อน' อยู่ในนี้แล้ว
-                            else if(status === 'ขาดงาน') stats.absent++;
-                            
-                            // ตรวจสอบและนับจำนวนกะการทำงาน (กะเช้า/กะดึก) ในวันที่นั้นๆ
-                            const dateShift = searchedEmp.shiftsByDate?.[dateStr];
-                            if (dateShift === 'Shift A') stats.dayShiftCount++;
-                            else if (dateShift === 'Shift B') stats.nightShiftCount++;
-                            
-                            stats.ot += otValue;
-                            stats.details.push({ date: dateStr, status: status, ot: otValue, shift: dateShift });
-                        }
-                    }
-                });
-                
-                stats.details.sort((a,b) => new Date(b.date) - new Date(a.date));
-                return stats;
-            }, [searchedEmp, selectedCycle]);
-
-            // สร้างกราฟวงแหวน (Donut Chart) จากข้อมูลในรอบ
-            const donutGradientStr = useMemo(() => {
-                const totalDays = getStats.normal + getStats.late + getStats.leave + getStats.absent;
-                if (totalDays === 0) return 'conic-gradient(#e2e8f0 0% 100%)';
-                
-                const nPct = (getStats.normal / totalDays) * 100;
-                const laPct = (getStats.late / totalDays) * 100;
-                const lePct = (getStats.leave / totalDays) * 100;
-                const aPct = (getStats.absent / totalDays) * 100;
-                
-                let current = 0;
-                const parts = [];
-                if (nPct > 0) { parts.push(`#10b981 ${current}% ${current + nPct}%`); current += nPct; }
-                if (laPct > 0) { parts.push(`#f97316 ${current}% ${current + laPct}%`); current += laPct; }
-                if (lePct > 0) { parts.push(`#94a3b8 ${current}% ${current + lePct}%`); current += lePct; }
-                if (aPct > 0) { parts.push(`#ef4444 ${current}% ${current + aPct}%`); current += aPct; }
-                
-                return `conic-gradient(${parts.join(', ')})`;
-            }, [getStats]);
-
-            return (
-                <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
-                    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10">
-                        <div className="text-center mb-8">
-                            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-[1.5rem] flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">
-                                <i className="fa-solid fa-user-clock"></i>
-                            </div>
-                            <h2 className="text-3xl font-black text-slate-800 tracking-tight">ตรวจสอบเวลาการมาทำงาน</h2>
-                            <div className="mt-2 inline-block bg-slate-50 border border-slate-100 px-6 py-1.5 rounded-full">
-                                <p className="text-slate-400 text-[13px] font-bold">รอบตัดเงินเดือน วันที่ 21 ถึง วันที่ 20 ของเดือนถัดไป</p>
-                            </div>
-                        </div>
-
-                        <form onSubmit={handleSearch} className="flex gap-3 max-w-xl mx-auto mb-10">
-                            <div className="relative flex-1 group">
-                                <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-500 transition-colors">
-                                    <i className="fa-regular fa-id-card text-xl"></i>
+                    {/* Modal รายชื่อคนมาทำงาน พร้อมระบบบันทึกสถานะ */}
+                    {showPresentModal && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                    <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-emerald-100 text-emerald-500 rounded-xl flex items-center justify-center">
+                                            <i className="fa-solid fa-user-check"></i>
+                                        </div>
+                                        รายชื่อพนักงานที่มาทำงาน
+                                    </h3>
+                                    <button onClick={() => setShowPresentModal(false)} className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 transition-colors shadow-sm">
+                                        <i className="fa-solid fa-xmark text-lg"></i>
+                                    </button>
                                 </div>
-                                <input 
-                                    type="text" value={searchId} onChange={(e)=>setSearchId(e.target.value)}
-                                    placeholder="240160490" 
-                                    className="w-full bg-slate-50 border border-slate-100 rounded-[1.2rem] pl-14 pr-5 py-4 font-black text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all text-lg"
-                                />
-                            </div>
-                            <button type="submit" className="bg-blue-600 text-white px-10 rounded-[1.2rem] font-black hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center gap-2">
-                                <i className="fa-solid fa-magnifying-glass"></i> ค้นหา
-                            </button>
-                        </form>
-
-                        {searchedEmp ? (
-                            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                                <div className="bg-white rounded-[2rem] border border-slate-100 p-8 flex flex-col md:flex-row items-center gap-8 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.03)]">
-                                    <div className="relative w-28 h-28 flex-shrink-0 mx-auto md:mx-0">
-                                        <div className="w-full h-full rounded-full shadow-inner" style={{ background: donutGradientStr }}></div>
-                                        <div className="absolute inset-0 m-auto w-[85px] h-[85px] bg-slate-50 rounded-full flex items-center justify-center border-[3px] border-white shadow-sm text-blue-500 text-3xl">
-                                            <i className="fa-solid fa-person text-blue-400"></i>
+                                <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
+                                    {/* กล่องสรุปสถิติ */}
+                                    <div className="flex flex-wrap gap-3 mb-6">
+                                        <div className="bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-sm text-sm font-black flex items-center gap-2">
+                                            รวมทั้งหมด <span className="bg-white/20 px-2.5 py-0.5 rounded-md">{presentEmployees.length}</span>
                                         </div>
+                                        {Object.entries(presenceSummary).map(([status, count]) => {
+                                            const config = STATUS_LEGEND.find(l => status.includes(l.label)) || { bg: 'bg-slate-200', color: 'text-slate-500' };
+                                            return (
+                                                <div key={status} className={`px-4 py-2.5 rounded-xl shadow-sm border border-slate-100 text-sm font-bold flex items-center gap-2 bg-slate-50 ${config.color}`}>
+                                                    {status} <span className={`px-2.5 py-0.5 rounded-md text-white font-black ${config.bg}`}>{count}</span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                    <div className="flex-1 text-center md:text-left">
-                                        <h3 className="text-[34px] font-black text-slate-800 leading-none mb-4">{searchedEmp.name}</h3>
-                                        <div className="flex flex-wrap justify-center md:justify-start gap-2.5">
-                                            <span className="bg-slate-50 border border-slate-100 px-4 py-1.5 rounded-full text-[11px] font-black text-slate-400 flex items-center gap-2">
-                                                <i className="fa-solid fa-hashtag text-[10px] opacity-60"></i> {searchedEmp.id}
-                                            </span>
-                                            <span className="bg-slate-50 border border-slate-100 px-4 py-1.5 rounded-full text-[11px] font-black text-slate-400 flex items-center gap-2">
-                                                <i className="fa-solid fa-location-dot text-[10px] opacity-60"></i> {searchedEmp.line} - {searchedEmp.group}
-                                            </span>
-                                            <span className="bg-slate-50 border border-slate-100 px-4 py-1.5 rounded-full text-[11px] font-black text-slate-400 flex items-center gap-2">
-                                                <i className="fa-solid fa-user-tie text-[10px] opacity-60"></i> {searchedEmp.role || 'Manager'}
-                                            </span>
-                                            {searchedEmp.resignedDate && (
-                                                <span className="bg-red-50 border border-red-100 px-4 py-1.5 rounded-full text-[11px] font-black text-red-500 flex items-center gap-2">
-                                                    <i className="fa-solid fa-user-xmark text-[10px]"></i> ลาออกเมื่อ {new Date(searchedEmp.resignedDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="w-full md:w-auto mt-4 md:mt-0">
-                                        <div className="bg-slate-50/50 p-2 rounded-2xl border border-slate-100">
-                                            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3 mb-1">เลือกรอบเงินเดือน</label>
-                                            <select 
-                                                value={selectedCycle} 
-                                                onChange={(e)=>setSelectedCycle(e.target.value)}
-                                                className="bg-white border-none text-[13px] font-black text-blue-600 outline-none pr-8 py-2.5 pl-3 rounded-xl cursor-pointer w-full shadow-sm"
-                                            >
-                                                {payrollCycles.map(c => <option key={c.start} value={c.start}>{c.label}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                    <div className="bg-white border border-slate-100 p-6 rounded-[2rem] text-center shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">มาทำงานปกติ</p>
-                                        <p className="text-4xl font-black text-emerald-500 leading-none mb-1">{getStats.normal}<span className="text-3xl opacity-50">/{getStats.details.length}</span> <span className="text-xs text-slate-400">วัน</span></p>
-                                    </div>
-                                    <div className="bg-white border border-slate-100 p-6 rounded-[2rem] text-center shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">มาสาย</p>
-                                        <p className="text-4xl font-black text-orange-500 leading-none mb-1">{getStats.late} <span className="text-xs text-slate-400">วัน</span></p>
-                                    </div>
-                                    <div className="bg-white border border-slate-100 p-6 rounded-[2rem] text-center shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">ลาหยุด/ลากิจ/ลาป่วย/พักร้อน</p>
-                                        <p className="text-4xl font-black text-slate-300 leading-none mb-1">{getStats.leave} <span className="text-xs text-slate-400">วัน</span></p>
-                                    </div>
-                                    <div className="bg-white border border-slate-100 p-6 rounded-[2rem] text-center shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">ขาดงาน</p>
-                                        <p className="text-4xl font-black text-red-500 leading-none mb-1">{getStats.absent} <span className="text-xs text-slate-400">วัน</span></p>
-                                    </div>
-                                    <div className="bg-white border border-slate-100 p-6 rounded-[2rem] text-center shadow-sm bg-blue-50/20 border-blue-100">
-                                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 italic">ชั่วโมงโอทีรวม</p>
-                                        <p className="text-4xl font-black text-blue-600 leading-none mb-1">{getStats.ot.toFixed(1)} <span className="text-xs text-slate-400">ชม.</span></p>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
-                                    <div className="bg-slate-50/50 px-10 py-5 flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-100 gap-4">
-                                        <div>
-                                            <h4 className="text-lg font-black text-slate-800">รายละเอียดการลงเวลาและโอที</h4>
-                                            <div className="flex gap-3 mt-2">
-                                                <span className="text-[11px] font-black text-slate-500 bg-white px-3 py-1 rounded-full border shadow-sm flex items-center gap-1.5">
-                                                    <i className="fa-solid fa-sun text-orange-500"></i> ทำกะเช้า {getStats.dayShiftCount} วัน
-                                                </span>
-                                                <span className="text-[11px] font-black text-slate-500 bg-white px-3 py-1 rounded-full border shadow-sm flex items-center gap-1.5">
-                                                    <i className="fa-solid fa-moon text-indigo-500"></i> ทำกะดึก {getStats.nightShiftCount} วัน
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <span className="text-[11px] font-bold text-slate-400 bg-white px-4 py-1.5 rounded-full border">ทั้งหมด {getStats.details.length} วันที่มีข้อมูล</span>
-                                    </div>
-                                    <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead className="bg-white sticky top-0 z-10">
+                                    
+                                    {/* ตารางรายชื่อ พร้อม Checkbox */}
+                                    <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                                        <table className="w-full text-left text-sm">
+                                            <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-widest border-b border-slate-200">
                                                 <tr>
-                                                    <th className="px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b">วันที่ (DATE)</th>
-                                                    <th className="px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b text-center">สถานะ (STATUS)</th>
-                                                    <th className="px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b text-center">กะ (SHIFT)</th>
-                                                    <th className="px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b text-right">โอที (OT)</th>
+                                                    <th className="px-4 py-4 w-12 text-center">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            onChange={handleSelectAllPresent} 
+                                                            checked={presentEmployees.length > 0 && Object.values(presentUpdates).filter(u => u.checked).length === presentEmployees.length}
+                                                            className="w-4 h-4 rounded text-emerald-500 accent-emerald-500 cursor-pointer" 
+                                                        />
+                                                    </th>
+                                                    <th className="px-4 py-4">รหัสพนักงาน</th>
+                                                    <th className="px-4 py-4">ชื่อ-นามสกุล</th>
+                                                    <th className="px-4 py-4">สายการผลิต / กลุ่ม</th>
+                                                    <th className="px-4 py-4">สถานะเดิม</th>
+                                                    <th className="px-4 py-4">เปลี่ยนสถานะใหม่</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
-                                                {getStats.details.map((d, i) => {
-                                                    const config = STATUS_LEGEND.find(l => d.status.includes(l.label));
-                                                    const bgClass = config ? config.bg : 'bg-slate-200';
-                                                    const textClass = config ? 'text-white' : 'text-slate-500';
-                                                    
-                                                    let shiftDisplay = '-';
-                                                    let shiftColor = 'text-slate-400';
-                                                    if (d.shift === 'Shift A') { shiftDisplay = 'DAY'; shiftColor = 'text-orange-500 font-black'; }
-                                                    else if (d.shift === 'Shift B') { shiftDisplay = 'NIGHT'; shiftColor = 'text-indigo-500 font-black'; }
-
-                                                    return (
-                                                        <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
-                                                            <td className="px-10 py-5 text-sm font-bold text-slate-600 border-b border-slate-50">
-                                                                {new Date(d.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                                            </td>
-                                                            <td className="px-10 py-5 border-b border-slate-50 text-center">
-                                                                <span className={`inline-block px-4 py-1.5 rounded-full text-[11px] font-black ${bgClass} ${textClass} shadow-sm`}>
-                                                                    {d.status}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-10 py-5 border-b border-slate-50 text-center">
-                                                                <span className={`text-[12px] ${shiftColor}`}>
-                                                                    {shiftDisplay}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-10 py-5 text-right font-black text-slate-300 border-b border-slate-50 group-hover:text-blue-500">
-                                                                {d.ot > 0 ? <span className="text-[#ea580c] text-lg">{d.ot}</span> : '-'}
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                                {getStats.details.length === 0 && (
+                                            <tbody className="divide-y divide-slate-100 font-bold text-slate-600">
+                                                {presentEmployees.length > 0 ? (
+                                                    presentEmployees.map((emp, idx) => {
+                                                        const config = STATUS_LEGEND.find(l => emp.status.includes(l.label)) || { bg: 'bg-slate-200', color: 'text-slate-500' };
+                                                        const updateData = presentUpdates[emp.id] || { checked: false, status: emp.status === 'ไม่มีข้อมูล' ? 'มาปกติ' : emp.status };
+                                                        
+                                                        return (
+                                                            <tr key={idx} className={`transition-colors ${updateData.checked ? 'bg-emerald-50/40' : 'hover:bg-slate-50/50'}`}>
+                                                                <td className="px-4 py-4 text-center">
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        checked={updateData.checked} 
+                                                                        onChange={() => togglePresentCheck(emp.id, emp.status)} 
+                                                                        className="w-4 h-4 rounded text-emerald-500 accent-emerald-500 cursor-pointer" 
+                                                                    />
+                                                                </td>
+                                                                <td className="px-4 py-4 text-[12px]">{emp.id}</td>
+                                                                <td className="px-4 py-4">{emp.name || 'ไม่ระบุ'}</td>
+                                                                <td className="px-4 py-4">
+                                                                    <span className="text-blue-600 font-black bg-blue-50 px-2.5 py-1 rounded-md text-[10px] mr-2 uppercase tracking-wider">{emp.line}</span>
+                                                                    <span className="text-[11px]">{emp.group}</span>
+                                                                </td>
+                                                                <td className="px-4 py-4">
+                                                                    <span className={`${config.bg} text-white px-3 py-1 rounded-full text-[10px] font-black shadow-sm inline-block`}>
+                                                                        {emp.status}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-4 py-4">
+                                                                    <select 
+                                                                        value={updateData.status} 
+                                                                        onChange={(e) => changePresentStatus(emp.id, e.target.value)}
+                                                                        className={`text-[12px] font-bold border rounded-lg px-2 py-1.5 outline-none cursor-pointer shadow-sm w-full max-w-[120px] transition-colors
+                                                                            ${updateData.checked ? 'border-emerald-400 bg-white text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}
+                                                                    >
+                                                                        {STATUS_LEGEND.filter(l => l.label !== 'ไม่มีข้อมูล').map(l => (
+                                                                            <option key={l.label} value={l.label}>{l.label}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                ) : (
                                                     <tr>
-                                                        <td colSpan="4" className="px-10 py-20 text-center text-slate-300 italic font-bold">ไม่พบข้อมูลการลงเวลาในรอบนี้</td>
+                                                        <td colSpan="6" className="px-6 py-12 text-center text-slate-400 italic font-bold">
+                                                            <i className="fa-regular fa-face-frown text-2xl block mb-2 opacity-50"></i>
+                                                            ไม่มีพนักงานมาทำงานในข้อมูลที่เลือก
+                                                        </td>
                                                     </tr>
                                                 )}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
+                                <div className="p-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <div className="text-sm font-bold text-slate-600">
+                                        เลือกเพื่ออัปเดต <span className="text-emerald-600 font-black bg-white px-2 py-0.5 rounded border border-emerald-100 shadow-sm mx-1">{Object.values(presentUpdates).filter(u => u.checked).length}</span> รายการ
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
+                                        {presentSaveStatus && (
+                                            <span className={`text-[12px] font-black px-3 py-1.5 rounded-full bg-white shadow-sm border ${presentSaveStatus.type === 'success' ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100'}`}>
+                                                {presentSaveStatus.msg}
+                                            </span>
+                                        )}
+                                        <button 
+                                            onClick={handleSavePresentStatus}
+                                            disabled={isSavingPresent || Object.values(presentUpdates).filter(u => u.checked).length === 0}
+                                            className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-[1rem] font-black text-sm transition-all shadow-md flex items-center justify-center gap-2"
+                                        >
+                                            {isSavingPresent ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-floppy-disk"></i>}
+                                            บันทึกสถานะลง Google Sheets
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        ) : (
-                            <div className="text-center py-20 opacity-30 italic">
-                                <i className="fa-solid fa-magnifying-glass text-6xl mb-6 block text-slate-200"></i>
-                                <p className="font-bold text-slate-400">กรุณากรอกรหัสพนักงานเพื่อค้นหาข้อมูล</p>
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
+
                 </div>
             );
         };
@@ -2092,7 +2094,7 @@
                         }
                         
                         // 2. รองรับกรณีพิมพ์วันที่เป็นเดือนภาษาไทย (เช่น "18 เม.ย. 2569" หรือ "18 เมษายน 2026")
-                        const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+                        const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กร ফারหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
                         for (let i = 0; i < thaiMonths.length; i++) {
                             if (trimmed.includes(thaiMonths[i])) {
                                 const m = (i % 12) + 1;
