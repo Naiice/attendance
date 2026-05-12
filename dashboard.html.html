@@ -431,6 +431,7 @@
             const lineNumFilter = dashLine.replace('LINE ', '');
             const trendData = trendDates.map(date => {
                 const dayEmps = employees.filter(e => {
+                    if (e.isResignedFromNote) return false;
                     if (e.resignedDate && new Date(date) > new Date(e.resignedDate)) return false;
                     if (e.shift !== activeShift) return false;
                     if (dashLine !== 'ALL' && !(e.line || '').toString().toUpperCase().includes(lineNumFilter.toUpperCase())) return false;
@@ -732,6 +733,9 @@
                     ...e,
                     status: e.statusesByDate?.[rawDate] || 'ไม่มีข้อมูล' 
                 })).filter(e => {
+                    if (e.isResignedFromNote) {
+                        return false;
+                    }
                     if (e.resignedDate && new Date(rawDate) > new Date(e.resignedDate)) {
                         return false;
                     }
@@ -1996,6 +2000,9 @@
                   if (globalEmployees && globalEmployees.length > 0) {
                       const gEmp = globalEmployees.find(ge => String(ge.id) === String(emp.id));
                       if (gEmp) {
+                          if (gEmp.isResignedFromNote) {
+                              return false;
+                          }
                           if (gEmp.resignedDate && new Date(targetDate) >= new Date(gEmp.resignedDate)) {
                               return false;
                           }
@@ -2523,6 +2530,7 @@
                     if (roleIdx === -1) roleIdx = 5;
                     
                     let isKeyIdx = getColIndex(headersAtt, ["iskey", "key", "สำคัญ"]);
+                    let noteIdx = getColIndex(headersAtt, ["note", "หมายเหตุ", "remark", "หมายเหตุ", "note"]); // Added note index
 
                     const emps = rowsAtt.slice(1).map(r => {
                         const eid = r[idIdx] ? String(r[idIdx]).trim() : '';
@@ -2575,6 +2583,8 @@
 
                         const fullRowStr = r.join(' ').toLowerCase();
                         const keyVal = isKeyIdx !== -1 && r[isKeyIdx] ? String(r[isKeyIdx]).trim() : '';
+                        const noteVal = noteIdx !== -1 && r[noteIdx] ? String(r[noteIdx]).trim().toLowerCase() : ''; // Get note value
+                        const isResignedFromNote = noteVal.includes('resign') || noteVal.includes('ลาออก'); // Check condition
 
                         const shiftCell = r[6] ? String(r[6]).trim().toUpperCase() : '';
                         let empShift = 'Shift A';
@@ -2593,6 +2603,7 @@
                             isKey: keyVal,
                             shift: empShift,
                             fullRowStr: fullRowStr,
+                            isResignedFromNote: isResignedFromNote, // Added flag
                             status: 'ไม่มีข้อมูล',
                             statusesByDate: statusesByDate,
                             shiftsByDate: shiftsByDate, // เพิ่มข้อมูลประวัติกะรายวัน
