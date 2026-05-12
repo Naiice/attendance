@@ -849,7 +849,7 @@
             const formatSheetDate = (dateStr) => {
                 if (!dateStr) return '';
                 const [year, month, day] = dateStr.split('-');
-                return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
+                return `${day}/${month}/${year}`;
             };
 
             const toggleAbsentCheck = (empId, currentStatus) => {
@@ -1930,7 +1930,7 @@
           const formatThaiDate = (dateStr) => {
             if (!dateStr) return '';
             const [year, month, day] = dateStr.split('-');
-            return `${parseInt(month, 10)}/${parseInt(day, 10)}/${year}`;
+            return `${day}/${month}/${year}`;
           };
 
           useEffect(() => {
@@ -2355,7 +2355,8 @@
                     
                     const headersAtt = rowsAtt[0];
 
-                    const CSV_OT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Grand_Summary`;
+                    const GID_GRAND_SUMMARY = "504388308";
+                    const CSV_OT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_GRAND_SUMMARY}`;
                     const textOT = await fetchWithFallback(CSV_OT_URL);
                     const rowsOT = textOT.replace(/\r/g, '').split('\n')
                         .filter(r => r.trim())
@@ -2363,52 +2364,32 @@
                     
                     const headersOT = rowsOT[0];
 
-                    const parseHeaderToYMD = (h) => {
-                        const trimmed = h.trim();
-                        const match = trimmed.match(/(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})/);
-                        if (!match) return null;
-                        let num1 = parseInt(match[1], 10), num2 = parseInt(match[2], 10), num3 = parseInt(match[3], 10);
-                        let y, m, d;
-                        if (num1 > 1000) { y = num1; m = num2; d = num3; }
-                        else if (num3 > 1000) {
-                            y = num3;
-                            if (num1 > 12) { d = num1; m = num2; }
-                            else if (num2 > 12) { m = num1; d = num2; }
-                            else { m = num1; d = num2; }
-                        } else {
-                            y = num3 + 2000;
-                            if (num1 > 12) { d = num1; m = num2; }
-                            else { m = num1; d = num2; }
-                        }
-                        if (y > 2500) y -= 543;
-                        return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                    };
-
-                    const parseOTHeaderToYMD = (h) => {
+                    const parseUnifiedDate = (h) => {
                         const trimmed = String(h).trim();
                         if (!trimmed) return null;
-                        
-                        // 1. อ่านรูปแบบตัวเลขปกติ (เช่น 18/04/2026 หรือ 18-4-69)
+
                         const match = trimmed.match(/(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})/);
                         if (match) {
-                            let num1 = parseInt(match[1], 10), num2 = parseInt(match[2], 10), num3 = parseInt(match[3], 10);
+                            let num1 = parseInt(match[1], 10);
+                            let num2 = parseInt(match[2], 10);
+                            let num3 = parseInt(match[3], 10);
                             let y, m, d;
-                            if (num1 > 1000) { y = num1; m = num2; d = num3; }
-                            else if (num3 > 1000) {
-                                y = num3;
-                                if (num2 > 12) { m = num1; d = num2; } 
-                                else { d = num1; m = num2; }
+
+                            if (num1 > 1000) {
+                                y = num1; m = num2; d = num3;
+                            } else if (num3 > 1000) {
+                                y = num3; d = num1; m = num2; // ยึดรูปแบบ DD/MM/YYYY เป็นหลัก
+                                if (m > 12 && d <= 12) { m = num1; d = num2; } // สลับถ้าเดือนเกิน 12
                             } else {
-                                y = num3 + 2000;
-                                if (num2 > 12) { m = num1; d = num2; }
-                                else { d = num1; m = num2; }
+                                y = num3 + 2000; d = num1; m = num2;
+                                if (m > 12 && d <= 12) { m = num1; d = num2; }
                             }
+
                             if (y > 2500) y -= 543;
                             return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                         }
-                        
-                        // 2. รองรับกรณีพิมพ์วันที่เป็นเดือนภาษาไทย (เช่น "18 เม.ย. 2569" หรือ "18 เมษายน 2026")
-                        const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กร ফারหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+
+                        const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
                         for (let i = 0; i < thaiMonths.length; i++) {
                             if (trimmed.includes(thaiMonths[i])) {
                                 const m = (i % 12) + 1;
@@ -2422,8 +2403,7 @@
                                 }
                             }
                         }
-                        
-                        // 3. รองรับกรณี Sheet คืนค่ามาเป็นตัวอักษรภาษาอังกฤษ เช่น "18-Apr" หรือ "18 Apr 2026"
+
                         const dObj = new Date(trimmed);
                         if (!isNaN(dObj.getTime()) && trimmed.match(/[a-zA-Z]/)) {
                              let y = dObj.getFullYear();
@@ -2435,7 +2415,7 @@
 
                     const attDateCols = [];
                     headersAtt.forEach((h, idx) => {
-                        const ymd = parseHeaderToYMD(h);
+                        const ymd = parseUnifiedDate(h);
                         if (ymd) attDateCols.push({ idx, ymd });
                     });
 
@@ -2468,7 +2448,7 @@
                                 
                                 if (!eid || !rawDate) return;
                                 
-                                const ymd = parseOTHeaderToYMD(rawDate);
+                                const ymd = parseUnifiedDate(rawDate);
                                 if (ymd) {
                                     if (!otMap[eid]) otMap[eid] = {};
                                     // หากมีข้อมูลพนักงานคนเดียวกันลงหลายบรรทัดใน 1 วัน ระบบจะบวกชั่วโมงเพิ่มให้
@@ -2480,21 +2460,14 @@
                         } else {
                             // 2. รูปแบบ Pivot Table (วันที่อยู่ตามหัวตาราง เช่น ID | 18/4 | 19/4)
                             const otDateCols = [];
-                            const maxCols = Math.max(...rowsOT.slice(0, 5).map(r => r.length));
-                            for (let colIdx = 0; colIdx < maxCols; colIdx++) {
+                            const headerRow = rowsOT[otHeaderRowIdx] || [];
+                            for (let colIdx = 0; colIdx < headerRow.length; colIdx++) {
                                 if (colIdx === idIdxOT) continue;
-                                let foundDateYMD = null;
-                                for (let rowIdx = 0; rowIdx < Math.min(5, rowsOT.length); rowIdx++) {
-                                    if (rowsOT[rowIdx] && rowsOT[rowIdx][colIdx]) {
-                                        const ymd = parseOTHeaderToYMD(rowsOT[rowIdx][colIdx]);
-                                        if (ymd) {
-                                            foundDateYMD = ymd;
-                                            break;
-                                        }
+                                if (headerRow[colIdx]) {
+                                    const ymd = parseUnifiedDate(headerRow[colIdx]);
+                                    if (ymd) {
+                                        otDateCols.push({ idx: colIdx, ymd: ymd });
                                     }
-                                }
-                                if (foundDateYMD) {
-                                    otDateCols.push({ idx: colIdx, ymd: foundDateYMD });
                                 }
                             }
 
