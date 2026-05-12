@@ -1,7 +1,7 @@
 // ============================================================
 //  GOOGLE APPS SCRIPT — REST API Backend
 //  วิธีใช้: Deploy > New deployment > Web App
-//           Execute as: Me | Who has access: Anyone
+//             Execute as: Me | Who has access: Anyone
 // ============================================================
 
 function doGet(e) {
@@ -91,7 +91,9 @@ function logAttendance(name, lat, lng) {
 
   const now = new Date();
   const mapLink = (lat && lng) ? `https://www.google.com/maps?q=${lat},${lng}` : '';
-  const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'd/M/yyyy');
+  
+  // แก้ไขรูปแบบวันที่จาก 'd/M/yyyy' เป็น 'dd/MM/yyyy' เพื่อให้ได้รูปแบบ 12/05/2026 เสมอ
+  const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'dd/MM/yyyy');
   const timeStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'HH:mm:ss');
 
   sheet.appendRow([
