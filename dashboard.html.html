@@ -892,6 +892,7 @@
                 // ใช้รูปแบบ Payload เพื่อส่งให้ Google Sheets
                 const payload = itemsToSave.map(([id, data]) => {
                     const emp = employees.find(e => e.id === id);
+                    const suffix = activeShift === 'Shift A' ? '_Day' : '_Night';
                     return {
                         action: 'UPDATE_ATTENDANCE', // ตัวระบุคำสั่งให้ Google Apps Script
                         date: formatSheetDate(rawDate), // <-- ใช้วันที่รูปแบบ เดือน/วัน/ค.ศ.
@@ -900,7 +901,7 @@
                         id: id,
                         name: emp?.name || '',
                         groupName: emp?.group || '',
-                        status: mapStatusToEnglish(data.status) // <-- แปลงสถานะเป็นภาษาอังกฤษ
+                        status: mapStatusToEnglish(data.status) + suffix // <-- แปลงสถานะเป็นภาษาอังกฤษพร้อมกะ
                     };
                 });
 
@@ -967,6 +968,7 @@
                 
                 const payload = itemsToSave.map(([id, data]) => {
                     const emp = employees.find(e => e.id === id);
+                    const suffix = activeShift === 'Shift A' ? '_Day' : '_Night';
                     return {
                         action: 'UPDATE_ATTENDANCE',
                         date: formatSheetDate(rawDate),
@@ -975,7 +977,7 @@
                         id: id,
                         name: emp?.name || '',
                         groupName: emp?.group || '',
-                        status: mapStatusToEnglish(data.status)
+                        status: mapStatusToEnglish(data.status) + suffix
                     };
                 });
 
@@ -1045,7 +1047,7 @@
                                 </h3>
                                 <p className="text-red-600 text-[13px] mt-1 font-bold leading-relaxed">
                                     พบพนักงานขาดและลางานจำนวน <span className="font-black bg-white px-1.5 py-0.5 rounded shadow-sm">{absentCount} คน</span> (คิดเป็น {absentRate.toFixed(1)}% ของพนักงานในกะ/ไลน์นี้) ซึ่งเกินเกณฑ์เฝ้าระวัง 10% อาจส่งผลกระทบต่อเป้าหมายการผลิต<br/>
-                                    <span className="text-red-500 text-[11px]">发现缺勤和请假员工 <span className="font-black bg-white/60 px-1 py-0.5 rounded">{absentCount} 人</span>，占比 {absentRate.toFixed(1)}%，超过 10% 的预警标准，可能影响生产目标</span>
+                                    <span className="text-red-500 text-[11px]">发现缺勤和请假员工 <span className="font-black bg-white/60 px-1 py-0.5 rounded">{absentCount} 人</span>，占比 {absentRate.toFixed(1)}%，超过 10% 的预警标准，可能影响生产目標</span>
                                 </p>
                             </div>
                         </div>
@@ -2466,7 +2468,7 @@
                                 if (headerRow[colIdx]) {
                                     const ymd = parseUnifiedDate(headerRow[colIdx]);
                                     if (ymd) {
-                                        otDateCols.push({ idx: colIdx, ymd: ymd });
+                                        otDateCols.push({ colIdx, ymd: ymd });
                                     }
                                 }
                             }
@@ -2476,7 +2478,7 @@
                                 if (!eid) return;
                                 if (!otMap[eid]) otMap[eid] = {};
                                 otDateCols.forEach(col => {
-                                    const val = r[col.idx] ? String(r[col.idx]).trim() : '0';
+                                    const val = r[col.colIdx] ? String(r[col.colIdx]).trim() : '0';
                                     if (val !== '0' && val !== '' && val !== '-') {
                                         otMap[eid][col.ymd] = val;
                                     }
