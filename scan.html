@@ -549,15 +549,29 @@
     document.getElementById('btnConfirm').disabled = !isChecked;
   }
 
+  // ===== ส่งข้อมูล Date, Time, Status ด้วย =====
   async function confirmAttendance() {
     const btn = document.getElementById('btnConfirm');
     btn.disabled   = true;
     btn.innerText  = 'กำลังบันทึก...';
 
+    const now = new Date();
+    const dateStr = getOriginalLocalDateString();
+    const timeStr = now.toLocaleTimeString('th-TH', { hour12: false });
+    const scanStatus = checkScanTimeStatus(now);
+
     try {
       const res = await fetch(API_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'logAttendance', name: currentMatch, lat: currentLat, lng: currentLng })
+        body: JSON.stringify({ 
+          action: 'logAttendance', 
+          name: currentMatch, 
+          lat: currentLat, 
+          lng: currentLng,
+          date: dateStr,     // ส่งวันที่ DD/MM/YYYY
+          time: timeStr,     // ส่งเวลา
+          status: scanStatus // ส่งสถานะกะที่ตรวจจับได้
+        })
       });
       const data = await res.json();
       alert('✅ ' + (data.message || 'บันทึกเวลาสำเร็จ'));
@@ -589,6 +603,29 @@
   }
 
   // ===== Helpers =====
+  const getOriginalLocalDateString = () => {
+    const now = new Date();
+    // บังคับรูปแบบ วัน/เดือน/ปี (DD/MM/YYYY)
+    return `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+  };
+
+  const checkScanTimeStatus = (dateObj = new Date()) => {
+    const h = dateObj.getHours();
+    const m = dateObj.getMinutes();
+    const s = dateObj.getSeconds();
+    const timeInSeconds = (h * 3600) + (m * 60) + s;
+
+    if (timeInSeconds >= 18000 && timeInSeconds <= 28800) {
+      return "Present_Day";
+    } else if (timeInSeconds >= 28801 && timeInSeconds <= 61199) {
+      return "Late_Day";
+    } else if (timeInSeconds >= 61200 && timeInSeconds <= 72000) {
+      return "Present_Night";
+    } else {
+      return "Late_Night";
+    }
+  };
+
   function showError(msg) {
     mainStatus.innerHTML = '<span style="color:#f87171">❌ ' + msg + '</span>';
   }
