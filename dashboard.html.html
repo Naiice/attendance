@@ -11,6 +11,8 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- เพิ่ม html2canvas สำหรับแคปหน้าจอ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -110,20 +112,15 @@
             const m = dateObj.getMinutes();
             const s = dateObj.getSeconds();
             
-            // แปลงเวลาให้เป็นวินาทีรวมทั้งหมดใน 1 วัน เพื่อง่ายต่อการตรวจสอบช่วงเวลา
             const timeInSeconds = (h * 3600) + (m * 60) + s;
 
             if (timeInSeconds >= 18000 && timeInSeconds <= 28800) {
-                // 05:00:00 ถึง 08:00:00 (18000 ถึง 28800 วินาที)
                 return "Present Day (กะเช้า มาปกติ)";
             } else if (timeInSeconds >= 28801 && timeInSeconds <= 61199) {
-                // 08:00:01 ถึง 16:59:59 (28801 ถึง 61199 วินาที)
                 return "Late Day (กะเช้า มาสาย)";
             } else if (timeInSeconds >= 61200 && timeInSeconds <= 72000) {
-                // 17:00:00 ถึง 20:00:00 (61200 ถึง 72000 วินาที)
                 return "Present Night (กะดึก มาปกติ)";
             } else {
-                // 20:00:01 ถึง 04:59:59 (เวลาอื่นๆ ที่เหลือในวันใหม่)
                 return "Late Night (กะดึก มาสาย)";
             }
         };
@@ -701,6 +698,51 @@
             const [isSavingPresent, setIsSavingPresent] = useState(false);
             const [presentSaveStatus, setPresentSaveStatus] = useState(null);
 
+            const [isCapturing, setIsCapturing] = useState(false);
+
+            // ฟังก์ชันแคปหน้าจอและส่งไป WeChat (ผ่านคลิปบอร์ด)
+            const handleShareWeChat = async () => {
+                const element = document.getElementById('dashboard-capture-area');
+                const actionBtns = document.getElementById('dashboard-action-buttons');
+                
+                if (!element) return;
+                
+                setIsCapturing(true);
+                if (actionBtns) actionBtns.style.opacity = '0'; // ซ่อนปุ่มก่อนแคป
+                
+                try {
+                    const canvas = await window.html2canvas(element, { 
+                        scale: 2, 
+                        backgroundColor: '#ffffff',
+                        useCORS: true
+                    });
+                    
+                    if (actionBtns) actionBtns.style.opacity = '1'; // คืนค่าปุ่ม
+                    
+                    canvas.toBlob(async (blob) => {
+                        try {
+                            const item = new ClipboardItem({ 'image/png': blob });
+                            await navigator.clipboard.write([item]);
+                            alert('✅ แคปเจอร์หน้าจอสำเร็จ!\n\nระบบได้คัดลอกรูปภาพลง "คลิปบอร์ด" แล้ว\nคุณสามารถไปที่หน้าต่างแชทกลุ่ม WeChat แล้วกด "วาง" (Ctrl+V) หรือกดค้างเพื่อส่งรูปได้ทันทีครับ');
+                        } catch (err) {
+                            // Fallback กรณี Browser ไม่รองรับการเขียนรูปลง Clipboard
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.download = `Haier_A01_Dashboard_${selectedLine.replace(' ', '_')}.png`;
+                            link.href = url;
+                            link.click();
+                            alert('✅ บันทึกรูปภาพสำเร็จ!\n\nระบบได้ดาวน์โหลดรูปภาพลงเครื่องของคุณแล้ว\nคุณสามารถนำรูปภาพนี้ไปส่งในกลุ่ม WeChat ได้เลยครับ');
+                        }
+                        setIsCapturing(false);
+                    }, 'image/png');
+                } catch (error) {
+                    console.error("Capture error:", error);
+                    if (actionBtns) actionBtns.style.opacity = '1';
+                    alert("เกิดข้อผิดพลาดในการแคปเจอร์หน้าจอ");
+                    setIsCapturing(false);
+                }
+            };
+
             // รีเซ็ตการเลือกเมื่อเปลี่ยนวัน หรือปิดหน้าต่าง
             useEffect(() => {
                 setAbsentUpdates({});
@@ -1005,6 +1047,24 @@
                 }
             };
 
+            // ✅ กรองวันที่และคอลัมน์ซ้ำซ้อนใน Dashboard อย่างฉลาด! 
+            // โค้ดนี้จะช่วยให้ Dashboard อ่านคอลัมน์ที่มีฟอร์แมต 13/05/2026 
+            // และข้ามคอลัมน์ขยะอย่าง 5/13/2026 ไปเลย (ถึงจะมีอยู่ในชีตก็ไม่เอามาคำนวณ)
+            const attDateCols = useMemo(() => {
+                const cols = [];
+                const seenAttDates = new Set();
+                if (employees.length > 0 && employees[0].headersAtt) {
+                     employees[0].headersAtt.forEach((h, idx) => {
+                         const ymd = employees[0].parseUnifiedDateFunc(h);
+                         if (ymd && !seenAttDates.has(ymd)) {
+                             seenAttDates.add(ymd);
+                             cols.push({ idx, ymd });
+                         }
+                     });
+                }
+                return cols;
+            }, [employees]);
+
             if (isSyncing) {
                 return (
                     <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-200 animate-pulse w-full print-hidden">
@@ -1033,7 +1093,7 @@
             }
 
             return (
-                <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-200 animate-in fade-in duration-500 relative">
+                <div id="dashboard-capture-area" className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-200 animate-in fade-in duration-500 relative">
                     {/* Anomaly Alert Banner */}
                     {isAnomaly && (
                         <div className="print-hidden bg-red-50 border border-red-200 p-4 rounded-2xl mb-8 flex items-start gap-4 shadow-sm animate-in slide-in-from-top-4">
@@ -1079,7 +1139,7 @@
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto justify-start xl:justify-end print-hidden shrink-0">
+                        <div id="dashboard-action-buttons" className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto justify-start xl:justify-end print-hidden shrink-0 transition-opacity duration-200">
                             {/* ปุ่มเปิด Modal ผู้ขาด/ลาเกิน 3 วัน (Warning) */}
                             <button onClick={() => setShowWarningModal(true)} className="shrink-0 bg-rose-600 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold relative border-none outline-none" title="เฝ้าระวังพนักงานที่ขาด/ลาเกิน 3 วัน">
                                 <i className="fa-solid fa-triangle-exclamation"></i> <span className="whitespace-nowrap hidden sm:inline">เฝ้าระวัง - 预警</span>
@@ -1096,6 +1156,12 @@
                             {/* ปุ่มเปิด Modal ดูผู้ขาดลา */}
                             <button onClick={() => setShowAbsentModal(true)} className="shrink-0 bg-amber-500 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold border-none outline-none" title="ดูรายชื่อผู้ขาด/ลา">
                                 <i className="fa-solid fa-user-slash"></i> <span className="whitespace-nowrap hidden sm:inline">ดูผู้ขาด/ลา - 缺勤/请假</span>
+                            </button>
+
+                            {/* ปุ่มแชร์ WeChat */}
+                            <button onClick={handleShareWeChat} disabled={isCapturing} className="shrink-0 bg-[#07c160] text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold border-none outline-none disabled:opacity-50" title="แชร์เข้า WeChat">
+                                {isCapturing ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <i className="fa-brands fa-weixin text-lg"></i>}
+                                <span className="whitespace-nowrap hidden sm:inline">{isCapturing ? 'กำลังแคป...' : 'WeChat'}</span>
                             </button>
 
                             <button onClick={handleDownloadCSV} className="shrink-0 bg-emerald-500 text-white w-10 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer border-none outline-none" title="ดาวน์โหลด CSV">
@@ -1218,9 +1284,9 @@
                                                 <div className="bg-[#f8fafc] rounded-[2rem] p-4 w-[80%] max-w-[220px] text-center shadow-[0_15px_30px_rgba(0,0,0,0.1)] border border-slate-200 relative my-2">
                                                     <h4 className="text-[20px] font-black italic text-slate-800 leading-none">{sec.name}</h4>
                                                     <p className="text-[10px] font-bold text-slate-500 mt-1">{sec.sub}</p>
-                                                    <div className="mt-3 inline-flex items-center justify-center gap-2 bg-white px-4 py-1.5 rounded-full border shadow-sm">
+                                                    <div className="mt-3 flex items-center justify-center mx-auto w-fit bg-white px-4 py-1.5 rounded-full border shadow-sm">
                                                         <span className="text-lg font-black text-emerald-500">{presCount}</span>
-                                                        <span className="text-slate-300 font-light">/</span>
+                                                        <span className="text-slate-300 font-light mx-2">/</span>
                                                         <span className="text-lg font-black text-slate-500">{secEmps.length}</span>
                                                     </div>
                                                 </div>
@@ -2366,6 +2432,7 @@
                     
                     const headersOT = rowsOT[0];
 
+                    // ฟังก์ชันแปลงวันที่แบบ Smart Date Match (เพื่อให้รองรับ 13/05/2026 หรือ 13/5/2026)
                     const parseUnifiedDate = (h) => {
                         const trimmed = String(h).trim();
                         if (!trimmed) return null;
@@ -2415,10 +2482,15 @@
                         return null;
                     };
 
+                    // ✅ กรองวันที่ซ้ำซ้อนในชีต Attendance
                     const attDateCols = [];
+                    const seenAttDates = new Set();
                     headersAtt.forEach((h, idx) => {
                         const ymd = parseUnifiedDate(h);
-                        if (ymd) attDateCols.push({ idx, ymd });
+                        if (ymd && !seenAttDates.has(ymd)) {
+                            seenAttDates.add(ymd);
+                            attDateCols.push({ idx, ymd });
+                        }
                     });
 
                     // [OT FIX] ระบบตรวจสอบรูปแบบข้อมูล (Flat Log vs Pivot Table) เพื่อดึงโอทีให้แม่นยำที่สุด
@@ -2442,7 +2514,7 @@
                     const otMap = {};
                     if (idIdxOT !== -1) {
                         if (dateIdxOT !== -1 && hoursIdxOT !== -1) {
-                            // 1. รูปแบบ Flat Log (ข้อมูลเรียงต่อกันเป็นบรรทัดๆ เช่น Date | ID | OT)
+                            // 1. รูปแบบ Flat Log
                             rowsOT.slice(otHeaderRowIdx + 1).forEach(r => {
                                 const eid = r[idIdxOT] ? String(r[idIdxOT]).trim() : '';
                                 const rawDate = r[dateIdxOT] ? String(r[dateIdxOT]).trim() : '';
@@ -2453,21 +2525,23 @@
                                 const ymd = parseUnifiedDate(rawDate);
                                 if (ymd) {
                                     if (!otMap[eid]) otMap[eid] = {};
-                                    // หากมีข้อมูลพนักงานคนเดียวกันลงหลายบรรทัดใน 1 วัน ระบบจะบวกชั่วโมงเพิ่มให้
                                     const currentVal = parseFloat(otMap[eid][ymd]) || 0;
                                     const addVal = parseFloat(rawHours) || 0;
                                     otMap[eid][ymd] = (currentVal + addVal).toString();
                                 }
                             });
                         } else {
-                            // 2. รูปแบบ Pivot Table (วันที่อยู่ตามหัวตาราง เช่น ID | 18/4 | 19/4)
+                            // 2. รูปแบบ Pivot Table
+                            // ✅ กรองคอลัมน์วันที่ซ้ำซ้อนในชีต Grand_Summary ด้วย
                             const otDateCols = [];
+                            const seenOtDates = new Set();
                             const headerRow = rowsOT[otHeaderRowIdx] || [];
                             for (let colIdx = 0; colIdx < headerRow.length; colIdx++) {
                                 if (colIdx === idIdxOT) continue;
                                 if (headerRow[colIdx]) {
                                     const ymd = parseUnifiedDate(headerRow[colIdx]);
-                                    if (ymd) {
+                                    if (ymd && !seenOtDates.has(ymd)) {
+                                        seenOtDates.add(ymd);
                                         otDateCols.push({ colIdx, ymd: ymd });
                                     }
                                 }
@@ -2505,12 +2579,12 @@
                     if (roleIdx === -1) roleIdx = 5;
                     
                     let isKeyIdx = getColIndex(headersAtt, ["iskey", "key", "สำคัญ"]);
-                    let noteIdx = getColIndex(headersAtt, ["note", "หมายเหตุ", "remark", "หมายเหตุ", "note"]); // Added note index
+                    let noteIdx = getColIndex(headersAtt, ["note", "หมายเหตุ", "remark", "หมายเหตุ", "note"]);
 
                     const emps = rowsAtt.slice(1).map(r => {
                         const eid = r[idIdx] ? String(r[idIdx]).trim() : '';
                         const statusesByDate = {};
-                        const shiftsByDate = {}; // เก็บข้อมูลกะรายวัน
+                        const shiftsByDate = {};
                         let firstResignedDate = null;
                         
                         const sortedAttDateCols = [...attDateCols].sort((a,b) => new Date(a.ymd) - new Date(b.ymd));
@@ -2518,12 +2592,11 @@
                         sortedAttDateCols.forEach(col => {
                             const cellStatus = r[col.idx] ? String(r[col.idx]).trim() : '';
                             let fStatus = 'ไม่มีข้อมูล';
-                            let dShift = 'ไม่มีข้อมูล'; // เก็บกะประจำวันของวันนั้น
+                            let dShift = 'ไม่มีข้อมูล';
                             
                             if (cellStatus !== '' && cellStatus !== '-') {
                                 const sStatus = cellStatus.toLowerCase();
                                 
-                                // ระบบตรวจสอบและแยกแยะกะ (A/B) จากข้อความสถานะรายวัน
                                 if (sStatus.includes('day') || sStatus.includes('เช้า') || sStatus.includes('a-') || sStatus.startsWith('a')) {
                                     dShift = 'Shift A';
                                 } else if (sStatus.includes('night') || sStatus.includes('ดึก') || sStatus.includes('b-') || sStatus.startsWith('b')) {
@@ -2546,7 +2619,7 @@
                             }
                             
                             statusesByDate[col.ymd] = fStatus;
-                            shiftsByDate[col.ymd] = dShift; // บันทึกกะลงตารางรายวัน
+                            shiftsByDate[col.ymd] = dShift;
                         });
 
                         let groupVal = r[groupIdx] ? String(r[groupIdx]).trim() : '';
@@ -2558,8 +2631,8 @@
 
                         const fullRowStr = r.join(' ').toLowerCase();
                         const keyVal = isKeyIdx !== -1 && r[isKeyIdx] ? String(r[isKeyIdx]).trim() : '';
-                        const noteVal = noteIdx !== -1 && r[noteIdx] ? String(r[noteIdx]).trim().toLowerCase() : ''; // Get note value
-                        const isResignedFromNote = noteVal.includes('resign') || noteVal.includes('ลาออก'); // Check condition
+                        const noteVal = noteIdx !== -1 && r[noteIdx] ? String(r[noteIdx]).trim().toLowerCase() : '';
+                        const isResignedFromNote = noteVal.includes('resign') || noteVal.includes('ลาออก');
 
                         const shiftCell = r[6] ? String(r[6]).trim().toUpperCase() : '';
                         let empShift = 'Shift A';
@@ -2578,10 +2651,10 @@
                             isKey: keyVal,
                             shift: empShift,
                             fullRowStr: fullRowStr,
-                            isResignedFromNote: isResignedFromNote, // Added flag
+                            isResignedFromNote: isResignedFromNote,
                             status: 'ไม่มีข้อมูล',
                             statusesByDate: statusesByDate,
-                            shiftsByDate: shiftsByDate, // เพิ่มข้อมูลประวัติกะรายวัน
+                            shiftsByDate: shiftsByDate,
                             otByDate: otMap[eid] || {},
                             resignedDate: firstResignedDate
                         };
