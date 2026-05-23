@@ -376,10 +376,12 @@
         const SummaryDashboard = ({ filteredEmps: baseFilteredEmps, employees, rawDate, availableDates, activeShift, STATUS_LEGEND }) => {
             const [dashLine, setDashLine] = useState('ALL');
             
+            // ✨ แก้ไขส่วนคัดกรอง Dashboard ย่อย (SummaryDashboard) ให้แม่นยำขึ้นด้วย Regex
             const filteredEmps = useMemo(() => {
                 if (dashLine === 'ALL') return baseFilteredEmps;
-                const lineNum = dashLine.replace('LINE ', '');
-                return baseFilteredEmps.filter(e => (e.line || '').toString().toUpperCase().includes(lineNum.toUpperCase()));
+                const lineNum = dashLine.replace('LINE ', '').trim();
+                const regex = new RegExp(`(^|\\s|\\W)${lineNum}(\\s|\\W|$)`);
+                return baseFilteredEmps.filter(e => regex.test((e.line || '').toString().toUpperCase()));
             }, [baseFilteredEmps, dashLine]);
 
             const totalEmps = filteredEmps.length;
@@ -406,8 +408,11 @@
             const secondPie = sortedPie.length > 1 ? sortedPie[1] : null;
 
             const ORIGINAL_LINES = [1, 2, 3, 4, 5];
+            
+            // ✨ แก้ไขส่วนคัดกรองกราฟแท่งด้วย Regex
             const barData = ORIGINAL_LINES.map(lineNum => {
-                const lineEmps = baseFilteredEmps.filter(e => (e.line || '').toString().includes(lineNum.toString()));
+                const regex = new RegExp(`(^|\\s|\\W)${lineNum}(\\s|\\W|$)`);
+                const lineEmps = baseFilteredEmps.filter(e => regex.test((e.line || '').toString().toUpperCase()));
                 const total = lineEmps.length;
                 const present = lineEmps.filter(e => e.status === 'มาปกติ' || e.status === 'สาย').length;
                 const percent = total > 0 ? (present/total)*100 : 0;
@@ -425,13 +430,16 @@
                 ? sortedDates.slice(Math.max(0, currentIdx - 6), currentIdx + 1)
                 : sortedDates.slice(-7);
             
-            const lineNumFilter = dashLine.replace('LINE ', '');
+            // ✨ แก้ไขส่วนคัดกรองกราฟ Trend ย้อนหลังด้วย Regex
+            const lineNumFilter = dashLine.replace('LINE ', '').trim();
+            const lineRegex = new RegExp(`(^|\\s|\\W)${lineNumFilter}(\\s|\\W|$)`);
+            
             const trendData = trendDates.map(date => {
                 const dayEmps = employees.filter(e => {
                     if (e.isResignedFromNote) return false;
                     if (e.resignedDate && new Date(date) > new Date(e.resignedDate)) return false;
                     if (e.shift !== activeShift) return false;
-                    if (dashLine !== 'ALL' && !(e.line || '').toString().toUpperCase().includes(lineNumFilter.toUpperCase())) return false;
+                    if (dashLine !== 'ALL' && !lineRegex.test((e.line || '').toString().toUpperCase())) return false;
                     return true;
                 });
                 const pres = dayEmps.filter(e => {
@@ -441,7 +449,7 @@
 
                 const resigns = employees.filter(e => {
                     if (e.shift !== activeShift) return false;
-                    if (dashLine !== 'ALL' && !(e.line || '').toString().toUpperCase().includes(lineNumFilter.toUpperCase())) return false;
+                    if (dashLine !== 'ALL' && !lineRegex.test((e.line || '').toString().toUpperCase())) return false;
                     return e.statusesByDate?.[date] === 'ลาออก' || e.resignedDate === date;
                 }).length;
 
@@ -487,6 +495,27 @@
                 ? <>มีพนักงานลาออกรวม <span className="text-rose-600 font-black bg-white px-1.5 py-0.5 rounded shadow-sm">{totalResign7Days} คน</span> ในช่วง 7 วันที่ผ่านมา</> 
                 : "ไม่มีพนักงานลาออกในรอบ 7 วันที่ผ่านมา ถือเป็นสัญญาณที่ดี";
 
+            // สถิติแยกตามจุดการผลิต (หัวไลน์, กลางไลน์, ทดสอบ, ท้ายไลน์)
+            const sectionStats = useMemo(() => {
+                return SECTIONS.map(sec => {
+                    const secEmps = filteredEmps.filter(e => sec.keywords.some(k => (e.group || '').toLowerCase().includes(k) || (e.role || '').toLowerCase().includes(k)));
+                    
+                    const total = secEmps.length;
+                    const presentCount = secEmps.filter(e => e.status === 'มาปกติ' || e.status === 'สาย').length;
+                    const leaveCount = secEmps.filter(e => ['ลาป่วย', 'ลากิจ', 'ลาพักร้อน', 'ลาอื่นๆ'].includes(e.status)).length;
+                    const absentCount = secEmps.filter(e => e.status === 'ขาดงาน').length;
+
+                    return {
+                        ...sec,
+                        total,
+                        presentCount,
+                        leaveCount,
+                        absentCount,
+                        presentPercent: total > 0 ? ((presentCount / total) * 100).toFixed(0) : 0
+                    };
+                });
+            }, [filteredEmps]);
+
             return (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full mb-8">
                     <div className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm gap-4 print-hidden">
@@ -504,7 +533,7 @@
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                         <div className="bg-white border border-slate-100 p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between h-full">
                             <div className="w-full">
                                 <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-6 w-full text-left flex items-center gap-3">
@@ -583,7 +612,60 @@
                                 </p>
                             </div>
                         </div>
+                    </div>
 
+                    {/* NEW SECTION: Detailed Status per Section */}
+                    <div className="w-full mb-8 bg-white border border-slate-100 p-6 md:p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+                        <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-6 w-full text-left flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-layer-group text-sm"></i></div> 
+                            สรุปสถานะแยกตามจุดการผลิต
+                        </h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+                            {sectionStats.map((sec) => (
+                                <div key={sec.id} className="bg-slate-50/70 border border-slate-100 p-5 rounded-2xl relative overflow-hidden group hover:bg-white hover:shadow-lg transition-all duration-300">
+                                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-purple-100 to-transparent opacity-50 rounded-bl-full pointer-events-none group-hover:scale-125 transition-transform duration-500"></div>
+                                    <div className="flex justify-between items-start mb-4 relative z-10">
+                                        <div>
+                                            <h4 className="text-[16px] font-black text-slate-800 leading-tight">{sec.name}</h4>
+                                            <p className="text-[10px] font-bold text-slate-400 tracking-wide uppercase mt-0.5">{sec.sub}</p>
+                                        </div>
+                                        <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-sm text-center min-w-[48px]">
+                                            <span className="block text-[15px] font-black text-slate-700 leading-none">{sec.total}</span>
+                                            <span className="block text-[8px] font-bold text-slate-400 mt-1 uppercase">ทั้งหมด</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="mb-5 relative z-10">
+                                        <div className="flex justify-between text-[11px] font-black mb-1.5">
+                                            <span className="text-slate-500 uppercase tracking-wide">อัตราเข้างาน</span>
+                                            <span className="text-emerald-600">{sec.presentPercent}%</span>
+                                        </div>
+                                        <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                                            <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${sec.presentPercent}%` }}></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-2 text-center border-t border-slate-200/80 pt-4 relative z-10">
+                                        <div className="bg-white rounded-xl py-2 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100">
+                                            <span className="block text-[16px] font-black text-emerald-500 leading-none">{sec.presentCount}</span>
+                                            <span className="block text-[9px] font-bold text-slate-400 mt-1">มา/สาย</span>
+                                        </div>
+                                        <div className="bg-white rounded-xl py-2 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100">
+                                            <span className="block text-[16px] font-black text-amber-500 leading-none">{sec.leaveCount}</span>
+                                            <span className="block text-[9px] font-bold text-slate-400 mt-1">ลา</span>
+                                        </div>
+                                        <div className="bg-white rounded-xl py-2 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100">
+                                            <span className="block text-[16px] font-black text-rose-500 leading-none">{sec.absentCount}</span>
+                                            <span className="block text-[9px] font-bold text-slate-400 mt-1">ขาดงาน</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div className="bg-white border border-slate-100 p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between h-full">
                             <div className="w-full flex-1 flex flex-col">
                                 <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-1 w-full text-left flex items-center gap-3">
@@ -775,21 +857,34 @@
                     ...e,
                     status: e.statusesByDate?.[rawDate] || 'ไม่มีข้อมูล' 
                 })).filter(e => {
-                    if (e.isResignedFromNote) {
-                        return false;
-                    }
-                    if (e.resignedDate && new Date(rawDate) > new Date(e.resignedDate)) {
-                        return false;
-                    }
-                    if (e.shift !== activeShift) {
-                        return false;
-                    }
+                    // กรองคนลาออก (ตรวจสอบให้แม่นยำ)
+                    if (e.isResignedFromNote) return false;
+                    if (e.resignedDate && new Date(rawDate) > new Date(e.resignedDate)) return false;
+                    
+                    // ตรวจสอบ Shift
+                    if (e.shift !== activeShift) return false;
+                    
                     return true;
                 });
             }, [employees, rawDate, activeShift]);
 
-            const lineNum = selectedLine.replace('LINE ', '');
-            const filtered = dynamicEmployees.filter(e => selectedLine === 'ALL' || (e.line || '').toString().toUpperCase().includes(lineNum.toUpperCase()));
+            const lineNum = selectedLine.replace('LINE ', '').trim();
+            const filtered = dynamicEmployees.filter(e => {
+                if (selectedLine === 'ALL') return true;
+                // ✨ แก้ไขให้แม่นยำ: ค้นหาด้วย Regex เพื่อหาตัวเลขไลน์ที่ตรงกันเป๊ะๆ (Word Boundary)
+                const empLine = (e.line || '').toString().toUpperCase();
+                const regex = new RegExp(`(^|\\s|\\W)${lineNum}(\\s|\\W|$)`);
+                return regex.test(empLine);
+            });
+
+            // ✨ เพิ่ม Debug Log: ถ้ากด Refresh แล้วเลขยังไม่ครบ ให้กด F12 แล้วดูที่ Console
+            useEffect(() => {
+                console.log("== อัปเดตข้อมูล Line: " + selectedLine + " ==");
+                console.log("จำนวนพนักงานที่ผ่านเงื่อนไขแสดงใน Dashboard:", filtered.length);
+                if(filtered.length < 71 && selectedLine !== 'ALL') {
+                    console.log("รายชื่อพนักงานที่ถูก Filter ออก (ที่ควรจะอยู่):", employees.filter(e => !filtered.includes(e) && (e.line || '').toString().includes(lineNum)));
+                }
+            }, [filtered.length, selectedLine, employees, lineNum]);
             
             const stats = {
                 total: filtered.length,
