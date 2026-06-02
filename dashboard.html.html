@@ -153,7 +153,7 @@
         // ============================================================================
         // [ Shared Components ]
         // ============================================================================
-        const PersonMapIcon = ({ employee, groupName }) => {
+        const PersonMapIcon = ({ employee, groupName, tooltipPos = 'top' }) => {
             const status = employee?.status || 'ไม่มีข้อมูล';
             const config = STATUS_LEGEND.find(l => status.includes(l.label)) || { bg: 'bg-slate-200' };
             const roleName = groupName || employee?.role || employee?.group || 'EMPLOYEE';
@@ -185,8 +185,17 @@
 
             const keyData = getKeyIcon(employee?.isKey);
             
+            // ปรับแต่งคลาสของ Tooltip ตามค่า Props tooltipPos ที่รับเข้ามา
+            const tooltipContainerClass = tooltipPos === 'bottom'
+                ? "absolute top-[calc(100%+6px)] left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-[100] pointer-events-none drop-shadow-2xl"
+                : "absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-[100] pointer-events-none drop-shadow-2xl";
+
+            const arrowClass = tooltipPos === 'bottom'
+                ? "w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-[#0f172a]"
+                : "w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#0f172a]";
+
             return (
-                <div className="relative group m-[1px]">
+                <div className="relative group m-[1px] hover:z-[100]">
                     <div className={`w-[22px] h-[22px] rounded-md ${config.bg} flex items-center justify-center shadow-sm cursor-pointer relative`}>
                         <i className="fa-solid fa-user text-white text-[11px]"></i>
                         {keyData && (
@@ -199,8 +208,10 @@
                             </div>
                         )}
                     </div>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
-                        <div className="bg-[#0f172a] text-white text-center px-4 py-3 rounded-xl shadow-xl min-w-[140px] border border-slate-700 flex flex-col items-center">
+                    
+                    <div className={tooltipContainerClass}>
+                        {tooltipPos === 'bottom' && <div className={arrowClass}></div>}
+                        <div className="bg-[#0f172a] text-white text-center px-4 py-3 rounded-xl shadow-2xl min-w-[140px] border border-slate-700 flex flex-col items-center">
                             {directPicUrl ? (
                                 <img 
                                     src={directPicUrl} 
@@ -232,7 +243,7 @@
                                 </div>
                             )}
                         </div>
-                        <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#0f172a]"></div>
+                        {tooltipPos === 'top' && <div className={arrowClass}></div>}
                     </div>
                 </div>
             );
@@ -1236,21 +1247,21 @@
                                 <i className="fa-solid fa-id-badge text-[#06b6d4] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.came}</p>
-                                    <p className="text-[9px] font-black text-slate-400 mt-1">มาจริง <span className="font-bold">实到</span></p>
+                                    <p className="text-[9px] font-black text-slate-400 mt-1">มาจริงรวมคนมาสาย <span className="font-bold">实到含迟到</span></p>
                                 </div>
                             </div>
                             <div className="bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
                                 <i className="fa-solid fa-user-check text-[#10b981] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.normal}</p>
-                                    <p className="text-[9px] font-black text-slate-400 mt-1">มาปกติ <span className="font-bold">正常准时</span></p>
+                                    <p className="text-[9px] font-black text-slate-400 mt-1">มาปกติก่อนเริ่มงาน <span className="font-bold">正常准时</span></p>
                                 </div>
                             </div>
                             <div className="bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
                                 <i className="fa-solid fa-arrow-trend-up text-[#10b981] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.rate}%</p>
-                                    <p className="text-[9px] font-black text-slate-400 mt-1">มาทำงาน <span className="font-bold">出勤率</span></p>
+                                    <p className="text-[9px] font-black text-slate-400 mt-1">มาทำงาน % <span className="font-bold">出勤率</span></p>
                                 </div>
                             </div>
                         </div>
@@ -1269,7 +1280,7 @@
                         />
                     ) : (
                         <>
-                            <div className="w-full overflow-x-auto pb-6 hide-scrollbar">
+                            <div className="w-full overflow-x-auto pb-8 pt-4 px-4 -mx-4 hide-scrollbar">
                                 <div className="relative h-[380px] min-w-[900px] w-full flex items-center">
                                     <div className="absolute inset-y-0 left-1/4 w-[1px] bg-slate-300 z-0"></div>
                                     <div className="absolute inset-y-0 left-2/4 w-[1px] bg-slate-300 z-0"></div>
@@ -1313,8 +1324,8 @@
                                             
                                             return (
                                                 <div key={sec.id} className="flex flex-col items-center justify-between py-3">
-                                                    <div className="flex flex-wrap gap-1 justify-center w-[85%] max-w-[200px]">
-                                                        {topHalf.map((e, i) => <PersonMapIcon key={i} employee={e} groupName={sec.name} />)}
+                                                    <div className="flex flex-wrap gap-1 justify-center w-[85%] max-w-[200px] relative z-20">
+                                                        {topHalf.map((e, i) => <PersonMapIcon key={i} employee={e} groupName={sec.name} tooltipPos="bottom" />)}
                                                     </div>
                                                     <div className="bg-[#f8fafc] rounded-[2rem] p-4 w-[80%] max-w-[220px] text-center shadow-[0_15px_30px_rgba(0,0,0,0.1)] border border-slate-200 relative my-2">
                                                         <h4 className="text-[16px] sm:text-[20px] font-black italic text-slate-800 leading-none">{sec.name}</h4>
@@ -1325,8 +1336,8 @@
                                                             <span className="text-lg font-black text-slate-500">{secEmps.length}</span>
                                                         </div>
                                                     </div>
-                                                    <div className="flex flex-wrap gap-1 justify-center w-[85%] max-w-[200px]">
-                                                        {bottomHalf.map((e, i) => <PersonMapIcon key={i} employee={e} groupName={sec.name} />)}
+                                                    <div className="flex flex-wrap gap-1 justify-center w-[85%] max-w-[200px] relative z-20">
+                                                        {bottomHalf.map((e, i) => <PersonMapIcon key={i} employee={e} groupName={sec.name} tooltipPos="top" />)}
                                                     </div>
                                                 </div>
                                             );
@@ -1357,14 +1368,14 @@
                                     });
 
                                     return (
-                                        <div key={g.t} className={`bg-white px-5 py-4 rounded-[2rem] border ${g.border} shadow-sm flex flex-col min-h-[100px]`}>
+                                        <div key={g.t} className={`bg-white px-5 py-4 rounded-[2rem] border ${g.border} shadow-sm flex flex-col min-h-[100px] relative z-10`}>
                                             <div className={`mb-3 border-b ${g.border} pb-1.5 inline-block pr-4`}>
                                                 <h5 className={`text-[11px] font-black ${g.text} uppercase italic tracking-widest flex items-center gap-2`}>
                                                     <i className={`fa-solid ${g.icon}`}></i> {g.t}
                                                 </h5>
                                             </div>
                                             <div className="flex flex-wrap gap-1">
-                                                {matchedEmps.map((e, i) => <PersonMapIcon key={i} employee={e} groupName={g.t} />)}
+                                                {matchedEmps.map((e, i) => <PersonMapIcon key={i} employee={e} groupName={g.t} tooltipPos="top" />)}
                                             </div>
                                         </div>
                                     );
@@ -1916,7 +1927,7 @@
                                         <div>
                                             <h4 className="text-lg font-black text-slate-800">รายละเอียดการลงเวลาและโอที</h4>
                                             <div className="flex flex-wrap gap-2 sm:gap-3 mt-2">
-                                                <span className="text-[11px] font-black text-slate-500 bg-white px-3 py-1 rounded-full border shadow-sm flex items-center gap-1.5">
+                                                <span className="text-[11px] font-black text-slate-50 bg-white px-3 py-1 rounded-full border shadow-sm flex items-center gap-1.5">
                                                     <i className="fa-solid fa-sun text-orange-500"></i> ทำกะเช้า {getStats.dayShiftCount} วัน
                                                 </span>
                                                 <span className="text-[11px] font-black text-slate-500 bg-white px-3 py-1 rounded-full border shadow-sm flex items-center gap-1.5">
@@ -2413,7 +2424,7 @@
                                                                 <span className="text-slate-500 font-bold bg-white border border-slate-200 px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider shadow-sm">{emp.contract || '-'}</span>
                                                             </td>
                                                             <td className="px-4 sm:px-5 py-2 flex justify-center">
-                                                                <div className="relative group cursor-pointer">
+                                                                <div className="relative group cursor-pointer hover:z-[100]">
                                                                     {directPicUrl ? (
                                                                         <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 shadow-sm relative bg-slate-100 flex items-center justify-center z-10">
                                                                             <img 
@@ -2741,7 +2752,7 @@
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                   {ORIGINAL_UI_GROUPS.map(group => {
                     const baseList = group.isGlobal ? filteredActiveEmployees : productionEmps;
                     const members = baseList.filter(u => {
