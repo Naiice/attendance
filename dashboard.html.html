@@ -3075,6 +3075,9 @@
                     if (groupIdx === -1) groupIdx = 3;
                     let roleIdx = getColIndex(headersAtt, ["ตำแหน่ง", "role", "ระดับ", "หน้าที่"]);
                     if (roleIdx === -1) roleIdx = 5;
+                    // --- เพิ่มการค้นหาคอลัมน์ Shift แทนการ Hardcode ระบุตำแหน่งตายตัว ---
+                    let shiftIdx = getColIndex(headersAtt, ["shift", "กะ", "กะการทำงาน"]);
+                    // --------------------------------------------------------
                     let contractIdx = getColIndex(headersAtt, ["contract", "สัญญา", "สังกัด", "company", "บริษัท", "สังกัด(บริษัท)"]);
                     let isKeyIdx = getColIndex(headersAtt, ["iskey", "key", "สำคัญ"]);
                     let noteIdx = getColIndex(headersAtt, ["note", "หมายเหตุ", "remark", "หมายเหตุ", "note"]);
@@ -3131,13 +3134,18 @@
                         const picUrl = picIdx !== -1 && r[picIdx] ? String(r[picIdx]).trim() : '';
                         const contractVal = contractIdx !== -1 && r[contractIdx] ? String(r[contractIdx]).trim() : '-';
 
-                        const shiftCell = r[6] ? String(r[6]).trim().toUpperCase() : '';
+                        // --- แก้ไขการดึงข้อมูล Shift ตรงนี้ (Dynamic Column Index & Fallback) ---
+                        const shiftCell = shiftIdx !== -1 && r[shiftIdx] 
+                            ? String(r[shiftIdx]).trim().toUpperCase() 
+                            : (r[6] ? String(r[6]).trim().toUpperCase() : '');
+                            
                         let empShift = 'Shift A';
-                        if (shiftCell === 'B' || shiftCell.includes('SHIFT B') || shiftCell.includes('กะ B') || shiftCell.includes('NIGHT') || shiftCell === 'N') {
+                        if (shiftCell === 'B' || shiftCell.includes('SHIFT B') || shiftCell.includes('กะ B') || shiftCell.includes('กะB') || shiftCell.includes('NIGHT') || shiftCell === 'N' || shiftCell.includes('ดึก')) {
                             empShift = 'Shift B';
-                        } else if (shiftCell === 'A' || shiftCell.includes('SHIFT A') || shiftCell.includes('กะ A') || shiftCell.includes('DAY') || shiftCell === 'D') {
+                        } else if (shiftCell === 'A' || shiftCell.includes('SHIFT A') || shiftCell.includes('กะ A') || shiftCell.includes('กะA') || shiftCell.includes('DAY') || shiftCell === 'D' || shiftCell.includes('เช้า')) {
                             empShift = 'Shift A';
                         }
+                        // ------------------------------------------------------------
 
                         return {
                             id: eid, name: r[nameIdx] ? String(r[nameIdx]).trim() : '', line: r[lineIdx] ? String(r[lineIdx]).trim() : '',
