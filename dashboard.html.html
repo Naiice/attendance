@@ -2321,9 +2321,8 @@
             };
 
             const { processedList, counts, total } = useMemo(() => {
-                const list = [];
+                const uniqueEmpsMap = new Map();
                 const roleCounts = { supervisor: 0, leader: 0, welding: 0, vacuum: 0, pinch: 0, cooling: 0, screw: 0 };
-                let totalMatches = 0;
 
                 employees.forEach(emp => {
                     if (emp.isResignedFromNote || (emp.resignedDate && new Date() > new Date(emp.resignedDate))) return;
@@ -2335,30 +2334,75 @@
                         if (!regex.test((emp.line || '').toString().toUpperCase())) return;
                     }
 
-                    const roleStr = (emp.role || emp.group || '').toLowerCase();
-                    let matchedCategory = null;
+                    // ค้นหาตำแหน่งหลัก (Main Role)
+                    const mainRoleStr = [emp.role, emp.group].join(' ').toLowerCase();
+                    // ค้นหาทักษะทั้งหมด (Multi-skills)
+                    const fullRoleStr = [emp.role, emp.role2, emp.role3, emp.role4, emp.group].join(' ').toLowerCase();
+                    
+                    let primaryCat = null;
+                    let matchedCats = [];
 
+                    // 1. ตรวจสอบหมวดหมู่สำหรับตำแหน่งหลัก (เพื่อนับลงกราฟสรุปเพียง 1 ตำแหน่ง)
                     for (const cat of KEY_ROLES) {
-                        if (cat.keywords.some(kw => roleStr.includes(kw.toLowerCase()))) {
-                            matchedCategory = cat;
-                            roleCounts[cat.id]++;
-                            totalMatches++;
+                        if (cat.keywords.some(kw => mainRoleStr.includes(kw.toLowerCase()))) {
+                            primaryCat = cat;
                             break;
                         }
                     }
 
-                    if (matchedCategory) {
-                        list.push({ ...emp, category: matchedCategory });
+                    // 2. รวบรวมทักษะสำคัญทั้งหมดที่พนักงานทำได้ (แสดงผลเป็น Badge)
+                    for (const cat of KEY_ROLES) {
+                        if (cat.keywords.some(kw => fullRoleStr.includes(kw.toLowerCase()))) {
+                            matchedCats.push(cat);
+                        }
+                    }
+
+                    // 3. ถ้าตำแหน่งหลักไม่อยู่ในกลุ่ม Key Roles แต่พนักงานมีทักษะเสริม ให้ยึดทักษะเสริมแรกเป็นหลักแทน
+                    if (!primaryCat && matchedCats.length > 0) {
+                        primaryCat = matchedCats[0];
+                    }
+
+                    if (primaryCat && matchedCats.length > 0) {
+                        // นับยอดลงกราฟเฉพาะตำแหน่งที่ยึดเป็นหลักเท่านั้น (ไม่นับทักษะเสริมซ้ำลงกราฟ)
+                        roleCounts[primaryCat.id]++;
+                        uniqueEmpsMap.set(emp.id, { ...emp, category: primaryCat, allCategories: matchedCats });
                     }
                 });
 
+                const list = Array.from(uniqueEmpsMap.values());
                 list.sort((a, b) => {
                     if (a.line === b.line) return a.category.id.localeCompare(b.category.id);
                     return a.line.localeCompare(b.line);
                 });
 
-                return { processedList: list, counts: roleCounts, total: totalMatches };
+                return { processedList: list, counts: roleCounts, total: list.length };
             }, [employees, activeShift, selectedLine]);
+
+            const handleExportCSV = () => {
+                const headers = ['รหัส', 'ชื่อ-นามสกุล', 'ไลน์', 'กลุ่ม', 'ตำแหน่งหลัก', 'ตำแหน่งเสริม 1 (Role2)', 'ตำแหน่งเสริม 2 (Role3)', 'ตำแหน่งเสริม 3 (Role4)', 'สังกัด', 'ทักษะสำคัญที่ระบบตรวจพบ'];
+                const rows = processedList.map(e => [
+                    `"${e.id}"`, 
+                    `"${e.name}"`, 
+                    `"${e.line}"`, 
+                    `"${e.group}"`, 
+                    `"${e.role}"`, 
+                    `"${e.role2 || ''}"`, 
+                    `"${e.role3 || ''}"`, 
+                    `"${e.role4 || ''}"`, 
+                    `"${e.contract}"`,
+                    `"${e.allCategories?.map(c => c.label).join(', ') || ''}"`
+                ]);
+                const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + 
+                    [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `haier_key_positions_${activeShift}_${selectedLine}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
 
             return (
                 <div className="w-full max-w-[1920px] mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
@@ -2377,9 +2421,14 @@
                                     </p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 px-5 py-2.5 rounded-full border border-slate-200 shadow-sm flex items-center gap-3">
-                                <span className="text-slate-500 font-bold text-sm">พนักงานสำคัญทั้งหมด</span>
-                                <span className="text-xl font-black text-slate-800">{total} <span className="text-sm font-bold text-slate-400">คน</span></span>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div className="bg-slate-50 px-5 py-2.5 rounded-full border border-slate-200 shadow-sm flex items-center gap-3">
+                                    <span className="text-slate-500 font-bold text-sm">พนักงานสำคัญทั้งหมด</span>
+                                    <span className="text-xl font-black text-slate-800">{total} <span className="text-sm font-bold text-slate-400">คน</span></span>
+                                </div>
+                                <button onClick={handleExportCSV} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-full font-black text-[13px] shadow-sm transition-colors flex items-center gap-2">
+                                    <i className="fa-solid fa-file-csv"></i> Export CSV
+                                </button>
                             </div>
                         </div>
 
@@ -2390,13 +2439,14 @@
                                 </h3>
                                 <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex-1 flex flex-col bg-white">
                                     <div className="overflow-y-auto custom-scrollbar flex-1 w-full overflow-x-auto">
-                                        <table className="w-full text-left text-sm min-w-[600px]">
+                                        <table className="w-full text-left text-sm min-w-[700px]">
                                             <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-widest border-b border-slate-200 sticky top-0 z-10">
                                                 <tr>
                                                     <th className="px-4 sm:px-5 py-4 w-20 text-center">รหัส (ID)</th>
                                                     <th className="px-4 sm:px-5 py-4">ชื่อ-นามสกุล (Name)</th>
                                                     <th className="px-4 sm:px-5 py-4 w-24 text-center">ไลน์ (Line)</th>
-                                                    <th className="px-4 sm:px-5 py-4">ตำแหน่ง (Role)</th>
+                                                    <th className="px-4 sm:px-5 py-4">ตำแหน่งหลัก (Main Role)</th>
+                                                    <th className="px-4 sm:px-5 py-4">ทักษะเสริม (Multi-Skills)</th>
                                                     <th className="px-4 sm:px-5 py-4 text-center">สังกัด (Contract)</th>
                                                     <th className="px-4 sm:px-5 py-4 w-20 text-center">รูป (Pic)</th>
                                                 </tr>
@@ -2405,6 +2455,8 @@
                                                 {processedList.length > 0 ? (
                                                     processedList.map((emp, idx) => {
                                                         const directPicUrl = getDirectImageUrl(emp.picture);
+                                                        const multiSkills = [emp.role2, emp.role3, emp.role4].filter(Boolean);
+                                                        
                                                         return (
                                                         <tr key={idx} className="hover:bg-slate-50 transition-colors">
                                                             <td className="px-4 sm:px-5 py-3 text-[12px] text-center">{emp.id}</td>
@@ -2417,7 +2469,16 @@
                                                                     <span className={`px-2.5 py-0.5 rounded text-[10px] font-black ${emp.category.light} ${emp.category.text} border shadow-sm border-white flex items-center gap-1.5`}>
                                                                         <i className={`fa-solid ${emp.category.icon}`}></i> {emp.category.label}
                                                                     </span>
-                                                                    <span className="text-[11px] text-slate-400 font-normal truncate max-w-[150px]" title={emp.role}>{emp.role}</span>
+                                                                    <span className="text-[11px] text-slate-400 font-normal truncate max-w-[150px]" title={emp.role}>{emp.role || '-'}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 sm:px-5 py-3">
+                                                                <div className="flex flex-wrap gap-1 max-w-[180px]">
+                                                                    {multiSkills.length > 0 ? multiSkills.map((skill, sIdx) => (
+                                                                        <span key={sIdx} className="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap">
+                                                                            {skill}
+                                                                        </span>
+                                                                    )) : <span className="text-slate-300 text-[10px]">-</span>}
                                                                 </div>
                                                             </td>
                                                             <td className="px-4 sm:px-5 py-3 text-center">
@@ -3075,6 +3136,12 @@
                     if (groupIdx === -1) groupIdx = 3;
                     let roleIdx = getColIndex(headersAtt, ["ตำแหน่ง", "role", "ระดับ", "หน้าที่"]);
                     if (roleIdx === -1) roleIdx = 5;
+                    
+                    // --- เพิ่มการค้นหา Role2, Role3, Role4 ---
+                    let role2Idx = getColIndex(headersAtt, ["role2", "ตำแหน่ง2", "ทักษะ2"]);
+                    let role3Idx = getColIndex(headersAtt, ["role3", "ตำแหน่ง3", "ทักษะ3"]);
+                    let role4Idx = getColIndex(headersAtt, ["role4", "ตำแหน่ง4", "ทักษะ4"]);
+                    
                     // --- เพิ่มการค้นหาคอลัมน์ Shift แทนการ Hardcode ระบุตำแหน่งตายตัว ---
                     let shiftIdx = getColIndex(headersAtt, ["shift", "กะ", "กะการทำงาน"]);
                     // --------------------------------------------------------
@@ -3134,6 +3201,11 @@
                         const picUrl = picIdx !== -1 && r[picIdx] ? String(r[picIdx]).trim() : '';
                         const contractVal = contractIdx !== -1 && r[contractIdx] ? String(r[contractIdx]).trim() : '-';
 
+                        // ดึงข้อมูล Multi-skill
+                        const r2 = role2Idx !== -1 && r[role2Idx] ? String(r[role2Idx]).trim() : '';
+                        const r3 = role3Idx !== -1 && r[role3Idx] ? String(r[role3Idx]).trim() : '';
+                        const r4 = role4Idx !== -1 && r[role4Idx] ? String(r[role4Idx]).trim() : '';
+
                         // --- แก้ไขการดึงข้อมูล Shift ตรงนี้ (Dynamic Column Index & Fallback) ---
                         const shiftCell = shiftIdx !== -1 && r[shiftIdx] 
                             ? String(r[shiftIdx]).trim().toUpperCase() 
@@ -3149,7 +3221,8 @@
 
                         return {
                             id: eid, name: r[nameIdx] ? String(r[nameIdx]).trim() : '', line: r[lineIdx] ? String(r[lineIdx]).trim() : '',
-                            group: groupVal, role: r[roleIdx] ? String(r[roleIdx]).trim() : '', contract: contractVal,
+                            group: groupVal, role: r[roleIdx] ? String(r[roleIdx]).trim() : '', 
+                            role2: r2, role3: r3, role4: r4, contract: contractVal,
                             isKey: keyVal, shift: empShift, fullRowStr: fullRowStr, isResignedFromNote: isResignedFromNote,
                             picture: picUrl, status: 'ไม่มีข้อมูล', statusesByDate: statusesByDate, shiftsByDate: shiftsByDate,
                             otByDate: otMap[eid] || {}, resignedDate: firstResignedDate
