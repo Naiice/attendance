@@ -27,7 +27,7 @@
   <script src="https://unpkg.com/@babel/standalone@7.22.20/babel.min.js"></script>
 
   <style>
-    /* ปรับแต่ง Scrollbar ให้ดูสะอาดตาบนทุกอุปกรณ์ */
+    /* ปรับแต่ง Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -40,13 +40,12 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // 🔴 URL ของ Google Apps Script ที่ Deploy ไว้แล้ว (ใช้สำหรับการบันทึก In/Out)
+    // 🔴 URL Apps Script
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec'; 
 
     // 🟢 ลิงก์ Publish to web (CSV) ของชีต Stock
     const CSV_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQguGoF3kiHKMbAW_IHJaxIO0cAr4-6CktfRLZRYhf4z2WvVC_zmiZp6AH8hLpX_aNZNWpJuWfiBcYc/pub?gid=2049777622&single=true&output=csv`;
 
-    // ฟังก์ชัน Fallback สำหรับการดึงข้อมูลเพื่อหลีกเลี่ยง CORS
     const fetchWithFallback = async (url) => {
         const proxyList = [
             url, 
@@ -59,7 +58,7 @@
             try {
                 const response = await fetch(proxyList[i]);
                 const text = await response.text();
-                if (text.includes("<!DOCTYPE html>")) throw new Error("Google Sheet requires login (Not published to web)");
+                if (text.includes("<!DOCTYPE html>")) throw new Error("Google Sheet requires login");
                 return text;
             } catch (error) {
                 lastError = error;
@@ -68,12 +67,11 @@
         throw lastError || new Error("Failed to fetch data from all sources");
     };
 
-    // 🟢 ฟังก์ชันดึงรูปภาพแบบ Direct Link (อัปเดตแก้ปัญหาโหลดรูปไม่ขึ้น)
+    // 🟢 อัปเดตฟังก์ชันดึงรูปภาพที่ถูกต้อง (lh3.googleusercontent.com)
     const getDirectImageUrl = (url) => {
       if (!url) return null;
       let id = '';
       
-      // ดักจับรูปแบบลิงก์ Google Drive
       const matchFileD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
       const matchId = url.match(/id=([a-zA-Z0-9_-]+)/);
       const matchUc = url.match(/uc\?.*id=([a-zA-Z0-9_-]+)/);
@@ -86,11 +84,10 @@
         id = matchUc[1];
       }
 
-      // ถ้าเจอ ID ของรูป ให้แปลงเป็นลิงก์ของ Google Content Server ป้องกันการโดนบล็อก
+      // ใส่ $ เพื่อแทรกตัวแปร id ได้ถูกต้อง
       if (id) {
         return `https://lh3.googleusercontent.com/d/${id}`; 
       }
-      
       return url;
     };
 
@@ -129,7 +126,9 @@
           const qtyIdx = headers.findIndex(h => h === 'in-stock');
           const safetyIdx = headers.findIndex(h => h === 'safety stock');
           const unitIdx = headers.findIndex(h => h === 'unit');
-          const picIdx = headers.findIndex(h => h === 'picture url' || h === 'picture');
+          
+          // 🔴 แก้ให้ดึงเฉพาะคอลัมน์ "picture url" เท่านั้น
+          const picIdx = headers.findIndex(h => h === 'picture url');
 
           const parsedData = rows.slice(1).map(row => {
               const cells = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, ''));
@@ -268,6 +267,7 @@
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-6 tv:gap-8">
               
               <div className="lg:col-span-4 xl:col-span-3 space-y-3 sm:space-y-4 lg:space-y-6 tv:space-y-8">
+                
                 <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100">
                   <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-slate-800 mb-2 lg:mb-4 flex items-center gap-2">
                     <i className="fas fa-barcode"></i> สแกนบาร์โค้ด
