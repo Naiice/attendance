@@ -40,7 +40,7 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // 🔴 URL ของ Google Apps Script ที่ Deploy ไว้แล้ว (ใช้สำหรับการบันทึก In/Out เท่านั้น)
+    // 🔴 URL ของ Google Apps Script ที่ Deploy ไว้แล้ว (ใช้สำหรับการบันทึก In/Out)
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec'; 
 
     // 🟢 ลิงก์ Publish to web (CSV) ของชีต Stock
@@ -68,7 +68,7 @@
         throw lastError || new Error("Failed to fetch data from all sources");
     };
 
-    // 🟢 ฟังก์ชันดึงรูปภาพแบบ Direct Link (ใช้ระบบยิงตรงผ่านเซิร์ฟเวอร์ lh3 ป้องกันเบราว์เซอร์บล็อกพรีวิว)
+    // 🟢 ฟังก์ชันดึงรูปภาพแบบ Direct Link (อัปเดตแก้ปัญหาโหลดรูปไม่ขึ้น)
     const getDirectImageUrl = (url) => {
       if (!url) return null;
       let id = '';
@@ -76,19 +76,21 @@
       // ดักจับรูปแบบลิงก์ Google Drive
       const matchFileD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
       const matchId = url.match(/id=([a-zA-Z0-9_-]+)/);
+      const matchUc = url.match(/uc\?.*id=([a-zA-Z0-9_-]+)/);
       
       if (matchFileD && matchFileD[1]) {
         id = matchFileD[1];
       } else if (matchId && matchId[1]) {
         id = matchId[1];
+      } else if (matchUc && matchUc[1]) {
+        id = matchUc[1];
       }
 
-      // แปลงเป็นลิงก์สำหรับดึงรูปภาพโดยตรง (ใช้ lh3.googleusercontent.com)
+      // ถ้าเจอ ID ของรูป ให้แปลงเป็นลิงก์ของ Google Content Server ป้องกันการโดนบล็อก
       if (id) {
         return `https://lh3.googleusercontent.com/d/${id}`; 
       }
       
-      // ถ้ารูปไม่ได้มาจาก Google Drive ก็ให้ใช้ URL เดิม
       return url;
     };
 
@@ -113,10 +115,6 @@
       const fetchStockData = async () => {
         setIsLoading(true);
         try {
-          if(!CSV_URL || CSV_URL.includes('ใส่ลิงก์')){
-              throw new Error("คุณยังไม่ได้ใส่ลิงก์ CSV_URL ในโค้ดครับ");
-          }
-
           const csvText = await fetchWithFallback(CSV_URL);
           const rows = csvText.replace(/\r/g, '').split('\n').filter(r => r.trim());
           
@@ -124,7 +122,6 @@
 
           const headers = rows[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, '').toLowerCase());
           
-          // หาตำแหน่งคอลัมน์แบบยืดหยุ่นตามหัวข้อในชีตจริง
           const idIdx = headers.findIndex(h => h === 'product code');
           const nameIdx = headers.findIndex(h => h === 'name - thai');
           const nameChinaIdx = headers.findIndex(h => h === 'name - china');
@@ -162,7 +159,6 @@
 
       useEffect(() => {
         fetchStockData();
-        // ตั้งเวลาอัปเดตข้อมูลอัตโนมัติทุกๆ 2 นาที (120000ms)
         const intervalId = setInterval(() => { fetchStockData(); }, 120000);
         return () => clearInterval(intervalId);
       }, []);
@@ -245,7 +241,6 @@
         <div className="min-h-screen bg-slate-50 p-2 sm:p-4 lg:p-6 tv:p-10 font-sans transition-all duration-300">
           <div className="w-full xl:max-w-[98%] 2xl:max-w-[95%] mx-auto space-y-3 sm:space-y-4 lg:space-y-6 tv:space-y-8">
             
-            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 md:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 gap-3">
               <div>
                 <h1 className="text-lg sm:text-xl lg:text-2xl tv:text-4xl font-bold text-slate-800 flex items-center gap-2 tv:gap-4">
@@ -263,7 +258,6 @@
               </button>
             </div>
 
-            {/* Status Messages */}
             {statusMessage.text && (
               <div className={`p-3 lg:p-4 tv:p-6 rounded-lg flex items-center gap-2 lg:gap-3 tv:gap-5 ${statusMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
                 {statusMessage.type === 'error' ? <i className="fas fa-exclamation-triangle text-base lg:text-xl tv:text-3xl"></i> : <i className="fas fa-check-circle text-base lg:text-xl tv:text-3xl"></i>}
@@ -273,10 +267,7 @@
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-6 tv:gap-8">
               
-              {/* ซ้าย: เครื่องมือ & การแจ้งเตือน */}
               <div className="lg:col-span-4 xl:col-span-3 space-y-3 sm:space-y-4 lg:space-y-6 tv:space-y-8">
-                
-                {/* กล่องสแกนเนอร์ */}
                 <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100">
                   <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-slate-800 mb-2 lg:mb-4 flex items-center gap-2">
                     <i className="fas fa-barcode"></i> สแกนบาร์โค้ด
@@ -298,7 +289,6 @@
                   </form>
                 </div>
 
-                {/* แจ้งเตือน Safety Stock */}
                 <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-red-100">
                   <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-red-600 mb-2 lg:mb-4 flex items-center gap-2">
                     <i className="fas fa-exclamation-triangle"></i> สินค้าใกล้หมด ({lowStockItems.length})
@@ -327,7 +317,6 @@
                 </div>
               </div>
 
-              {/* ขวา: ตารางสต็อก */}
               <div className="lg:col-span-8 xl:col-span-9 bg-white p-3 sm:p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2 lg:gap-4">
                   <h2 className="text-base sm:text-lg lg:text-xl tv:text-4xl font-bold text-slate-800">รายการสินค้าทั้งหมด</h2>
@@ -377,14 +366,14 @@
                                   <img 
                                     src={getDirectImageUrl(item.picUrl)} 
                                     alt={item.name} 
-                                    className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-24 tv:h-24 object-cover rounded-md border border-slate-200 bg-white" 
+                                    className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 tv:w-32 tv:h-32 object-cover rounded-md border border-slate-200 bg-white" 
                                     onError={(e) => { 
                                       e.target.onerror = null; 
                                       e.target.src = 'https://placehold.co/100x100/f8fafc/94a3b8?text=No+Img'; 
                                     }} 
                                   />
                                 ) : (
-                                  <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-24 tv:h-24 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 border border-slate-200">
+                                  <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 tv:w-32 tv:h-32 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 border border-slate-200">
                                      <i className="fas fa-image text-sm lg:text-lg tv:text-3xl"></i>
                                   </div>
                                 )}
@@ -401,17 +390,17 @@
                               <div className="flex justify-center gap-1 sm:gap-1.5 lg:gap-2 tv:gap-4">
                                 <button 
                                   onClick={() => setModalState({ isOpen: true, type: 'IN', itemCode: item.id, qty: 1, person: '' })}
-                                  className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 tv:w-16 tv:h-16 flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md transition-colors"
+                                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-20 tv:h-20 flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md transition-colors shadow-sm"
                                   title="เติมสต็อก"
                                 >
-                                  <i className="fas fa-cart-plus text-[10px] sm:text-xs lg:text-sm tv:text-3xl"></i>
+                                  <i className="fas fa-cart-plus text-[12px] sm:text-sm lg:text-base tv:text-3xl"></i>
                                 </button>
                                 <button 
                                   onClick={() => setModalState({ isOpen: true, type: 'OUT', itemCode: item.id, qty: 1, person: '' })}
-                                  className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 tv:w-16 tv:h-16 flex items-center justify-center bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-md transition-colors"
+                                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-20 tv:h-20 flex items-center justify-center bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-md transition-colors shadow-sm"
                                   title="เบิกจ่าย"
                                 >
-                                  <i className="fas fa-dolly text-[10px] sm:text-xs lg:text-sm tv:text-3xl"></i>
+                                  <i className="fas fa-dolly text-[12px] sm:text-sm lg:text-base tv:text-3xl"></i>
                                 </button>
                               </div>
                             </td>
