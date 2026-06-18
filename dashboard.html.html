@@ -853,16 +853,12 @@
                   if (globalEmployees && globalEmployees.length > 0) {
                       const gEmp = globalEmployees.find(ge => String(ge.id).trim() === String(emp.id).trim());
                       if (gEmp) {
-                          // 1. ซ่อนคนที่ลาออก (Resigned)
                           if (gEmp.isResignedFromNote) return false;
                           if (gEmp.resignedDate && new Date(targetDate) >= new Date(gEmp.resignedDate)) return false;
                           
-                          // 2. ซ่อนคนที่ ขาด / ลา ตามสถิติจากแท็บเช็คเวลา (Attendance)
                           const status = gEmp.statusesByDate?.[targetDate] || 'ไม่มีข้อมูล';
                           if (status.includes('ขาด') || status.includes('ลา')) return false;
                           
-                          // 3. ตรวจสอบกะการทำงาน (แก้ไขบั๊กคนมาทำงานแต่รายชื่อไม่ขึ้น)
-                          // ให้ความสำคัญกับกะทำงานจริงของวันนั้นก่อน ถ้าไม่มีค่าค่อยดึงกะหลักมาเปรียบเทียบ
                           const dayShift = gEmp.shiftsByDate?.[targetDate];
                           const currentShift = dayShift && dayShift !== 'ไม่มีข้อมูล' ? dayShift : gEmp.shift;
                           if (currentShift !== shift) return false;
