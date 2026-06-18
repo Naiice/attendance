@@ -604,7 +604,7 @@
 
                     <div className="w-full mb-8 bg-white border border-slate-100 p-6 md:p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
                         <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-6 w-full text-left flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-50 flex items-center justify-center shadow-sm"><i className="fa-solid fa-layer-group text-sm"></i></div> 
+                            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-layer-group text-sm"></i></div> 
                             สรุปสถานะแยกตามจุดการผลิต
                         </h3>
                         
@@ -857,13 +857,14 @@
                           if (gEmp.isResignedFromNote) return false;
                           if (gEmp.resignedDate && new Date(targetDate) >= new Date(gEmp.resignedDate)) return false;
                           
-                          // 2. ซ่อนคนที่ ขาด / ลา (ตามที่ User ต้องการ)
+                          // 2. ซ่อนคนที่ ขาด / ลา ตามสถิติจากแท็บเช็คเวลา (Attendance)
                           const status = gEmp.statusesByDate?.[targetDate] || 'ไม่มีข้อมูล';
                           if (status.includes('ขาด') || status.includes('ลา')) return false;
                           
-                          // 3. เช็คกะการทำงานของวันนั้นๆ (แก้ปัญหาคนมาสลับกะแล้วไม่แสดง)
+                          // 3. ตรวจสอบกะการทำงาน (แก้ไขบั๊กคนมาทำงานแต่รายชื่อไม่ขึ้น)
+                          // ให้ความสำคัญกับกะทำงานจริงของวันนั้นก่อน ถ้าไม่มีค่าค่อยดึงกะหลักมาเปรียบเทียบ
                           const dayShift = gEmp.shiftsByDate?.[targetDate];
-                          const currentShift = (dayShift && dayShift !== 'ไม่มีข้อมูล') ? dayShift : gEmp.shift;
+                          const currentShift = dayShift && dayShift !== 'ไม่มีข้อมูล' ? dayShift : gEmp.shift;
                           if (currentShift !== shift) return false;
                       }
                   }
