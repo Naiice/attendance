@@ -12,7 +12,7 @@
       theme: {
         extend: {
           screens: {
-            'tv': '1920px', 
+            'tv': '1920px', // หน้าจอระดับ Full HD ขึ้นไป หรือทีวีขนาดใหญ่
           }
         }
       }
@@ -23,9 +23,11 @@
 
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
   <script src="https://unpkg.com/@babel/standalone@7.22.20/babel.min.js"></script>
 
   <style>
+    /* ปรับแต่ง Scrollbar ให้ดูสะอาดตาบนทุกอุปกรณ์ */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -38,12 +40,13 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // URL ของ Google Apps Script ที่ Deploy ไว้แล้ว (ใช้สำหรับบันทึก In/Out)
+    // 🔴 URL ของ Google Apps Script ที่ Deploy ไว้แล้ว (ใช้สำหรับการบันทึก In/Out เท่านั้น)
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec'; 
 
-    // ลิงก์ Publish to web (CSV) ของชีต FA Stock
+    // 🟢 ลิงก์ Publish to web (CSV) ของชีต Stock
     const CSV_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQguGoF3kiHKMbAW_IHJaxIO0cAr4-6CktfRLZRYhf4z2WvVC_zmiZp6AH8hLpX_aNZNWpJuWfiBcYc/pub?gid=2049777622&single=true&output=csv`;
 
+    // ฟังก์ชัน Fallback สำหรับการดึงข้อมูลเพื่อหลีกเลี่ยง CORS
     const fetchWithFallback = async (url) => {
         const proxyList = [
             url, 
@@ -56,25 +59,36 @@
             try {
                 const response = await fetch(proxyList[i]);
                 const text = await response.text();
-                if (text.includes("<!DOCTYPE html>")) throw new Error("Google Sheet requires login");
+                if (text.includes("<!DOCTYPE html>")) throw new Error("Google Sheet requires login (Not published to web)");
                 return text;
             } catch (error) {
                 lastError = error;
             }
         }
-        throw lastError || new Error("Failed to fetch data");
+        throw lastError || new Error("Failed to fetch data from all sources");
     };
 
+    // 🟢 ฟังก์ชันดึงรูปภาพแบบ Direct Link (อัปเดตใหม่)
     const getDirectImageUrl = (url) => {
       if (!url) return null;
       let id = '';
+      
+      // ดักจับรูปแบบลิงก์ Google Drive
       const matchFileD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
       const matchId = url.match(/id=([a-zA-Z0-9_-]+)/);
       
-      if (matchFileD && matchFileD[1]) id = matchFileD[1];
-      else if (matchId && matchId[1]) id = matchId[1];
+      if (matchFileD && matchFileD[1]) {
+        id = matchFileD[1];
+      } else if (matchId && matchId[1]) {
+        id = matchId[1];
+      }
 
-      if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w400`; 
+      // แปลงเป็นลิงก์สำหรับดึงรูปภาพโดยตรง (Direct Image URL)
+      if (id) {
+        return `https://drive.google.com/uc?export=view&id=${id}`; 
+      }
+      
+      // ถ้ารูปไม่ได้มาจาก Google Drive ก็ให้ใช้ URL เดิม
       return url;
     };
 
@@ -99,13 +113,18 @@
       const fetchStockData = async () => {
         setIsLoading(true);
         try {
+          if(!CSV_URL || CSV_URL.includes('ใส่ลิงก์')){
+              throw new Error("คุณยังไม่ได้ใส่ลิงก์ CSV_URL ในโค้ดครับ");
+          }
+
           const csvText = await fetchWithFallback(CSV_URL);
           const rows = csvText.replace(/\r/g, '').split('\n').filter(r => r.trim());
+          
           if(rows.length < 2) throw new Error("ไม่พบข้อมูลในชีต");
 
           const headers = rows[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, '').toLowerCase());
           
-          // จับคู่กับหัวคอลัมน์ที่คุณให้มาเป๊ะๆ
+          // หาตำแหน่งคอลัมน์แบบยืดหยุ่น
           const idIdx = headers.findIndex(h => h === 'product code');
           const nameIdx = headers.findIndex(h => h === 'name - thai');
           const nameChinaIdx = headers.findIndex(h => h === 'name - china');
@@ -135,7 +154,7 @@
           setTimeout(() => setStatusMessage({ type: '', text: '' }), 3000);
         } catch (error) {
           console.error('Error fetching stock:', error);
-          setStatusMessage({ type: 'error', text: 'ไม่สามารถดึงข้อมูลได้: ' + error.message });
+          setStatusMessage({ type: 'error', text: 'การเชื่อมต่อล้มเหลว: ' + error.message });
         } finally {
           setIsLoading(false);
         }
@@ -143,6 +162,7 @@
 
       useEffect(() => {
         fetchStockData();
+        // ตั้งเวลาอัปเดตข้อมูลอัตโนมัติทุกๆ 2 นาที (120000ms)
         const intervalId = setInterval(() => { fetchStockData(); }, 120000);
         return () => clearInterval(intervalId);
       }, []);
@@ -203,10 +223,12 @@
             method: 'POST',
             body: JSON.stringify(payload),
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            mode: 'no-cors'
+            mode: 'no-cors' // สำคัญมากสำหรับ POST ไปที่ GAS แบบไม่ติด CORS
           });
           
+          // สมมติว่าการ POST สำเร็จเสมอเพราะ mode: 'no-cors' จะไม่ return JSON กลับมา
           setStatusMessage({ type: 'success', text: `ส่งคำสั่งบันทึกรายการ ${modalState.type === 'IN' ? 'เข้า' : 'ออก'} สู่ระบบแล้ว` });
+          // รอให้ GAS เขียนข้อมูลลงชีตสัก 2.5 วินาทีแล้วค่อยโหลดข้อมูลใหม่
           setTimeout(() => { fetchStockData(); }, 2500);
           
         } catch (error) {
