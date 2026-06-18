@@ -12,7 +12,7 @@
       theme: {
         extend: {
           screens: {
-            'tv': '1920px', // หน้าจอระดับ Full HD ขึ้นไป หรือทีวีขนาดใหญ่
+            'tv': '1920px', 
           }
         }
       }
@@ -68,7 +68,7 @@
         throw lastError || new Error("Failed to fetch data from all sources");
     };
 
-    // 🟢 ฟังก์ชันดึงรูปภาพแบบ Direct Link (อัปเดตใหม่)
+    // 🟢 ฟังก์ชันดึงรูปภาพแบบ Direct Link (ใช้ระบบยิงตรงผ่านเซิร์ฟเวอร์ lh3 ป้องกันเบราว์เซอร์บล็อกพรีวิว)
     const getDirectImageUrl = (url) => {
       if (!url) return null;
       let id = '';
@@ -83,9 +83,9 @@
         id = matchId[1];
       }
 
-      // แปลงเป็นลิงก์สำหรับดึงรูปภาพโดยตรง (Direct Image URL)
+      // แปลงเป็นลิงก์สำหรับดึงรูปภาพโดยตรง (ใช้ lh3.googleusercontent.com)
       if (id) {
-        return `https://drive.google.com/uc?export=view&id=${id}`; 
+        return `https://lh3.googleusercontent.com/d/${id}`; 
       }
       
       // ถ้ารูปไม่ได้มาจาก Google Drive ก็ให้ใช้ URL เดิม
@@ -124,7 +124,7 @@
 
           const headers = rows[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, '').toLowerCase());
           
-          // หาตำแหน่งคอลัมน์แบบยืดหยุ่น
+          // หาตำแหน่งคอลัมน์แบบยืดหยุ่นตามหัวข้อในชีตจริง
           const idIdx = headers.findIndex(h => h === 'product code');
           const nameIdx = headers.findIndex(h => h === 'name - thai');
           const nameChinaIdx = headers.findIndex(h => h === 'name - china');
@@ -223,12 +223,10 @@
             method: 'POST',
             body: JSON.stringify(payload),
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            mode: 'no-cors' // สำคัญมากสำหรับ POST ไปที่ GAS แบบไม่ติด CORS
+            mode: 'no-cors' 
           });
           
-          // สมมติว่าการ POST สำเร็จเสมอเพราะ mode: 'no-cors' จะไม่ return JSON กลับมา
           setStatusMessage({ type: 'success', text: `ส่งคำสั่งบันทึกรายการ ${modalState.type === 'IN' ? 'เข้า' : 'ออก'} สู่ระบบแล้ว` });
-          // รอให้ GAS เขียนข้อมูลลงชีตสัก 2.5 วินาทีแล้วค่อยโหลดข้อมูลใหม่
           setTimeout(() => { fetchStockData(); }, 2500);
           
         } catch (error) {
