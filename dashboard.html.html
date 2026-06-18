@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Haier A01 - WOR MAP & OT System</title>
     
-    <!-- ดึงไฟล์ตั้งค่า API มาใช้งาน -->
     <script src="./api-config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- เพิ่ม html2canvas สำหรับแคปหน้าจอ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -2632,7 +2630,7 @@
           
           const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec'); 
           const SHEET_ID = '1R3-R-HsrfGBt1L2wMFrsIBZnCz20YNRhVTWnb4Ygxto';
-          const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+          const csvUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQguGoF3kiHKMbAW_IHJaxIO0cAr4-6CktfRLZRYhf4z2WvVC_zmiZp6AH8hLpX_aNZNWpJuWfiBcYc/pub?gid=505123189&single=true&output=csv`;
 
           const ORIGINAL_UI_GROUPS = [
             { id: 'front', name: 'หัวไลน์', sub: '前装-Input', keywords: ['input', '前装', 'หัวไลน์'], isGlobal: false },
@@ -3035,8 +3033,7 @@
             const fetchDashboardData = async (isSilent = false) => {
                 if (!isSilent) setLoading(true);
                 try {
-                    const GID_ATTENDANCE = "505123189";
-                    const CSV_ATT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_ATTENDANCE}`;
+                    const CSV_ATT_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQguGoF3kiHKMbAW_IHJaxIO0cAr4-6CktfRLZRYhf4z2WvVC_zmiZp6AH8hLpX_aNZNWpJuWfiBcYc/pub?gid=505123189&single=true&output=csv`;
                     
                     const textAtt = await fetchWithFallback(CSV_ATT_URL);
                     const rowsAtt = textAtt.replace(/\r/g, '').split('\n')
@@ -3045,8 +3042,7 @@
                     
                     const headersAtt = rowsAtt[0];
 
-                    const GID_GRAND_SUMMARY = "504388308";
-                    const CSV_OT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID_GRAND_SUMMARY}`;
+                    const CSV_OT_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQguGoF3kiHKMbAW_IHJaxIO0cAr4-6CktfRLZRYhf4z2WvVC_zmiZp6AH8hLpX_aNZNWpJuWfiBcYc/pub?gid=504388308&single=true&output=csv`;
                     const textOT = await fetchWithFallback(CSV_OT_URL);
                     const rowsOT = textOT.replace(/\r/g, '').split('\n')
                         .filter(r => r.trim())
@@ -3282,7 +3278,7 @@
 
             useEffect(() => {
                 fetchDashboardData();
-                fetchInterval.current = setInterval(() => { fetchDashboardData(true); }, 30000);
+                fetchInterval.current = setInterval(() => { fetchDashboardData(true); }, 120000);
                 return () => { if (fetchInterval.current) clearInterval(fetchInterval.current); };
             }, [view]);
 
