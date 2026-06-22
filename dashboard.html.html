@@ -90,22 +90,13 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // ============================================================================
-        // [ ตั้งค่าความปลอดภัย หน้า OT ]
-        // ============================================================================
         const OT_ACCESS_PASSWORD = "admina01";
 
-        // ============================================================================
-        // [ Helper Functions แก้ไข ReferenceError ]
-        // ============================================================================
         const getOriginalLocalDateString = () => {
             const now = new Date();
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         };
 
-        // ============================================================================
-        // [ ระบบดึงข้อมูลอัจฉริยะ Multi-Proxy Fallback แก้อาการ Failed to fetch ]
-        // ============================================================================
         const fetchWithFallback = async (url) => {
             const proxyList = [
                 url, 
@@ -127,9 +118,6 @@
             throw lastError || new Error("Failed to fetch data from all sources");
         };
 
-        // ============================================================================
-        // [ Constants & Configurations ]
-        // ============================================================================
         const STATUS_LEGEND = [
             { label: 'มาปกติ', zh: '正常准时', color: 'text-emerald-500', bg: 'bg-[#22c55e]' },
             { label: 'สาย', zh: '迟到', color: 'text-orange-500', bg: 'bg-[#f97316]' },
@@ -149,9 +137,6 @@
             { id: 'final', name: 'ท้ายไลน์', sub: '后装-Final', keywords: ['final', '后装', 'ท้ายไลน์'] }
         ];
 
-        // ============================================================================
-        // [ Shared Components ]
-        // ============================================================================
         const PersonMapIcon = ({ employee, groupName, tooltipPos = 'top' }) => {
             const status = employee?.status || 'ไม่มีข้อมูล';
             const config = STATUS_LEGEND.find(l => status.includes(l.label)) || { bg: 'bg-slate-200' };
@@ -184,7 +169,6 @@
 
             const keyData = getKeyIcon(employee?.isKey);
             
-            // ปรับแต่งคลาสของ Tooltip ตามค่า Props tooltipPos ที่รับเข้ามา
             const tooltipContainerClass = tooltipPos === 'bottom'
                 ? "absolute top-[calc(100%+6px)] left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-[100] pointer-events-none drop-shadow-2xl"
                 : "absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-[100] pointer-events-none drop-shadow-2xl";
@@ -758,19 +742,16 @@
             const [showWarningModal, setShowWarningModal] = useState(false);
             const [showPresentModal, setShowPresentModal] = useState(false);
 
-            // ระบบสำหรับ Checkbox เปลี่ยนสถานะ
             const [absentUpdates, setAbsentUpdates] = useState({});
             const [isSavingAbsent, setIsSavingAbsent] = useState(false);
             const [absentSaveStatus, setAbsentSaveStatus] = useState(null);
 
-            // ระบบสำหรับ Checkbox เปลี่ยนสถานะคนมาทำงาน
             const [presentUpdates, setPresentUpdates] = useState({});
             const [isSavingPresent, setIsSavingPresent] = useState(false);
             const [presentSaveStatus, setPresentSaveStatus] = useState(null);
 
             const [isCapturing, setIsCapturing] = useState(false);
 
-            // ฟังก์ชันแคปหน้าจอและส่งไป WeChat (ผ่านคลิปบอร์ด)
             const handleShareWeChat = async () => {
                 const element = document.getElementById('dashboard-capture-area');
                 const actionBtns = document.getElementById('dashboard-action-buttons');
@@ -778,7 +759,7 @@
                 if (!element) return;
                 
                 setIsCapturing(true);
-                if (actionBtns) actionBtns.style.opacity = '0'; // ซ่อนปุ่มก่อนแคป
+                if (actionBtns) actionBtns.style.opacity = '0'; 
                 
                 try {
                     const canvas = await window.html2canvas(element, { 
@@ -787,7 +768,7 @@
                         useCORS: true
                     });
                     
-                    if (actionBtns) actionBtns.style.opacity = '1'; // คืนค่าปุ่ม
+                    if (actionBtns) actionBtns.style.opacity = '1'; 
                     
                     canvas.toBlob(async (blob) => {
                         try {
@@ -795,7 +776,6 @@
                             await navigator.clipboard.write([item]);
                             alert('✅ แคปเจอร์หน้าจอสำเร็จ!\n\nระบบได้คัดลอกรูปภาพลง "คลิปบอร์ด" แล้ว\nคุณสามารถไปที่หน้าต่างแชทกลุ่ม WeChat แล้วกด "วาง" (Ctrl+V) หรือกดค้างเพื่อส่งรูปได้ทันทีครับ');
                         } catch (err) {
-                            // Fallback กรณี Browser ไม่รองรับการเขียนรูปลง Clipboard
                             const url = URL.createObjectURL(blob);
                             const link = document.createElement('a');
                             link.download = `Haier_A01_Dashboard_${selectedLine.replace(' ', '_')}.png`;
@@ -813,7 +793,6 @@
                 }
             };
 
-            // รีเซ็ตการเลือกเมื่อเปลี่ยนวัน หรือปิดหน้าต่าง
             useEffect(() => {
                 setAbsentUpdates({});
                 setAbsentSaveStatus(null);
@@ -845,34 +824,26 @@
                     ...e,
                     status: e.statusesByDate?.[rawDate] || 'ไม่มีข้อมูล' 
                 })).filter(e => {
-                    // กรองคนลาออก (ตรวจสอบให้แม่นยำ)
                     if (e.isResignedFromNote) return false;
                     if (e.resignedDate && new Date(rawDate) > new Date(e.resignedDate)) return false;
-                    
-                    // ตรวจสอบ Shift
                     if (e.shift !== activeShift) return false;
-                    
                     return true;
                 });
             }, [employees, rawDate, activeShift]);
 
             const lineNum = selectedLine.replace('LINE ', '').trim();
             const filtered = dynamicEmployees.filter(e => {
-                // กรองตาม Line
                 if (selectedLine !== 'ALL') {
                     const empLine = (e.line || '').toString().toUpperCase();
                     const regex = new RegExp(`(^|\\s|\\W)${lineNum}(\\s|\\W|$)`);
                     if (!regex.test(empLine)) return false;
                 }
-
-                // กรองตามคำค้นหา
                 if (searchTerm) {
                     const term = searchTerm.toLowerCase().trim();
                     const idMatch = String(e.id).toLowerCase().includes(term);
                     const nameMatch = String(e.name).toLowerCase().includes(term);
                     if (!idMatch && !nameMatch) return false;
                 }
-
                 return true;
             });
             
@@ -1154,7 +1125,6 @@
 
             return (
                 <div id="dashboard-capture-area" className="bg-white rounded-[2.5rem] p-4 sm:p-6 lg:p-10 shadow-sm border border-slate-200 animate-in fade-in duration-500 relative w-full">
-                    {/* Anomaly Alert Banner */}
                     {isAnomaly && (
                         <div className="print-hidden bg-red-50 border border-red-200 p-4 rounded-2xl mb-8 flex items-start gap-4 shadow-sm animate-in slide-in-from-top-4">
                             <div className="bg-red-100 text-red-600 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-inner">
@@ -1173,7 +1143,6 @@
                         </div>
                     )}
 
-                    {/* Row 1: Header, Date, Buttons */}
                     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-6">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full xl:w-auto flex-wrap lg:flex-nowrap">
                             <div className="flex items-center gap-4 shrink-0">
@@ -1239,7 +1208,6 @@
                         </div>
                     </div>
 
-                    {/* Row 2: Legend, Stats */}
                     <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-8 pt-6 border-t border-slate-100">
                         <div className="flex flex-wrap gap-x-4 gap-y-2 items-center print-hidden flex-1 w-full xl:w-auto">
                             {STATUS_LEGEND.map(l => {
@@ -1405,7 +1373,6 @@
                         </>
                     )}
 
-                    {/* Modal รายชื่อคนขาด/ลาเกิน 3 วัน (Warning Modal) */}
                     {showWarningModal && (
                         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
                             <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
@@ -1473,7 +1440,6 @@
                         </div>
                     )}
 
-                    {/* Modal รายชื่อคนขาด/ลางาน พร้อมระบบบันทึกสถานะ */}
                     {showAbsentModal && (
                         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
                             <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
@@ -1602,7 +1568,6 @@
                         </div>
                     )}
 
-                    {/* Modal รายชื่อคนมาทำงาน พร้อมระบบบันทึกสถานะ */}
                     {showPresentModal && (
                         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
                             <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
@@ -1730,7 +1695,6 @@
                             </div>
                         </div>
                     )}
-
                 </div>
             );
         };
@@ -2357,24 +2321,19 @@
                         if (!regex.test((emp.line || '').toString().toUpperCase())) return;
                     }
 
-                    // --- เพิ่มระบบค้นหา (Search Filter) ---
                     if (searchTerm) {
                         const term = searchTerm.toLowerCase().trim();
                         const idMatch = String(emp.id).toLowerCase().includes(term);
                         const nameMatch = String(emp.name).toLowerCase().includes(term);
                         if (!idMatch && !nameMatch) return;
                     }
-                    // -------------------------------------
 
-                    // ค้นหาตำแหน่งหลัก (Main Role)
                     const mainRoleStr = [emp.role, emp.group].join(' ').toLowerCase();
-                    // ค้นหาทักษะทั้งหมด (Multi-skills)
                     const fullRoleStr = [emp.role, emp.role2, emp.role3, emp.role4, emp.group].join(' ').toLowerCase();
                     
                     let primaryCat = null;
                     let matchedCats = [];
 
-                    // 1. ตรวจสอบหมวดหมู่สำหรับตำแหน่งหลัก (เพื่อนับลงกราฟสรุปเพียง 1 ตำแหน่ง)
                     for (const cat of KEY_ROLES) {
                         if (cat.keywords.some(kw => mainRoleStr.includes(kw.toLowerCase()))) {
                             primaryCat = cat;
@@ -2382,20 +2341,17 @@
                         }
                     }
 
-                    // 2. รวบรวมทักษะสำคัญทั้งหมดที่พนักงานทำได้ (แสดงผลเป็น Badge)
                     for (const cat of KEY_ROLES) {
                         if (cat.keywords.some(kw => fullRoleStr.includes(kw.toLowerCase()))) {
                             matchedCats.push(cat);
                         }
                     }
 
-                    // 3. ถ้าตำแหน่งหลักไม่อยู่ในกลุ่ม Key Roles แต่พนักงานมีทักษะเสริม ให้ยึดทักษะเสริมแรกเป็นหลักแทน
                     if (!primaryCat && matchedCats.length > 0) {
                         primaryCat = matchedCats[0];
                     }
 
                     if (primaryCat && matchedCats.length > 0) {
-                        // นับยอดลงกราฟเฉพาะตำแหน่งที่ยึดเป็นหลักเท่านั้น (ไม่นับทักษะเสริมซ้ำลงกราฟ)
                         roleCounts[primaryCat.id]++;
                         uniqueEmpsMap.set(emp.id, { ...emp, category: primaryCat, allCategories: matchedCats });
                     }
@@ -2603,12 +2559,10 @@
             );
         };
 
-        const OriginalOTSystem = ({ globalEmployees }) => {
-          const [employees, setEmployees] = useState([]);
-          const [loading, setLoading] = useState(true);
+        const OriginalOTSystem = ({ globalEmployees, onRefresh }) => {
           const [saving, setSaving] = useState(false);
           const [status, setStatus] = useState(null);
-          const [savedIds, setSavedIds] = useState(new Set());
+          const [localSavedIds, setLocalSavedIds] = useState(new Set());
           const [shift, setShift] = useState('Shift A');
           const [selectedLine, setSelectedLine] = useState(2);
           const [targetDate, setTargetDate] = useState(getOriginalLocalDateString());
@@ -2617,8 +2571,6 @@
           const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, groupId: null, groupName: '' });
           
           const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec'); 
-          const SHEET_ID = '1R3-R-HsrfGBt1L2wMFrsIBZnCz20YNRhVTWnb4Ygxto';
-          const csvUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQguGoF3kiHKMbAW_IHJaxIO0cAr4-6CktfRLZRYhf4z2WvVC_zmiZp6AH8hLpX_aNZNWpJuWfiBcYc/pub?gid=505123189&single=true&output=csv`;
 
           const ORIGINAL_UI_GROUPS = [
             { id: 'front', name: 'หัวไลน์', sub: '前装-Input', keywords: ['input', '前装', 'หัวไลน์'], isGlobal: false },
@@ -2651,83 +2603,34 @@
             }
           }, [status]);
 
-          const fetchData = async () => {
-            setLoading(true);
-            setStatus(null);
-            try {
-              const text = await fetchWithFallback(csvUrl);
-              const rows = text.replace(/\r/g, '').split('\n')
-                .filter(r => r.trim())
-                .map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
-                .map(cell => cell.trim().replace(/"/g, '')));
-              
-              if (rows.length < 2) throw new Error("ไม่พบข้อมูลพนักงานในชีต");
-              
-              const headers = rows[0];
-              const thaiDateStr = formatThaiDate(targetDate);
-              const dateColIdx = headers.indexOf(thaiDateStr);
-
-              const getColIndex = (keywords) => headers.findIndex(h => keywords.some(k => h.toLowerCase().includes(k.toLowerCase())));
-              
-              let idIdx = getColIndex(["รหัส", "id", "工号"]);
-              if (idIdx === -1) idIdx = 0;
-              
-              let nameIdx = getColIndex(["ชื่อ", "name", "姓名"]);
-              if (nameIdx === -1) nameIdx = 1;
-              
-              let lineIdx = getColIndex(["ไลน์", "line", "线"]);
-              if (lineIdx === -1) lineIdx = 2;
-              
-              let groupIdx = getColIndex(["กลุ่ม", "section", "group", "แผนก"]);
-              if (groupIdx === -1) groupIdx = 3;
-
-              const newSavedIds = new Set();
-              const allEmps = rows.slice(1).map(row => {
-                const eid = row[idIdx] || '';
-                if (dateColIdx !== -1 && row[dateColIdx] && parseFloat(row[dateColIdx]) > 0) {
-                  newSavedIds.add(eid);
-                }
-                return {
-                  id: eid, name: row[nameIdx] || '', line: row[lineIdx] || '', group: row[groupIdx] || ''
-                };
-              }).filter(e => e.id);
-
-              setEmployees(allEmps);
-              setSavedIds(newSavedIds);
-            } catch (err) {
-              setStatus({ type: 'error', msg: err.message });
-            } finally {
-              setLoading(false);
-            }
-          };
-
-          useEffect(() => { fetchData(); }, [targetDate]);
+          useEffect(() => {
+              const ids = new Set();
+              (globalEmployees || []).forEach(emp => {
+                  if (parseFloat(emp.otByDate?.[targetDate]) > 0) {
+                      ids.add(emp.id);
+                  }
+              });
+              setLocalSavedIds(ids);
+          }, [globalEmployees, targetDate]);
 
           const filteredActiveEmployees = useMemo(() => {
-              return employees.filter(emp => {
-                  if (globalEmployees && globalEmployees.length > 0) {
-                      const gEmp = globalEmployees.find(ge => String(ge.id) === String(emp.id));
-                      if (gEmp) {
-                          if (gEmp.isResignedFromNote) return false;
-                          if (gEmp.resignedDate && new Date(targetDate) >= new Date(gEmp.resignedDate)) return false;
-                          const status = gEmp.statusesByDate?.[targetDate] || 'ไม่มีข้อมูล';
-                          if (status.includes('ขาด') || status.includes('ลา')) return false;
-                          if (gEmp.shift !== shift) return false;
-                      }
-                  }
+              return (globalEmployees || []).filter(emp => {
+                  if (emp.isResignedFromNote) return false;
+                  if (emp.resignedDate && new Date(targetDate) >= new Date(emp.resignedDate)) return false;
+                  if (emp.shift !== shift) return false;
                   return true;
               });
-          }, [employees, globalEmployees, targetDate, shift]);
+          }, [globalEmployees, targetDate, shift]);
 
           const productionEmps = useMemo(() => {
             return filteredActiveEmployees.filter(emp => {
-              const cleanLine = emp.line.toString().replace(/[^0-9]/g, '');
-              return cleanLine === selectedLine.toString();
+              const cleanLine = String(emp.line).replace(/[^0-9]/g, '');
+              return cleanLine === String(selectedLine);
             });
           }, [filteredActiveEmployees, selectedLine]);
 
           const handleToggleSelect = (groupId, userId) => {
-            if (savedIds.has(userId)) return;
+            if (localSavedIds.has(userId)) return;
             setGroupState(prev => {
               const current = prev[groupId].selectedIds;
               const next = current.includes(userId) ? current.filter(id => id !== userId) : [...current, userId];
@@ -2752,7 +2655,7 @@
             setStatus(null);
             
             const payload = settings.selectedIds.map(id => {
-              const emp = employees.find(e => e.id === id);
+              const emp = globalEmployees.find(e => e.id === id);
               return {
                 date: formatThaiDate(targetDate),
                 shift: shift, line: selectedLine, id: id, name: emp?.name || '',
@@ -2765,12 +2668,13 @@
                 method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) 
               });
               
-              const newSaved = new Set(savedIds);
+              const newSaved = new Set(localSavedIds);
               settings.selectedIds.forEach(id => newSaved.add(id));
-              setSavedIds(newSaved);
+              setLocalSavedIds(newSaved);
               
               setStatus({ type: 'success', msg: `บันทึกกลุ่ม ${groupName} (${payload.length} คน) เรียบร้อย` });
               setGroupState(p => ({ ...p, [groupId]: { ...p[groupId], selectedIds: [] } }));
+              if(onRefresh) onRefresh();
             } catch (e) {
               setStatus({ type: 'error', msg: "ไม่สามารถบันทึกข้อมูลได้ โปรดลองอีกครั้ง" });
             } finally {
@@ -2809,7 +2713,7 @@
                         <i className="fa-regular fa-calendar text-orange-600 text-lg"></i>
                         <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className="bg-transparent border-none text-[13px] font-black outline-none cursor-pointer text-slate-800 w-full" />
                         </div>
-                        <button onClick={fetchData} className="sm:hidden p-3.5 bg-white text-slate-400 hover:text-orange-600 rounded-2xl border shadow-sm active:scale-90 hover:border-orange-200"><i className={`fa-solid fa-arrows-rotate text-xl ${loading ? 'fa-spin' : ''}`}></i></button>
+                        <button onClick={onRefresh} className="sm:hidden p-3.5 bg-white text-slate-400 hover:text-orange-600 rounded-2xl border shadow-sm active:scale-90 hover:border-orange-200"><i className="fa-solid fa-arrows-rotate text-xl"></i></button>
                     </div>
 
                     <div className="flex w-full sm:w-auto gap-3 overflow-x-auto hide-scrollbar">
@@ -2824,7 +2728,7 @@
                             <button key={l} onClick={() => setSelectedLine(l)} className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-[11px] sm:text-[13px] font-black transition-all border ${selectedLine === l ? 'bg-white text-orange-600 shadow-md border-orange-200 scale-110' : 'text-slate-400 border-transparent hover:bg-white/50'}`}>{l}</button>
                         ))}
                         </div>
-                        <button onClick={fetchData} className="hidden sm:block p-3.5 bg-white text-slate-400 hover:text-orange-600 rounded-2xl border shadow-sm active:scale-90 hover:border-orange-200 shrink-0"><i className={`fa-solid fa-arrows-rotate text-xl ${loading ? 'fa-spin' : ''}`}></i></button>
+                        <button onClick={onRefresh} className="hidden sm:block p-3.5 bg-white text-slate-400 hover:text-orange-600 rounded-2xl border shadow-sm active:scale-90 hover:border-orange-200 shrink-0"><i className="fa-solid fa-arrows-rotate text-xl"></i></button>
                     </div>
                   </div>
                 </div>
@@ -2846,13 +2750,14 @@
                   {ORIGINAL_UI_GROUPS.map(group => {
                     const baseList = group.isGlobal ? filteredActiveEmployees : productionEmps;
                     const members = baseList.filter(u => {
-                      const matchesGroup = group.keywords.some(k => u.group.toLowerCase().includes(k.toLowerCase()));
-                      const matchesSearch = !searchTerm || u.id.toLowerCase().includes(searchTerm.toLowerCase()) || u.name.toLowerCase().includes(searchTerm.toLowerCase());
+                      const targetStr = [u.group, u.role, u.role2, u.role3, u.role4, u.fullRowStr].join(' ').toLowerCase();
+                      const matchesGroup = group.keywords.some(k => targetStr.includes(k.toLowerCase()));
+                      const matchesSearch = !searchTerm || String(u.id).toLowerCase().includes(searchTerm.toLowerCase()) || String(u.name).toLowerCase().includes(searchTerm.toLowerCase());
                       return matchesGroup && matchesSearch;
                     });
 
                     const settings = groupState[group.id];
-                    const available = members.filter(m => !savedIds.has(m.id));
+                    const available = members.filter(m => !localSavedIds.has(m.id));
                     const isAllSelected = available.length > 0 && settings.selectedIds.length === available.length;
                     const totalHours = settings.selectedIds.length * settings.defaultHours;
 
@@ -2900,7 +2805,7 @@
                         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar bg-white">
                           {members.length > 0 ? (
                             members.map(m => {
-                              const isSaved = savedIds.has(m.id);
+                              const isSaved = localSavedIds.has(m.id);
                               const isSelected = settings.selectedIds.includes(m.id);
                               const globalEmpInfo = globalEmployees?.find(ge => String(ge.id) === String(m.id));
                               const existingOTVal = globalEmpInfo?.otByDate?.[targetDate];
@@ -2935,7 +2840,7 @@
                           ) : (
                             <div className="h-full flex flex-col items-center justify-center text-slate-300 opacity-50 italic py-10">
                               <i className="fa-solid fa-users text-2xl mb-2"></i>
-                              <p className="text-[10px] uppercase font-black">{searchTerm ? "ไม่พบผลการค้นหา" : "ไม่พบพนักงาน"}</p>
+                              <p className="text-[10px] uppercase font-black">{searchTerm ? "ไม่พบผลการค้นหา" : "ไม่พบพนักงานในกะ/ไลน์นี้"}</p>
                             </div>
                           )}
                         </div>
@@ -3004,7 +2909,6 @@
             const [otPass, setOtPass] = useState('');
             const [isOtAuth, setIsOtAuth] = useState(false);
             
-            const SHEET_ID = '1R3-R-HsrfGBt1L2wMFrsIBZnCz20YNRhVTWnb4Ygxto';
             const fetchInterval = useRef(null);
 
             useEffect(() => {
@@ -3164,14 +3068,11 @@
                     let roleIdx = getColIndex(headersAtt, ["ตำแหน่ง", "role", "ระดับ", "หน้าที่"]);
                     if (roleIdx === -1) roleIdx = 5;
                     
-                    // --- เพิ่มการค้นหา Role2, Role3, Role4 ---
                     let role2Idx = getColIndex(headersAtt, ["role2", "ตำแหน่ง2", "ทักษะ2"]);
                     let role3Idx = getColIndex(headersAtt, ["role3", "ตำแหน่ง3", "ทักษะ3"]);
                     let role4Idx = getColIndex(headersAtt, ["role4", "ตำแหน่ง4", "ทักษะ4"]);
                     
-                    // --- เพิ่มการค้นหาคอลัมน์ Shift แทนการ Hardcode ระบุตำแหน่งตายตัว ---
                     let shiftIdx = getColIndex(headersAtt, ["shift", "กะ", "กะการทำงาน"]);
-                    // --------------------------------------------------------
                     let contractIdx = getColIndex(headersAtt, ["contract", "สัญญา", "สังกัด", "company", "บริษัท", "สังกัด(บริษัท)"]);
                     let isKeyIdx = getColIndex(headersAtt, ["iskey", "key", "สำคัญ"]);
                     let noteIdx = getColIndex(headersAtt, ["note", "หมายเหตุ", "remark", "หมายเหตุ", "note"]);
@@ -3228,12 +3129,10 @@
                         const picUrl = picIdx !== -1 && r[picIdx] ? String(r[picIdx]).trim() : '';
                         const contractVal = contractIdx !== -1 && r[contractIdx] ? String(r[contractIdx]).trim() : '-';
 
-                        // ดึงข้อมูล Multi-skill
                         const r2 = role2Idx !== -1 && r[role2Idx] ? String(r[role2Idx]).trim() : '';
                         const r3 = role3Idx !== -1 && r[role3Idx] ? String(r[role3Idx]).trim() : '';
                         const r4 = role4Idx !== -1 && r[role4Idx] ? String(r[role4Idx]).trim() : '';
 
-                        // --- แก้ไขการดึงข้อมูล Shift ตรงนี้ (Dynamic Column Index & Fallback) ---
                         const shiftCell = shiftIdx !== -1 && r[shiftIdx] 
                             ? String(r[shiftIdx]).trim().toUpperCase() 
                             : (r[6] ? String(r[6]).trim().toUpperCase() : '');
@@ -3244,7 +3143,6 @@
                         } else if (shiftCell === 'A' || shiftCell.includes('SHIFT A') || shiftCell.includes('กะ A') || shiftCell.includes('กะA') || shiftCell.includes('DAY') || shiftCell === 'D' || shiftCell.includes('เช้า')) {
                             empShift = 'Shift A';
                         }
-                        // ------------------------------------------------------------
 
                         return {
                             id: eid, name: r[nameIdx] ? String(r[nameIdx]).trim() : '', line: r[lineIdx] ? String(r[lineIdx]).trim() : '',
@@ -3360,7 +3258,7 @@
                                     </button>
                                 </div>
                             ) : (
-                                <OriginalOTSystem globalEmployees={employees} />
+                                <OriginalOTSystem globalEmployees={employees} onRefresh={fetchDashboardData} />
                             )
                         )}
                     </main>
