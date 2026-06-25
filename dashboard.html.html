@@ -732,6 +732,255 @@
             );
         };
 
+        const Rba60View = ({ employees, selectedLine, activeShift }) => {
+            const [selectedRangeEnd, setSelectedRangeEnd] = useState('');
+            const [searchTerm, setSearchTerm] = useState('');
+
+            const availableRanges = useMemo(() => {
+                if (!employees.length || !employees[0].statusesByDate) return [];
+                const dates = Object.keys(employees[0].statusesByDate).sort((a, b) => new Date(b) - new Date(a));
+                const ranges = [];
+                for (let i = 0; i < dates.length; i++) {
+                    const end = dates[i];
+                    // หาจุดเริ่มต้นของ 7 วันล่าสุด นับจากวันสิ้นสุด
+                    const endIndex = Math.min(i + 6, dates.length - 1);
+                    const start = dates[endIndex];
+                    ranges.push({
+                        endDate: end,
+                        startDate: start,
+                        dates: dates.slice(i, i + 7).reverse()
+                    });
+                }
+                return ranges;
+            }, [employees]);
+
+            useEffect(() => {
+                if (availableRanges.length > 0 && !selectedRangeEnd) {
+                    setSelectedRangeEnd(availableRanges[0].endDate);
+                }
+            }, [availableRanges]);
+
+            const currentRange = useMemo(() => {
+                return availableRanges.find(r => r.endDate === selectedRangeEnd) || availableRanges[0];
+            }, [selectedRangeEnd, availableRanges]);
+
+            const weekDates = useMemo(() => {
+                return currentRange ? currentRange.dates : [];
+            }, [currentRange]);
+
+            const tableData = useMemo(() => {
+                let list = employees.filter(emp => {
+                    if (emp.isResignedFromNote || (emp.resignedDate && weekDates.length > 0 && new Date(weekDates[weekDates.length-1]) > new Date(emp.resignedDate))) return false;
+                    if (emp.shift !== activeShift) return false;
+                    
+                    if (selectedLine !== 'ALL') {
+                        const lineNum = selectedLine.replace('LINE ', '').trim();
+                        const regex = new RegExp(`(^|\\s|\\W)${lineNum}(\\s|\\W|$)`);
+                        if (!regex.test((emp.line || '').toString().toUpperCase())) return false;
+                    }
+
+                    if (searchTerm) {
+                        const term = searchTerm.toLowerCase().trim();
+                        const idMatch = String(emp.id).toLowerCase().includes(term);
+                        const nameMatch = String(emp.name).toLowerCase().includes(term);
+                        if (!idMatch && !nameMatch) return false;
+                    }
+
+                    return true;
+                });
+
+                return list.map(emp => {
+                    let presentDays = 0;
+                    let totalOT = 0;
+                    weekDates.forEach(date => {
+                        const status = emp.statusesByDate?.[date] || 'ไม่มีข้อมูล';
+                        if (status === 'มาปกติ' || status === 'สาย') {
+                            presentDays += 1;
+                        }
+                        const ot = parseFloat(emp.otByDate?.[date]) || 0;
+                        totalOT += ot;
+                    });
+                    const normalHours = presentDays * 8;
+                    const totalHours = normalHours + totalOT;
+                    
+                    return { ...emp, presentDays, normalHours, totalOT, totalHours };
+                }).sort((a,b) => {
+                    if (a.line === b.line) return b.totalHours - a.totalHours;
+                    return a.line.localeCompare(b.line);
+                });
+            }, [employees, activeShift, selectedLine, weekDates, searchTerm]);
+
+            const groupedData = useMemo(() => {
+                const groups = {};
+                tableData.forEach(emp => {
+                    const line = emp.line || 'ไม่ระบุ Line';
+                    if (!groups[line]) groups[line] = [];
+                    groups[line].push(emp);
+                });
+                return groups;
+            }, [tableData]);
+
+            const getDirectImageUrl = (url) => {
+                if (!url) return null;
+                const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+                if (driveMatch && driveMatch[1]) {
+                    return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w100`;
+                }
+                return url;
+            };
+
+            const handleExportCSV = () => {
+                const headers = ['รหัส', 'ชื่อ-นามสกุล', 'ไลน์', 'ตำแหน่ง', 'กลุ่ม', 'เวลาปกติ (ชม.)', 'โอที (ชม.)', 'รวมเวลาทำงาน (ชม.)'];
+                const rows = tableData.map(e => [
+                    `"${e.id}"`, 
+                    `"${e.name}"`, 
+                    `"${e.line}"`, 
+                    `"${e.role}"`, 
+                    `"${e.group}"`, 
+                    `"${e.normalHours}"`, 
+                    `"${e.totalOT.toFixed(1)}"`, 
+                    `"${e.totalHours.toFixed(1)}"`
+                ]);
+                const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + 
+                    [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `haier_rba60_${activeShift}_${selectedLine}_${selectedRangeEnd}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            return (
+                <div className="w-full max-w-[1920px] mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
+                    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-6 sm:p-8">
+                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+                            <div className="flex items-center gap-4 shrink-0">
+                                <div className="w-12 h-12 bg-red-100 text-red-500 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
+                                    <i className="fa-solid fa-business-time"></i>
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                                        RBA 60 <span className="text-slate-400 text-lg">工时管控</span>
+                                    </h2>
+                                    <p className="text-[12px] font-bold text-slate-500 mt-1">
+                                        ติดตามชั่วโมงการทำงาน (7 วัน) อ้างอิงเฉพาะ <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md mx-1">{activeShift}</span> และ <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md mx-1">{selectedLine}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 px-4 shadow-inner w-full lg:flex-1 lg:max-w-md">
+                                <i className="fa-solid fa-search text-slate-400"></i>
+                                <input 
+                                    type="text" placeholder="ค้นหารหัส หรือ ชื่อพนักงาน..." 
+                                    value={searchTerm} onChange={e => setSearchTerm(e.target.value)} 
+                                    className="bg-transparent border-none text-[13px] font-bold outline-none text-slate-800 w-full" 
+                                />
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3 shrink-0">
+                                <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+                                    <span className="text-[11px] font-black text-slate-400 pl-3 uppercase tracking-wider whitespace-nowrap">ช่วงวันที่:</span>
+                                    <select 
+                                        value={selectedRangeEnd} 
+                                        onChange={(e) => setSelectedRangeEnd(e.target.value)}
+                                        className="bg-white border border-slate-200 text-[13px] font-black text-blue-600 outline-none pr-8 py-2 pl-3 rounded-xl cursor-pointer shadow-sm min-w-[180px]"
+                                    >
+                                        {availableRanges.map(range => {
+                                            const startStr = new Date(range.startDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+                                            const endStr = new Date(range.endDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+                                            return (
+                                                <option key={range.endDate} value={range.endDate}>
+                                                    {startStr} - {endStr}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                </div>
+                                <button onClick={handleExportCSV} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-full font-black text-[13px] shadow-sm transition-colors flex items-center gap-2">
+                                    <i className="fa-solid fa-file-csv"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-8">
+                            {Object.keys(groupedData).length > 0 ? (
+                                Object.keys(groupedData).map(line => (
+                                    <div key={line} className="rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm bg-white">
+                                        <div className="bg-slate-50 border-b border-slate-200 p-4">
+                                            <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                                                <i className="fa-solid fa-grip-lines text-slate-400"></i> {line}
+                                                <span className="bg-blue-100 text-blue-600 text-[11px] px-2 py-1 rounded-lg ml-2">{groupedData[line].length} คน</span>
+                                            </h3>
+                                        </div>
+                                        <div className="overflow-x-auto hide-scrollbar custom-scrollbar w-full">
+                                            <table className="w-full text-left text-sm min-w-[800px]">
+                                                <thead className="bg-slate-50/50 text-slate-500 font-black text-[11px] uppercase tracking-widest border-b border-slate-200 sticky top-0 z-10">
+                                                    <tr>
+                                                        <th className="px-4 py-4 w-16 text-center">รูป</th>
+                                                        <th className="px-4 py-4">รหัส</th>
+                                                        <th className="px-4 py-4">ชื่อ-นามสกุล</th>
+                                                        <th className="px-4 py-4">ตำแหน่ง/กลุ่ม</th>
+                                                        <th className="px-4 py-4 text-center">เวลาปกติ (ชม.)</th>
+                                                        <th className="px-4 py-4 text-center">โอที (ชม.)</th>
+                                                        <th className="px-4 py-4 text-center">รวมเวลาทำงาน</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100 font-bold text-slate-600">
+                                                    {groupedData[line].map((emp, idx) => {
+                                                        const directPicUrl = getDirectImageUrl(emp.picture);
+                                                        const isOver = emp.totalHours > 55;
+                                                        return (
+                                                            <tr key={idx} className={`transition-colors ${isOver ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-slate-50'}`}>
+                                                                <td className="px-4 py-2 flex justify-center">
+                                                                    {directPicUrl ? (
+                                                                        <img src={directPicUrl} className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm" onError={(e) => { e.target.onerror = null; e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2NiZDVlMSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAy 12IDJ6bTAgM2MxLjY2IDAgMyAxLjM0IDMgM3MtMS4zNCAzLTMgMy0zLTEuMzQtMy0zczEuMzQtMyAzLTN6bTAgMTQuMmMtMi41IDAtNC43MS0xLjI4LTYtMy4yMi4wMy0xLjk5IDQtMy4wOCA2LTMuMDhzNS45NyAxLjA5IDYgMy4wOGMtMS4yOSAxLjk0LTMuNSAzLjIyLTYgMy4yMnoiLz48L3N2Zz4='; }} />
+                                                                    ) : (
+                                                                        <div className="w-8 h-8 rounded-full border border-slate-200 shadow-sm bg-slate-100 flex items-center justify-center"><i className="fa-solid fa-user text-slate-300 text-xs"></i></div>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 py-3 text-[11px] font-black">{emp.id}</td>
+                                                                <td className="px-4 py-3 text-[12px]">{emp.name}</td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-[10px] text-slate-400">{emp.group}</span>
+                                                                        <span className="text-[11px]">{emp.role || '-'}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-3 text-center">
+                                                                    <span className="text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md text-[11px] shadow-sm border border-slate-200">{emp.normalHours}</span>
+                                                                </td>
+                                                                <td className="px-4 py-3 text-center">
+                                                                    <span className="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md text-[11px] shadow-sm border border-blue-100">{emp.totalOT.toFixed(1)}</span>
+                                                                </td>
+                                                                <td className="px-4 py-3 text-center">
+                                                                    <span className={`px-3 py-1.5 rounded-lg text-[12px] font-black shadow-sm flex items-center justify-center w-fit mx-auto gap-2 ${isOver ? 'bg-red-500 text-white shadow-red-200' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                                        {emp.totalHours.toFixed(1)} ชม.
+                                                                        {isOver && <i className="fa-solid fa-triangle-exclamation text-white animate-pulse" title="เกิน 55 ชั่วโมง"></i>}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        )
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-20 bg-slate-50 rounded-[2rem] border border-slate-100">
+                                    <i className="fa-solid fa-clipboard-user text-4xl text-slate-300 mb-4"></i>
+                                    <p className="font-bold text-slate-500">ไม่พบข้อมูลพนักงานสำหรับช่วงเวลานี้</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const DashboardView = ({ employees, selectedLine, activeShift, isSyncing, onRefresh }) => {
             const [rawDate, setRawDate] = useState(() => {
                 const d = new Date();
@@ -3196,7 +3445,8 @@
                                 { id: 'attendance', l: 'เช็คเวลา', zh: '考勤', i: 'fa-user-check', act: () => setView('attendance') },
                                 { id: 'ot', l: 'บันทึก OT', zh: '加班记录', i: 'fa-clock', act: handleOTClick },
                                 { id: 'key-positions', l: 'ตำแหน่งสำคัญ', zh: '关键岗位', i: 'fa-star', act: () => setView('key-positions') },
-                                { id: 'leave-stats', l: 'สถิติการลา', zh: '请假统计', i: 'fa-calendar-minus', act: () => setView('leave-stats') }
+                                { id: 'leave-stats', l: 'สถิติการลา', zh: '请假统计', i: 'fa-calendar-minus', act: () => setView('leave-stats') },
+                                { id: 'rba60', l: 'RBA 60', zh: '工时管控', i: 'fa-business-time', act: () => setView('rba60') }
                             ].map(t => (
                                 <button key={t.id} onClick={t.act} className={`whitespace-nowrap shrink-0 px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-[12px] font-bold flex items-center gap-2 transition-all border ${view===t.id ? 'bg-blue-50 text-blue-600 border-blue-100 shadow-sm' : 'text-slate-500 hover:bg-slate-50 border-transparent hover:border-slate-200'}`}>
                                     <i className={`fa-solid ${t.i}`}></i> 
@@ -3231,6 +3481,7 @@
                         {view === 'attendance' && <div className="w-full mx-auto p-4 sm:p-6 lg:p-8 2xl:px-12"><AttendanceView employees={employees} /></div>}
                         {view === 'leave-stats' && <div className="w-full mx-auto p-4 sm:p-6 lg:p-8 2xl:px-12"><LeaveStatsView employees={employees} selectedLine={selectedLine} activeShift={activeShift} /></div>}
                         {view === 'key-positions' && <div className="w-full mx-auto p-4 sm:p-6 lg:p-8 2xl:px-12"><KeyPositionsView employees={employees} selectedLine={selectedLine} activeShift={activeShift} /></div>}
+                        {view === 'rba60' && <div className="w-full mx-auto p-4 sm:p-6 lg:p-8 2xl:px-12"><Rba60View employees={employees} selectedLine={selectedLine} activeShift={activeShift} /></div>}
                         
                         {view === 'ot' && (
                             !isOtAuth ? (
