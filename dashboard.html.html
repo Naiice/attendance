@@ -3165,7 +3165,7 @@
 
             useEffect(() => {
                 fetchDashboardData();
-                fetchInterval.current = setInterval(() => { fetchDashboardData(true); }, 120000);
+                fetchInterval.current = setInterval(() => { fetchDashboardData(true); }, 60000); // อัปเดตทุก 1 นาที (60,000 ms) เพื่อลดดีเลย์แต่ไม่ถี่เกินไป
                 return () => { if (fetchInterval.current) clearInterval(fetchInterval.current); };
             }, [view]);
 
