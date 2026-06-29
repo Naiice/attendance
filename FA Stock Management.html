@@ -23,8 +23,12 @@
 
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  
   <script src="https://unpkg.com/@babel/standalone@7.22.20/babel.min.js"></script>
+  
+  <!-- เพิ่ม Library Recharts และ Dependencies สำหรับสร้างกราฟ -->
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://unpkg.com/react-is@18.2.0/umd/react-is.production.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.1.9/umd/Recharts.js"></script>
 
   <style>
     /* ปรับแต่ง Scrollbar */
@@ -39,12 +43,17 @@
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
+    // ดึง Components ของ Recharts มาใช้งาน
+    const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = window.Recharts;
 
     // 🔴 URL Apps Script
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec'; 
 
     // 🟢 ลิงก์ Publish to web (CSV) ของชีต Stock
     const CSV_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQguGoF3kiHKMbAW_IHJaxIO0cAr4-6CktfRLZRYhf4z2WvVC_zmiZp6AH8hLpX_aNZNWpJuWfiBcYc/pub?gid=2049777622&single=true&output=csv`;
+    
+    // 🟡 ลิงก์ Export CSV ของชีต "FA Stock History" ที่คุณให้มา
+    const HISTORY_CSV_URL = `https://docs.google.com/spreadsheets/d/1R3-R-HsrfGBt1L2wMFrsIBZnCz20YNRhVTWnb4Ygxto/export?format=csv&gid=500249857`;
 
     const fetchWithFallback = async (url) => {
         const proxyList = [
@@ -67,36 +76,30 @@
         throw lastError || new Error("Failed to fetch data from all sources");
     };
 
-    // 🟢 อัปเดตฟังก์ชันดึงรูปภาพที่ถูกต้อง (lh3.googleusercontent.com)
     const getDirectImageUrl = (url) => {
       if (!url) return null;
       let id = '';
-      
       const matchFileD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
       const matchId = url.match(/id=([a-zA-Z0-9_-]+)/);
       const matchUc = url.match(/uc\?.*id=([a-zA-Z0-9_-]+)/);
       
-      if (matchFileD && matchFileD[1]) {
-        id = matchFileD[1];
-      } else if (matchId && matchId[1]) {
-        id = matchId[1];
-      } else if (matchUc && matchUc[1]) {
-        id = matchUc[1];
-      }
+      if (matchFileD && matchFileD[1]) id = matchFileD[1];
+      else if (matchId && matchId[1]) id = matchId[1];
+      else if (matchUc && matchUc[1]) id = matchUc[1];
 
-      // ใส่ $ เพื่อแทรกตัวแปร id ได้ถูกต้อง
-      if (id) {
-        return `https://lh3.googleusercontent.com/d/${id}`; 
-      }
+      if (id) return `https://lh3.googleusercontent.com/d/${id}`; 
       return url;
     };
 
     function StockManagementApp() {
       const [inventory, setInventory] = useState([]);
       const [filteredInventory, setFilteredInventory] = useState([]);
+      const [outHistory, setOutHistory] = useState([]); // แยก State สำหรับเก็บข้อมูลกราฟฝั่งเบิก (OUT)
+      const [inHistory, setInHistory] = useState([]);   // แยก State สำหรับเก็บข้อมูลกราฟฝั่งเติม (IN)
       const [searchTerm, setSearchTerm] = useState('');
       const [isLoading, setIsLoading] = useState(true);
       const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
+      const [activeTab, setActiveTab] = useState('inventory'); // เพิ่ม State ควบคุมแท็บ
       
       const [modalState, setModalState] = useState({
         isOpen: false,
@@ -104,7 +107,7 @@
         itemCode: '',
         qty: 1,
         person: '',
-        line: '' // เพิ่มฟิลด์ line ใน state
+        line: '' 
       });
       
       const scannerInputRef = useRef(null);
@@ -127,9 +130,8 @@
           const qtyIdx = headers.findIndex(h => h === 'in-stock');
           const safetyIdx = headers.findIndex(h => h === 'safety stock');
           const unitIdx = headers.findIndex(h => h === 'unit');
-          
-          // 🔴 แก้ให้ดึงเฉพาะคอลัมน์ "picture url" เท่านั้น
           const picIdx = headers.findIndex(h => h === 'picture url');
+          const statusIdx = headers.findIndex(h => h === 'status'); // เพิ่ม Index สำหรับดึง Status
 
           const parsedData = rows.slice(1).map(row => {
               const cells = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, ''));
@@ -141,7 +143,8 @@
                   qty: qtyIdx !== -1 ? (parseInt(cells[qtyIdx], 10) || 0) : 0,
                   safetyStock: safetyIdx !== -1 ? (parseInt(cells[safetyIdx], 10) || 0) : 0,
                   unit: unitIdx !== -1 ? cells[unitIdx] : '',
-                  picUrl: picIdx !== -1 ? cells[picIdx] : ''
+                  picUrl: picIdx !== -1 ? cells[picIdx] : '',
+                  status: statusIdx !== -1 ? cells[statusIdx] : '' // ดึงค่า Status
               };
           }).filter(item => item.id !== '');
           
@@ -157,9 +160,67 @@
         }
       };
 
+      const fetchHistoryData = async () => {
+        if (HISTORY_CSV_URL === 'ใส่ลิงก์_CSV_ของชีท_History_ที่นี่') return;
+        
+        try {
+          const csvText = await fetchWithFallback(HISTORY_CSV_URL);
+          const rows = csvText.replace(/\r/g, '').split('\n').filter(r => r.trim());
+          if(rows.length < 2) return;
+
+          const headers = rows[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, '').toLowerCase());
+          
+          // ค้นหาคอลัมน์จากชีท History
+          const lineIdx = headers.findIndex(h => h === 'line' || h.includes('line'));
+          const statusIdx = headers.findIndex(h => h === 'status' || h.includes('status')); 
+          const qtyIdx = headers.findIndex(h => h === "q'ty" || h === 'qty' || h === 'quantity');
+          const nameIdx = headers.findIndex(h => h === 'name' || h === 'item name' || h === 'รายการ'); // ดึงชื่อรายการที่เบิก/เติม
+
+          const outMap = {};
+          const inMap = {};
+
+          rows.slice(1).forEach(row => {
+            const cells = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, ''));
+            const lineName = lineIdx !== -1 ? cells[lineIdx] : 'ไม่ระบุ Line';
+            const action = statusIdx !== -1 ? cells[statusIdx].toUpperCase() : '';
+            const qty = qtyIdx !== -1 ? (parseInt(cells[qtyIdx], 10) || 0) : 0;
+            const itemName = nameIdx !== -1 ? cells[nameIdx] : 'ไม่ระบุชื่อสินค้า';
+
+            if (!lineName || lineName === '') return;
+
+            // จัดกลุ่มตาม Line และรวมรายการสินค้า
+            if (action.includes('OUT')) {
+              if (!outMap[lineName]) outMap[lineName] = { name: lineName, total: 0, items: {} };
+              outMap[lineName].total += qty;
+              outMap[lineName].items[itemName] = (outMap[lineName].items[itemName] || 0) + qty;
+            }
+            if (action.includes('IN')) {
+              if (!inMap[lineName]) inMap[lineName] = { name: lineName, total: 0, items: {} };
+              inMap[lineName].total += qty;
+              inMap[lineName].items[itemName] = (inMap[lineName].items[itemName] || 0) + qty;
+            }
+          });
+
+          // แปลง Object เป็น Array พร้อมทั้งเรียงลำดับจำนวนที่เบิก/เติม
+          const formatData = (map) => Object.values(map).map(d => ({
+             ...d,
+             itemsList: Object.entries(d.items).map(([k, v]) => ({ name: k, qty: v })).sort((a,b) => b.qty - a.qty)
+          })).sort((a,b) => b.total - a.total);
+
+          setOutHistory(formatData(outMap));
+          setInHistory(formatData(inMap));
+        } catch (error) {
+          console.error('Error fetching history:', error);
+        }
+      };
+
       useEffect(() => {
         fetchStockData();
-        const intervalId = setInterval(() => { fetchStockData(); }, 120000);
+        fetchHistoryData();
+        const intervalId = setInterval(() => { 
+            fetchStockData(); 
+            fetchHistoryData();
+        }, 120000);
         return () => clearInterval(intervalId);
       }, []);
 
@@ -188,7 +249,7 @@
             itemCode: foundItem.id, 
             qty: 1,
             person: '',
-            line: '' // รีเซ็ตค่า line เมื่อแสกนพบสินค้า
+            line: '' 
           });
         } else {
           setStatusMessage({ type: 'error', text: `ไม่พบรหัสสินค้าหรือบาร์โค้ด: ${scannerCode}` });
@@ -217,7 +278,7 @@
           type: modalState.type,
           qty: modalState.qty,
           person: modalState.person,
-          line: modalState.line // ส่งค่า line ไปยัง Apps Script
+          line: modalState.line 
         };
 
         try {
@@ -229,7 +290,10 @@
           });
           
           setStatusMessage({ type: 'success', text: `ส่งคำสั่งบันทึกรายการ ${modalState.type === 'IN' ? 'เข้า' : 'ออก'} สู่ระบบแล้ว` });
-          setTimeout(() => { fetchStockData(); }, 2500);
+          setTimeout(() => { 
+              fetchStockData(); 
+              fetchHistoryData(); // โหลดกราฟใหม่
+          }, 2500);
           
         } catch (error) {
           console.error('Transaction Error:', error);
@@ -243,22 +307,42 @@
 
       const lowStockItems = inventory.filter(item => item.qty < item.safetyStock);
 
-      // ฟังก์ชันสำหรับ Export ข้อมูลสินค้าใกล้หมดเป็น CSV
+      // Component สำหรับแสดง Tooltip เมื่อชี้ที่กราฟ
+      const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+          const data = payload[0].payload;
+          return (
+            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-lg max-w-[200px] sm:max-w-xs z-50">
+              <p className="font-bold text-slate-800 border-b border-slate-100 pb-1 mb-2 text-xs sm:text-sm">{label}</p>
+              <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-2">รวมทั้งหมด: <span className="text-slate-800">{data.total}</span></p>
+              <div className="text-[10px] sm:text-xs space-y-1">
+                {data.itemsList.slice(0, 5).map((item, idx) => (
+                  <div key={idx} className="flex justify-between gap-3">
+                    <span className="truncate text-slate-500">{item.name}</span>
+                    <span className="font-medium text-slate-700">{item.qty}</span>
+                  </div>
+                ))}
+                {data.itemsList.length > 5 && (
+                  <div className="text-slate-400 italic mt-1">...และอื่นๆ อีก {data.itemsList.length - 5} รายการ</div>
+                )}
+              </div>
+            </div>
+          );
+        }
+        return null;
+      };
+
       const exportLowStockCSV = () => {
         if (lowStockItems.length === 0) {
           alert('ไม่มีสินค้าใกล้หมดให้ Export');
           return;
         }
-
         const headers = ['รหัสสินค้า', 'ชื่อสินค้า', 'บาร์โค้ด', 'คงเหลือ', 'ขั้นต่ำ'];
         const csvRows = [headers.join(',')];
-
         lowStockItems.forEach(item => {
           const name = `"${(item.name || '').replace(/"/g, '""')}"`;
           csvRows.push(`${item.id},${name},${item.barcode || ''},${item.qty},${item.safetyStock}`);
         });
-
-        // ใส่ \uFEFF BOM เพื่อให้เปิดด้วย Excel ภาษาไทยได้ไม่เพี้ยน
         const csvContent = "\uFEFF" + csvRows.join('\n'); 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -283,7 +367,7 @@
                 <p className="text-xs sm:text-sm lg:text-base tv:text-2xl text-slate-500 mt-1">ระบบจัดการสต็อกคงคลังอัจฉริยะ</p>
               </div>
               <button 
-                onClick={fetchStockData}
+                onClick={() => { fetchStockData(); fetchHistoryData(); }}
                 disabled={isLoading}
                 className="w-full md:w-auto px-3 py-2 lg:px-4 lg:py-2.5 tv:px-8 tv:py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm lg:text-base tv:text-2xl rounded-lg flex justify-center items-center gap-2 transition-colors disabled:opacity-50"
               >
@@ -299,167 +383,310 @@
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-6 tv:gap-8">
-              
-              <div className="lg:col-span-4 xl:col-span-3 space-y-3 sm:space-y-4 lg:space-y-6 tv:space-y-8">
+            {/* ระบบ Tabs */}
+            <div className="flex space-x-2 border-b border-slate-200 mb-2 sm:mb-4">
+              <button
+                onClick={() => setActiveTab('inventory')}
+                className={`px-4 py-3 font-semibold text-sm sm:text-base tv:text-2xl border-b-2 transition-colors flex items-center gap-2 ${
+                  activeTab === 'inventory' 
+                    ? 'border-blue-600 text-blue-600' 
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <i className="fas fa-boxes"></i> รายการสต็อกสินค้า
+              </button>
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`px-4 py-3 font-semibold text-sm sm:text-base tv:text-2xl border-b-2 transition-colors flex items-center gap-2 ${
+                  activeTab === 'dashboard' 
+                    ? 'border-blue-600 text-blue-600' 
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <i className="fas fa-chart-pie"></i> สรุปข้อมูลการเบิก-เติม
+              </button>
+            </div>
+
+            {/* แสดงผลตาม Tab ที่เลือก */}
+            {activeTab === 'inventory' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-6 tv:gap-8 animate-in fade-in duration-300">
                 
-                <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100">
-                  <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-slate-800 mb-2 lg:mb-4 flex items-center gap-2">
-                    <i className="fas fa-barcode"></i> สแกนบาร์โค้ด
-                  </h2>
-                  <form onSubmit={handleScanSubmit}>
-                    <div className="relative">
-                      <input
-                        ref={scannerInputRef}
-                        type="text"
-                        placeholder="สแกนรหัส..."
-                        className="w-full pl-8 sm:pl-10 tv:pl-16 pr-3 py-2 lg:py-3 tv:py-5 border-2 border-blue-100 rounded-lg focus:border-blue-500 focus:ring-0 outline-none transition-all text-slate-700 font-medium text-xs sm:text-sm lg:text-base tv:text-2xl"
-                        value={scannerCode}
-                        onChange={(e) => setScannerCode(e.target.value)}
-                        autoFocus
-                      />
-                      <i className="fas fa-barcode absolute left-2.5 sm:left-3 tv:left-5 top-2.5 lg:top-3.5 tv:top-5 text-slate-400 text-sm lg:text-base tv:text-3xl"></i>
+                <div className="lg:col-span-4 xl:col-span-3 space-y-3 sm:space-y-4 lg:space-y-6 tv:space-y-8">
+                  
+                  <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100">
+                    <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-slate-800 mb-2 lg:mb-4 flex items-center gap-2">
+                      <i className="fas fa-barcode"></i> สแกนบาร์โค้ด
+                    </h2>
+                    <form onSubmit={handleScanSubmit}>
+                      <div className="relative">
+                        <input
+                          ref={scannerInputRef}
+                          type="text"
+                          placeholder="สแกนรหัส..."
+                          className="w-full pl-8 sm:pl-10 tv:pl-16 pr-3 py-2 lg:py-3 tv:py-5 border-2 border-blue-100 rounded-lg focus:border-blue-500 focus:ring-0 outline-none transition-all text-slate-700 font-medium text-xs sm:text-sm lg:text-base tv:text-2xl"
+                          value={scannerCode}
+                          onChange={(e) => setScannerCode(e.target.value)}
+                          autoFocus
+                        />
+                        <i className="fas fa-barcode absolute left-2.5 sm:left-3 tv:left-5 top-2.5 lg:top-3.5 tv:top-5 text-slate-400 text-sm lg:text-base tv:text-3xl"></i>
+                      </div>
+                      <p className="text-[10px] sm:text-xs lg:text-sm tv:text-xl text-slate-400 mt-2 text-center">เสียบเครื่องสแกนบาร์โค้ดและยิงเข้าที่ช่องนี้</p>
+                    </form>
+                  </div>
+
+                  <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-red-100">
+                    <div className="flex justify-between items-center mb-2 lg:mb-4">
+                      <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-red-600 flex items-center gap-2">
+                        <i className="fas fa-exclamation-triangle"></i> สินค้าใกล้หมด ({lowStockItems.length})
+                      </h2>
+                      <button
+                        onClick={exportLowStockCSV}
+                        className="px-2 py-1 lg:px-3 lg:py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-md text-[10px] sm:text-xs lg:text-sm tv:text-xl transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                        title="Export เป็นไฟล์ CSV"
+                      >
+                        <i className="fas fa-file-csv"></i> Export
+                      </button>
                     </div>
-                    <p className="text-[10px] sm:text-xs lg:text-sm tv:text-xl text-slate-400 mt-2 text-center">เสียบเครื่องสแกนบาร์โค้ดและยิงเข้าที่ช่องนี้</p>
-                  </form>
+                    
+                    {lowStockItems.length > 0 ? (
+                      <div className="space-y-2 max-h-[30vh] lg:max-h-[60vh] overflow-y-auto pr-1">
+                        {lowStockItems.map(item => (
+                          <div key={item.id} className="bg-red-50 p-2 sm:p-3 tv:p-5 rounded-lg border border-red-100 flex justify-between items-center">
+                            <div className="min-w-0 pr-2">
+                              <div className="font-bold text-slate-800 text-xs sm:text-sm tv:text-2xl truncate">{item.name}</div>
+                              <div className="text-[10px] sm:text-xs tv:text-xl text-slate-500 truncate">รหัส: {item.id}</div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="text-red-600 font-bold text-sm sm:text-base lg:text-lg tv:text-4xl">{item.qty}</div>
+                              <div className="text-[10px] sm:text-xs tv:text-xl text-slate-500">ขั้นต่ำ: {item.safetyStock}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 lg:py-8 text-slate-400 flex flex-col items-center">
+                        <i className="fas fa-check-circle text-3xl lg:text-4xl tv:text-6xl mb-2 text-green-400"></i>
+                        <p className="text-xs sm:text-sm tv:text-xl">สินค้าคงคลังอยู่ในเกณฑ์ปกติ</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-red-100">
-                  <div className="flex justify-between items-center mb-2 lg:mb-4">
-                    <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-red-600 flex items-center gap-2">
-                      <i className="fas fa-exclamation-triangle"></i> สินค้าใกล้หมด ({lowStockItems.length})
-                    </h2>
-                    <button
-                      onClick={exportLowStockCSV}
-                      className="px-2 py-1 lg:px-3 lg:py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-md text-[10px] sm:text-xs lg:text-sm tv:text-xl transition-colors flex items-center gap-1.5 whitespace-nowrap"
-                      title="Export เป็นไฟล์ CSV"
-                    >
-                      <i className="fas fa-file-csv"></i> Export
-                    </button>
+                <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-4">
+                  {/* Section: ตารางสินค้า */}
+                  <div className="bg-white p-3 sm:p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2 lg:gap-4">
+                      <h2 className="text-base sm:text-lg lg:text-xl tv:text-4xl font-bold text-slate-800">รายการสินค้าทั้งหมด</h2>
+                      
+                      <div className="relative w-full sm:w-56 lg:w-72 tv:w-96">
+                        <i className="fas fa-search absolute left-2.5 lg:left-3 tv:left-5 top-2 sm:top-2.5 tv:top-4 text-slate-400 text-xs sm:text-sm tv:text-2xl"></i>
+                        <input
+                          type="text"
+                          placeholder="ค้นหารหัส/ชื่อสินค้า..."
+                          className="w-full pl-7 sm:pl-9 tv:pl-14 pr-3 py-1.5 sm:py-2 tv:py-4 border border-slate-200 rounded-lg focus:border-blue-500 outline-none text-xs sm:text-sm tv:text-2xl"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto w-full flex-1 border border-slate-100 rounded-lg">
+                      <table className="w-full text-left border-collapse min-w-[600px] lg:min-w-full">
+                        <thead className="bg-slate-50 sticky top-0 z-10">
+                          <tr className="text-slate-500 text-[10px] sm:text-xs lg:text-sm tv:text-2xl border-b border-slate-200 whitespace-nowrap">
+                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium">รหัส / บาร์โค้ด</th>
+                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium">ชื่อสินค้า</th>
+                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center">รูปภาพ</th>
+                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center">คงเหลือ</th>
+                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center border-l border-slate-200">สถานะ</th>
+                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center text-blue-600 bg-blue-50/50">เติมสต็อก</th>
+                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center text-amber-600 bg-amber-50/50">เบิกสต็อก</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {isLoading && inventory.length === 0 ? (
+                            <tr><td colSpan="7" className="text-center py-6 lg:py-10 text-slate-400 text-xs sm:text-sm tv:text-xl">กำลังโหลดข้อมูล...</td></tr>
+                          ) : filteredInventory.length === 0 ? (
+                            <tr><td colSpan="7" className="text-center py-6 lg:py-10 text-slate-400 text-xs sm:text-sm tv:text-xl">ไม่พบสินค้าที่ค้นหา</td></tr>
+                          ) : (
+                            filteredInventory.map(item => (
+                              <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
+                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 text-slate-600 font-mono align-middle">
+                                  <div className="font-bold text-slate-800 text-[11px] sm:text-xs lg:text-sm tv:text-2xl">{item.id}</div>
+                                  {item.barcode && <div className="text-[9px] sm:text-[10px] lg:text-xs tv:text-xl text-slate-400 mt-0.5">บาร์โค้ด: {item.barcode}</div>}
+                                </td>
+                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-slate-800 align-middle">
+                                  <div className="text-[11px] sm:text-xs lg:text-sm tv:text-3xl">{item.name}</div>
+                                  {item.nameChina && <div className="text-[9px] sm:text-[10px] lg:text-xs tv:text-xl text-slate-500 font-normal mt-0.5">{item.nameChina}</div>}
+                                </td>
+                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 align-middle">
+                                  <div className="flex justify-center">
+                                    {getDirectImageUrl(item.picUrl) ? (
+                                      <img 
+                                        src={getDirectImageUrl(item.picUrl)} 
+                                        alt={item.name} 
+                                        className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 tv:w-32 tv:h-32 object-contain p-1 rounded-md border border-slate-200 bg-white transition-all duration-300 ease-in-out hover:scale-[2.5] lg:hover:scale-[3] hover:-translate-y-2 hover:shadow-2xl relative z-10 hover:z-50 cursor-pointer" 
+                                        onError={(e) => { 
+                                          e.target.onerror = null; 
+                                          e.target.src = 'https://placehold.co/100x100/f8fafc/94a3b8?text=No+Img'; 
+                                        }} 
+                                      />
+                                    ) : (
+                                      <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 tv:w-32 tv:h-32 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 border border-slate-200 transition-all duration-300 ease-in-out hover:scale-[2.5] lg:hover:scale-[3] hover:-translate-y-2 hover:shadow-2xl relative z-10 hover:z-50 cursor-pointer">
+                                         <i className="fas fa-image text-sm lg:text-lg tv:text-3xl"></i>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 text-center align-middle">
+                                  <span className={`inline-flex items-baseline px-2 py-0.5 sm:py-1 lg:px-3 lg:py-1 tv:px-5 tv:py-2 rounded-full text-[10px] sm:text-xs lg:text-sm tv:text-2xl font-bold ${
+                                    item.qty < item.safetyStock ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                                  }`}>
+                                    {item.qty} <span className="text-[8px] sm:text-[9px] lg:text-xs tv:text-lg font-normal opacity-80 ml-1">{item.unit}</span>
+                                  </span>
+                                </td>
+                                {/* คอลัมน์ Status */}
+                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 text-center align-middle border-l border-slate-100">
+                                  {item.status ? (
+                                    <span className="inline-block px-2 py-1 bg-slate-100 border border-slate-200 text-slate-600 rounded text-[10px] sm:text-xs lg:text-sm whitespace-nowrap">
+                                      {item.status}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-300">-</span>
+                                  )}
+                                </td>
+                                {/* คอลัมน์ เติมสต็อก */}
+                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 align-middle text-center bg-blue-50/30">
+                                  <button 
+                                    onClick={() => setModalState({ isOpen: true, type: 'IN', itemCode: item.id, qty: 1, person: '', line: '' })}
+                                    className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-20 tv:h-20 inline-flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-md transition-colors shadow-sm"
+                                    title="เติมสต็อก"
+                                  >
+                                    <i className="fas fa-cart-plus text-[12px] sm:text-sm lg:text-base tv:text-3xl"></i>
+                                  </button>
+                                </td>
+                                {/* คอลัมน์ เบิกสต็อก */}
+                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 align-middle text-center bg-amber-50/30">
+                                  <button 
+                                    onClick={() => setModalState({ isOpen: true, type: 'OUT', itemCode: item.id, qty: 1, person: '', line: '' })}
+                                    className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-20 tv:h-20 inline-flex items-center justify-center bg-amber-100 hover:bg-amber-200 text-amber-600 rounded-md transition-colors shadow-sm"
+                                    title="เบิกจ่าย"
+                                  >
+                                    <i className="fas fa-dolly text-[12px] sm:text-sm lg:text-base tv:text-3xl"></i>
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
+                </div>
+              </div>
+            ) : (
+              /* โหมด Dashboard แสดงกราฟสรุปแบบเต็มความกว้าง */
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 tv:gap-8 animate-in fade-in duration-300">
+                {/* ฝั่งซ้าย: กราฟการเบิกสต็อก (OUT) */}
+                <div className="bg-white p-3 sm:p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[70vh] lg:h-[80vh]">
+                  <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i className="fas fa-dolly text-amber-500"></i> สรุปการเบิกสต็อก (OUT) แยกตาม Line
+                  </h2>
                   
-                  {lowStockItems.length > 0 ? (
-                    <div className="space-y-2 max-h-[30vh] lg:max-h-[60vh] overflow-y-auto pr-1">
-                      {lowStockItems.map(item => (
-                        <div key={item.id} className="bg-red-50 p-2 sm:p-3 tv:p-5 rounded-lg border border-red-100 flex justify-between items-center">
-                          <div className="min-w-0 pr-2">
-                            <div className="font-bold text-slate-800 text-xs sm:text-sm tv:text-2xl truncate">{item.name}</div>
-                            <div className="text-[10px] sm:text-xs tv:text-xl text-slate-500 truncate">รหัส: {item.id}</div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="text-red-600 font-bold text-sm sm:text-base lg:text-lg tv:text-4xl">{item.qty}</div>
-                            <div className="text-[10px] sm:text-xs tv:text-xl text-slate-500">ขั้นต่ำ: {item.safetyStock}</div>
-                          </div>
-                        </div>
-                      ))}
+                  {outHistory.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center py-8 text-slate-400 text-sm">
+                      <i className="fas fa-inbox text-3xl mb-2 text-slate-200"></i>
+                      <p>ไม่มีข้อมูลการเบิก</p>
                     </div>
                   ) : (
-                    <div className="text-center py-4 lg:py-8 text-slate-400 flex flex-col items-center">
-                      <i className="fas fa-check-circle text-3xl lg:text-4xl tv:text-6xl mb-2 text-green-400"></i>
-                      <p className="text-xs sm:text-sm tv:text-xl">สินค้าคงคลังอยู่ในเกณฑ์ปกติ</p>
-                    </div>
+                    <>
+                      <div className="w-full h-1/2 mb-4 shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={outHistory} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                            <XAxis dataKey="name" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                            <YAxis tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                            <Tooltip cursor={{fill: '#f1f5f9'}} content={<CustomTooltip />} />
+                            <Bar dataKey="total" name="ยอดเบิก (OUT)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      {/* รายละเอียดรายการที่เบิกของแต่ละ Line */}
+                      <div className="flex-1 overflow-y-auto bg-slate-50/50 rounded-lg p-2 sm:p-3 border border-slate-100">
+                         <h3 className="text-[11px] sm:text-xs tv:text-xl font-bold text-slate-500 mb-2 sticky top-0 bg-slate-50 pb-1 z-10">รายละเอียดรายการ (แยกตาม Line)</h3>
+                         {outHistory.map((line, idx) => (
+                            <div key={idx} className="mb-3 last:mb-0">
+                               <div className="flex justify-between items-center bg-amber-100/40 px-2 py-1.5 rounded text-[11px] sm:text-xs tv:text-xl font-bold text-amber-800 mb-1">
+                                  <span>{line.name}</span>
+                                  <span>รวม {line.total}</span>
+                               </div>
+                               <ul className="space-y-1 px-1.5">
+                                  {line.itemsList.map((item, i) => (
+                                     <li key={i} className="flex justify-between text-[10px] sm:text-[11px] tv:text-lg text-slate-600 border-b border-slate-100 last:border-0 pb-1">
+                                        <span className="truncate pr-2">{item.name}</span>
+                                        <span className="font-medium shrink-0">{item.qty}</span>
+                                     </li>
+                                  ))}
+                               </ul>
+                            </div>
+                         ))}
+                      </div>
+                    </>
                   )}
                 </div>
-              </div>
 
-              <div className="lg:col-span-8 xl:col-span-9 bg-white p-3 sm:p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2 lg:gap-4">
-                  <h2 className="text-base sm:text-lg lg:text-xl tv:text-4xl font-bold text-slate-800">รายการสินค้าทั้งหมด</h2>
+                {/* ฝั่งขวา: กราฟการเติมสต็อก (IN) */}
+                <div className="bg-white p-3 sm:p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[70vh] lg:h-[80vh]">
+                  <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i className="fas fa-cart-plus text-blue-500"></i> สรุปการเติมสต็อก (IN) แยกตาม Line
+                  </h2>
                   
-                  <div className="relative w-full sm:w-56 lg:w-72 tv:w-96">
-                    <i className="fas fa-search absolute left-2.5 lg:left-3 tv:left-5 top-2 sm:top-2.5 tv:top-4 text-slate-400 text-xs sm:text-sm tv:text-2xl"></i>
-                    <input
-                      type="text"
-                      placeholder="ค้นหารหัส/ชื่อสินค้า..."
-                      className="w-full pl-7 sm:pl-9 tv:pl-14 pr-3 py-1.5 sm:py-2 tv:py-4 border border-slate-200 rounded-lg focus:border-blue-500 outline-none text-xs sm:text-sm tv:text-2xl"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
+                  {inHistory.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center py-8 text-slate-400 text-sm">
+                      <i className="fas fa-inbox text-3xl mb-2 text-slate-200"></i>
+                      <p>ไม่มีข้อมูลการเติม</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-full h-1/2 mb-4 shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={inHistory} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                            <XAxis dataKey="name" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                            <YAxis tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                            <Tooltip cursor={{fill: '#f1f5f9'}} content={<CustomTooltip />} />
+                            <Bar dataKey="total" name="ยอดเติม (IN)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      {/* รายละเอียดรายการที่เติมของแต่ละ Line */}
+                      <div className="flex-1 overflow-y-auto bg-slate-50/50 rounded-lg p-2 sm:p-3 border border-slate-100">
+                         <h3 className="text-[11px] sm:text-xs tv:text-xl font-bold text-slate-500 mb-2 sticky top-0 bg-slate-50 pb-1 z-10">รายละเอียดรายการ (แยกตาม Line)</h3>
+                         {inHistory.map((line, idx) => (
+                            <div key={idx} className="mb-3 last:mb-0">
+                               <div className="flex justify-between items-center bg-blue-100/40 px-2 py-1.5 rounded text-[11px] sm:text-xs tv:text-xl font-bold text-blue-800 mb-1">
+                                  <span>{line.name}</span>
+                                  <span>รวม {line.total}</span>
+                               </div>
+                               <ul className="space-y-1 px-1.5">
+                                  {line.itemsList.map((item, i) => (
+                                     <li key={i} className="flex justify-between text-[10px] sm:text-[11px] tv:text-lg text-slate-600 border-b border-slate-100 last:border-0 pb-1">
+                                        <span className="truncate pr-2">{item.name}</span>
+                                        <span className="font-medium shrink-0">{item.qty}</span>
+                                     </li>
+                                  ))}
+                               </ul>
+                            </div>
+                         ))}
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                <div className="overflow-x-auto w-full flex-1 border border-slate-100 rounded-lg">
-                  <table className="w-full text-left border-collapse min-w-[350px] sm:min-w-[500px] lg:min-w-full">
-                    <thead className="bg-slate-50 sticky top-0 z-10">
-                      <tr className="text-slate-500 text-[10px] sm:text-xs lg:text-sm tv:text-2xl border-b border-slate-200 whitespace-nowrap">
-                        <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium">รหัส / บาร์โค้ด</th>
-                        <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium">ชื่อสินค้า</th>
-                        <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center">รูปภาพ</th>
-                        <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center">คงเหลือ</th>
-                        <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center">จัดการ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {isLoading && inventory.length === 0 ? (
-                        <tr><td colSpan="5" className="text-center py-6 lg:py-10 text-slate-400 text-xs sm:text-sm tv:text-xl">กำลังโหลดข้อมูล...</td></tr>
-                      ) : filteredInventory.length === 0 ? (
-                        <tr><td colSpan="5" className="text-center py-6 lg:py-10 text-slate-400 text-xs sm:text-sm tv:text-xl">ไม่พบสินค้าที่ค้นหา</td></tr>
-                      ) : (
-                        filteredInventory.map(item => (
-                          <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
-                            <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 text-slate-600 font-mono align-middle">
-                              <div className="font-bold text-slate-800 text-[11px] sm:text-xs lg:text-sm tv:text-2xl">{item.id}</div>
-                              {item.barcode && <div className="text-[9px] sm:text-[10px] lg:text-xs tv:text-xl text-slate-400 mt-0.5">บาร์โค้ด: {item.barcode}</div>}
-                            </td>
-                            <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-slate-800 align-middle">
-                              <div className="text-[11px] sm:text-xs lg:text-sm tv:text-3xl">{item.name}</div>
-                              {item.nameChina && <div className="text-[9px] sm:text-[10px] lg:text-xs tv:text-xl text-slate-500 font-normal mt-0.5">{item.nameChina}</div>}
-                            </td>
-                            <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 align-middle">
-                              <div className="flex justify-center">
-                                {getDirectImageUrl(item.picUrl) ? (
-                                  <img 
-                                    src={getDirectImageUrl(item.picUrl)} 
-                                    alt={item.name} 
-                                    className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 tv:w-32 tv:h-32 object-contain p-1 rounded-md border border-slate-200 bg-white transition-all duration-300 ease-in-out hover:scale-[2.5] lg:hover:scale-[3] hover:-translate-y-2 hover:shadow-2xl relative z-10 hover:z-50 cursor-pointer" 
-                                    onError={(e) => { 
-                                      e.target.onerror = null; 
-                                      e.target.src = 'https://placehold.co/100x100/f8fafc/94a3b8?text=No+Img'; 
-                                    }} 
-                                  />
-                                ) : (
-                                  <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 tv:w-32 tv:h-32 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 border border-slate-200 transition-all duration-300 ease-in-out hover:scale-[2.5] lg:hover:scale-[3] hover:-translate-y-2 hover:shadow-2xl relative z-10 hover:z-50 cursor-pointer">
-                                     <i className="fas fa-image text-sm lg:text-lg tv:text-3xl"></i>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 text-center align-middle">
-                              <span className={`inline-flex items-baseline px-2 py-0.5 sm:py-1 lg:px-3 lg:py-1 tv:px-5 tv:py-2 rounded-full text-[10px] sm:text-xs lg:text-sm tv:text-2xl font-bold ${
-                                item.qty < item.safetyStock ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                              }`}>
-                                {item.qty} <span className="text-[8px] sm:text-[9px] lg:text-xs tv:text-lg font-normal opacity-80 ml-1">{item.unit}</span>
-                              </span>
-                            </td>
-                            <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 align-middle">
-                              <div className="flex justify-center gap-1 sm:gap-1.5 lg:gap-2 tv:gap-4">
-                                <button 
-                                  onClick={() => setModalState({ isOpen: true, type: 'IN', itemCode: item.id, qty: 1, person: '', line: '' })}
-                                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-20 tv:h-20 flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md transition-colors shadow-sm"
-                                  title="เติมสต็อก"
-                                >
-                                  <i className="fas fa-cart-plus text-[12px] sm:text-sm lg:text-base tv:text-3xl"></i>
-                                </button>
-                                <button 
-                                  onClick={() => setModalState({ isOpen: true, type: 'OUT', itemCode: item.id, qty: 1, person: '', line: '' })}
-                                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-20 tv:h-20 flex items-center justify-center bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-md transition-colors shadow-sm"
-                                  title="เบิกจ่าย"
-                                >
-                                  <i className="fas fa-dolly text-[12px] sm:text-sm lg:text-base tv:text-3xl"></i>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Modal เติม/เบิก สินค้า */}
           {modalState.isOpen && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50">
               <div className="bg-white rounded-xl sm:rounded-2xl w-full max-w-[95%] sm:max-w-sm lg:max-w-md tv:max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
@@ -512,7 +739,6 @@
                     />
                   </div>
 
-                  {/* เพิ่ม Input สำหรับกรอก Line */}
                   <div>
                     <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1 text-red-600">Line / ไลน์การผลิต (บังคับ)*</label>
                     <input 
