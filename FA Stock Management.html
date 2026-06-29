@@ -697,7 +697,7 @@
                 <div className={`p-3 sm:p-4 lg:p-5 flex justify-between items-center text-white ${modalState.type === 'IN' ? 'bg-blue-600' : 'bg-amber-500'}`}>
                   <h3 className="font-bold text-base sm:text-lg tv:text-3xl flex items-center gap-2">
                     {modalState.type === 'IN' ? <i className="fas fa-cart-plus"></i> : <i className="fas fa-dolly"></i>}
-                    {modalState.type === 'IN' ? 'ทำรายการ: เติมสต็อก (IN)' : 'ทำรายการ: เบิกจ่าย (OUT)'}
+                    {modalState.type === 'IN' ? 'ทำรายการ: เติมสต็อก (IN) / 入库' : 'ทำรายการ: เบิกจ่าย (OUT) / 出库'}
                   </h3>
                   <button onClick={() => setModalState({...modalState, isOpen: false})} className="text-white/80 hover:text-white">
                     <i className="fas fa-times text-lg sm:text-xl tv:text-4xl"></i>
@@ -706,7 +706,7 @@
                 
                 <form onSubmit={handleTransactionSubmit} className="p-4 sm:p-5 lg:p-6 tv:p-10 space-y-3 sm:space-y-4 tv:space-y-8">
                   <div>
-                    <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1">รหัสสินค้า</label>
+                    <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1">รหัสสินค้า / 物品代码</label>
                     <input 
                       type="text" 
                       value={modalState.itemCode} 
@@ -719,7 +719,7 @@
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1">จำนวนที่{modalState.type === 'IN' ? 'เติม' : 'เบิก'}</label>
+                    <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1">จำนวนที่{modalState.type === 'IN' ? 'เติม (入库)' : 'เบิก (出库)'}</label>
                     <input 
                       type="number" 
                       min="1"
@@ -731,11 +731,11 @@
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1 text-red-600">ชื่อผู้รับผิดชอบ / ผู้เบิก (บังคับ)*</label>
+                    <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1 text-red-600">ชื่อผู้รับผิดชอบ / 负责人 (บังคับ)*</label>
                     <input 
                       type="text" 
                       required
-                      placeholder="ระบุชื่อพนักงาน"
+                      placeholder="ระบุชื่อพนักงาน / 请输入员工姓名"
                       value={modalState.person}
                       onChange={(e) => setModalState({...modalState, person: e.target.value})}
                       className="w-full p-2 sm:p-2.5 tv:p-4 border-2 border-slate-300 focus:border-red-500 rounded-lg outline-none text-xs sm:text-base tv:text-2xl" 
@@ -744,15 +744,23 @@
                   </div>
 
                   <div>
-                    <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1 text-red-600">Line / ไลน์การผลิต (บังคับ)*</label>
-                    <input 
-                      type="text" 
+                    <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1 text-red-600">Line / 生产线 (บังคับ)*</label>
+                    <select 
                       required
-                      placeholder="ระบุ Line (เช่น Line 1, Line A)"
                       value={modalState.line}
                       onChange={(e) => setModalState({...modalState, line: e.target.value})}
-                      className="w-full p-2 sm:p-2.5 tv:p-4 border-2 border-slate-300 focus:border-red-500 rounded-lg outline-none text-xs sm:text-base tv:text-2xl" 
-                    />
+                      className="w-full p-2 sm:p-2.5 tv:p-4 border-2 border-slate-300 focus:border-red-500 rounded-lg outline-none text-xs sm:text-base tv:text-2xl bg-white" 
+                    >
+                      <option value="" disabled>เลือก Line / 选择生产线</option>
+                      <option value="1#">1#</option>
+                      <option value="2#">2#</option>
+                      <option value="3#">3#</option>
+                      <option value="4#">4#</option>
+                      <option value="5#">5#</option>
+                      <option value="6#">6#</option>
+                      <option value="7#">7#</option>
+                      <option value="8#">8#</option>
+                    </select>
                   </div>
 
                   <div className="pt-3 sm:pt-4 tv:pt-6 flex gap-2 sm:gap-3 tv:gap-6">
@@ -761,13 +769,13 @@
                       onClick={() => setModalState({...modalState, isOpen: false})}
                       className="flex-1 py-2 sm:py-2.5 tv:py-5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors text-xs sm:text-sm tv:text-2xl"
                     >
-                      ยกเลิก
+                      ยกเลิก / 取消
                     </button>
                     <button 
                       type="submit"
                       className={`flex-1 py-2 sm:py-2.5 tv:py-5 text-white rounded-lg font-medium transition-colors text-xs sm:text-sm tv:text-2xl ${modalState.type === 'IN' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-amber-500 hover:bg-amber-600'}`}
                     >
-                      ยืนยันบันทึก
+                      ยืนยันบันทึก / 确认
                     </button>
                   </div>
                 </form>
