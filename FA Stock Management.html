@@ -174,7 +174,9 @@
           const lineIdx = headers.findIndex(h => h === 'line' || h.includes('line'));
           const statusIdx = headers.findIndex(h => h === 'status' || h.includes('status')); 
           const qtyIdx = headers.findIndex(h => h === "q'ty" || h === 'qty' || h === 'quantity');
-          const nameIdx = headers.findIndex(h => h === 'name' || h === 'item name' || h === 'รายการ'); // ดึงชื่อรายการที่เบิก/เติม
+          
+          // 🔴 เพิ่มการค้นหาคอลัมน์ "name - thai" ตรงนี้
+          const nameIdx = headers.findIndex(h => h === 'name - thai' || h === 'name' || h === 'item name' || h === 'รายการ'); 
 
           const outMap = {};
           const inMap = {};
@@ -184,6 +186,8 @@
             const lineName = lineIdx !== -1 ? cells[lineIdx] : 'ไม่ระบุ Line';
             const action = statusIdx !== -1 ? cells[statusIdx].toUpperCase() : '';
             const qty = qtyIdx !== -1 ? (parseInt(cells[qtyIdx], 10) || 0) : 0;
+            
+            // ดึงชื่อสินค้ามาใช้งาน
             const itemName = nameIdx !== -1 ? cells[nameIdx] : 'ไม่ระบุชื่อสินค้า';
 
             if (!lineName || lineName === '') return;
