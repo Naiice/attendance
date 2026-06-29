@@ -502,9 +502,9 @@
                             <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium">ชื่อสินค้า</th>
                             <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center">รูปภาพ</th>
                             <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center">คงเหลือ</th>
-                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center border-l border-slate-200">สถานะ</th>
-                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center text-blue-600 bg-blue-50/50">เติมสต็อก</th>
+                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center text-blue-600 bg-blue-50/50 border-l border-slate-200">เติมสต็อก</th>
                             <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center text-amber-600 bg-amber-50/50">เบิกสต็อก</th>
+                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center border-l border-slate-200">สถานะ</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -549,18 +549,8 @@
                                     {item.qty} <span className="text-[8px] sm:text-[9px] lg:text-xs tv:text-lg font-normal opacity-80 ml-1">{item.unit}</span>
                                   </span>
                                 </td>
-                                {/* คอลัมน์ Status */}
-                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 text-center align-middle border-l border-slate-100">
-                                  {item.status ? (
-                                    <span className="inline-block px-2 py-1 bg-slate-100 border border-slate-200 text-slate-600 rounded text-[10px] sm:text-xs lg:text-sm whitespace-nowrap">
-                                      {item.status}
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-300">-</span>
-                                  )}
-                                </td>
                                 {/* คอลัมน์ เติมสต็อก */}
-                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 align-middle text-center bg-blue-50/30">
+                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 align-middle text-center bg-blue-50/30 border-l border-slate-100">
                                   <button 
                                     onClick={() => setModalState({ isOpen: true, type: 'IN', itemCode: item.id, qty: 1, person: '', line: '' })}
                                     className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-20 tv:h-20 inline-flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-md transition-colors shadow-sm"
@@ -578,6 +568,16 @@
                                   >
                                     <i className="fas fa-dolly text-[12px] sm:text-sm lg:text-base tv:text-3xl"></i>
                                   </button>
+                                </td>
+                                {/* คอลัมน์ Status */}
+                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 text-center align-middle border-l border-slate-100">
+                                  {item.status ? (
+                                    <span className="inline-block px-2 py-1 bg-slate-100 border border-slate-200 text-slate-600 rounded text-[10px] sm:text-xs lg:text-sm whitespace-nowrap">
+                                      {item.status}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-300">-</span>
+                                  )}
                                 </td>
                               </tr>
                             ))
