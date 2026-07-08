@@ -23,6 +23,11 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        /* Table scrollbar */
+        .table-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .table-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .table-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        .table-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
     </style>
 </head>
 <body class="bg-gray-800 h-screen w-screen flex items-center justify-center p-1.5 md:p-2 overflow-hidden box-border">
@@ -149,11 +154,34 @@
                         </div>
                     </div>
 
-                    <!-- Summary Chart -->
-                    <div class="col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-2.5 md:p-3 flex flex-col min-h-0">
-                        <h3 class="text-sm md:text-base font-bold text-gray-700 mb-1 md:mb-2 text-center flex-none">Summary (By Line) / 总结 (按线别)</h3>
-                        <div class="relative flex-1 w-full h-full min-h-0">
-                            <canvas id="summaryChart"></canvas>
+                    <!-- Summary Column (Right Side - Top: Chart, Bottom: Table) -->
+                    <div class="col-span-1 flex flex-col gap-2 md:gap-3 min-h-0">
+                        <!-- Summary Chart -->
+                        <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-2.5 md:p-3 flex flex-col min-h-0">
+                            <h3 class="text-sm md:text-base font-bold text-gray-700 mb-1 md:mb-2 text-center flex-none">Summary Chart / 总结图表</h3>
+                            <div class="relative flex-1 w-full h-full min-h-0">
+                                <canvas id="summaryChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Summary Data Table -->
+                        <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-2.5 md:p-3 flex flex-col min-h-0">
+                            <h3 class="text-sm md:text-base font-bold text-gray-700 mb-1 md:mb-2 text-center flex-none">Summary Data / 数据总结</h3>
+                            <div class="flex-1 w-full overflow-y-auto table-scrollbar min-h-0 border border-gray-200 rounded-md">
+                                <table class="w-full text-left border-collapse text-[11px] md:text-[13px]">
+                                    <thead class="sticky top-0 bg-gray-100 shadow-sm z-10 border-b border-gray-200">
+                                        <tr>
+                                            <th class="p-1.5 border-r border-gray-200 font-bold text-gray-700 text-center">Line</th>
+                                            <th class="p-1.5 border-r border-gray-200 font-bold text-blue-700 text-right">Plan</th>
+                                            <th class="p-1.5 border-r border-gray-200 font-bold text-green-700 text-right">Actual</th>
+                                            <th class="p-1.5 font-bold text-purple-700 text-right">Rate %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="summaryTableBody" class="text-gray-800 bg-white">
+                                        <!-- Rows injected by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -641,6 +669,52 @@
                         }
                     }
                 });
+            }
+
+            // Populate Summary Data Table
+            const tableBody = document.getElementById('summaryTableBody');
+            if (activeLines.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-3 text-gray-500 italic">No data available / 无数据</td></tr>';
+            } else {
+                let rowsHtml = '';
+                activeLines.forEach((line, index) => {
+                    let p = summaryPlan[index];
+                    let a = summaryActual[index];
+                    let r = summaryRate[index];
+                    
+                    let rColorClass = "text-red-500 font-semibold";
+                    if (r >= 100) rColorClass = "text-green-600 font-bold";
+                    else if (r >= 80) rColorClass = "text-blue-600 font-semibold";
+                    
+                    rowsHtml += `
+                        <tr class="hover:bg-gray-50 transition-colors border-b border-gray-100">
+                            <td class="p-1.5 md:p-2 font-semibold text-gray-700 text-center border-r border-gray-200">${line}</td>
+                            <td class="p-1.5 md:p-2 text-blue-700 text-right border-r border-gray-200">${p.toLocaleString()}</td>
+                            <td class="p-1.5 md:p-2 text-green-700 text-right border-r border-gray-200">${a.toLocaleString()}</td>
+                            <td class="p-1.5 md:p-2 ${rColorClass} text-right">${r}%</td>
+                        </tr>
+                    `;
+                });
+                
+                // Calculate Totals
+                let sumP = summaryPlan.reduce((acc, val) => acc + val, 0);
+                let sumA = summaryActual.reduce((acc, val) => acc + val, 0);
+                let sumR = sumP > 0 ? ((sumA / sumP) * 100).toFixed(1) : 0;
+                
+                let sumRColorClass = "text-red-500 font-bold";
+                if(sumR >= 100) sumRColorClass = "text-green-600 font-bold";
+                else if(sumR >= 80) sumRColorClass = "text-blue-600 font-bold";
+
+                rowsHtml += `
+                    <tr class="bg-gray-100 font-bold sticky bottom-0 z-10 border-t border-gray-300">
+                        <td class="p-1.5 md:p-2 text-gray-800 text-center uppercase text-xs border-r border-gray-200">Total</td>
+                        <td class="p-1.5 md:p-2 text-blue-800 text-right border-r border-gray-200">${sumP.toLocaleString()}</td>
+                        <td class="p-1.5 md:p-2 text-green-800 text-right border-r border-gray-200">${sumA.toLocaleString()}</td>
+                        <td class="p-1.5 md:p-2 ${sumRColorClass} text-right">${sumR}%</td>
+                    </tr>
+                `;
+                
+                tableBody.innerHTML = rowsHtml;
             }
         }
 
