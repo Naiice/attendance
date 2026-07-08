@@ -83,12 +83,15 @@
                 <!-- Line Filter -->
                 <div class="flex items-center gap-1.5">
                     <label class="text-[11px] md:text-xs text-blue-100 whitespace-nowrap">Line / 线:</label>
-                    <div class="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded text-[11px] md:text-xs text-gray-800 shadow-sm">
+                    <div class="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded text-[11px] md:text-xs text-gray-800 shadow-sm flex-wrap">
                         <label class="flex items-center gap-0.5 cursor-pointer font-semibold text-blue-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="1#" class="line-cb w-3.5 h-3.5 accent-blue-600" checked> 1#</label>
                         <label class="flex items-center gap-0.5 cursor-pointer font-semibold text-green-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="2#" class="line-cb w-3.5 h-3.5 accent-green-600" checked> 2#</label>
                         <label class="flex items-center gap-0.5 cursor-pointer font-semibold text-purple-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="3#" class="line-cb w-3.5 h-3.5 accent-purple-600" checked> 3#</label>
                         <label class="flex items-center gap-0.5 cursor-pointer font-semibold text-orange-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="4#" class="line-cb w-3.5 h-3.5 accent-orange-600" checked> 4#</label>
                         <label class="flex items-center gap-0.5 cursor-pointer font-semibold text-red-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="5#" class="line-cb w-3.5 h-3.5 accent-red-600" checked> 5#</label>
+                        <label class="flex items-center gap-0.5 cursor-pointer font-semibold text-teal-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="6#" class="line-cb w-3.5 h-3.5 accent-teal-600" checked> 6#</label>
+                        <label class="flex items-center gap-0.5 cursor-pointer font-semibold text-pink-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="7#" class="line-cb w-3.5 h-3.5 accent-pink-600" checked> 7#</label>
+                        <label class="flex items-center gap-0.5 cursor-pointer font-semibold text-amber-700 hover:bg-gray-100 px-1 rounded transition"><input type="checkbox" value="8#" class="line-cb w-3.5 h-3.5 accent-amber-600" checked> 8#</label>
                     </div>
                 </div>
                 <button id="applyFilterBtn" class="bg-white text-blue-700 font-bold py-0.5 px-3 rounded text-[11px] md:text-xs hover:bg-blue-50 transition shadow">Apply</button>
@@ -293,7 +296,10 @@
             '2#': { plan: 'rgba(16, 185, 129, 0.4)', actual: 'rgba(16, 185, 129, 0.9)', border: 'rgb(5, 150, 105)' },
             '3#': { plan: 'rgba(168, 85, 247, 0.4)', actual: 'rgba(168, 85, 247, 0.9)', border: 'rgb(147, 51, 234)' },
             '4#': { plan: 'rgba(249, 115, 22, 0.4)', actual: 'rgba(249, 115, 22, 0.9)', border: 'rgb(234, 88, 12)' },
-            '5#': { plan: 'rgba(239, 68, 68, 0.4)', actual: 'rgba(239, 68, 68, 0.9)', border: 'rgb(220, 38, 38)' }
+            '5#': { plan: 'rgba(239, 68, 68, 0.4)', actual: 'rgba(239, 68, 68, 0.9)', border: 'rgb(220, 38, 38)' },
+            '6#': { plan: 'rgba(20, 184, 166, 0.4)', actual: 'rgba(20, 184, 166, 0.9)', border: 'rgb(13, 148, 136)' }, // Teal
+            '7#': { plan: 'rgba(236, 72, 153, 0.4)', actual: 'rgba(236, 72, 153, 0.9)', border: 'rgb(219, 39, 119)' }, // Pink
+            '8#': { plan: 'rgba(245, 158, 11, 0.4)', actual: 'rgba(245, 158, 11, 0.9)', border: 'rgb(217, 119, 6)' }    // Amber
         };
 
         const categoryColorMap = {
