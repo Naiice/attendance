@@ -1399,6 +1399,7 @@
 
             return (
                 <div id="dashboard-capture-area" className="bg-white rounded-[2.5rem] p-4 sm:p-6 lg:p-10 shadow-sm border border-slate-200 animate-in fade-in duration-500 relative w-full">
+                    {}
                     {isAnomaly && (
                         <div className="print-hidden bg-red-50 border border-red-200 p-4 rounded-2xl mb-8 flex items-start gap-4 shadow-sm animate-in slide-in-from-top-4">
                             <div className="bg-red-100 text-red-600 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-inner">
@@ -1543,6 +1544,7 @@
                         />
                     ) : (
                         <>
+                            {}
                             <div className="w-full overflow-x-auto pb-8 pt-4 px-4 -mx-4 hide-scrollbar">
                                 <div className="relative h-[380px] min-w-[900px] w-full flex items-center">
                                     <div className="absolute inset-y-0 left-1/4 w-[1px] bg-slate-300 z-0"></div>
@@ -1611,15 +1613,16 @@
 
                             <hr className="border-slate-800 mt-2 mb-6" />
 
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                                 {[
                                     { t: 'MANAGERS', keywords: ['manager', 'ผู้จัดการ', 'mgr'], border: 'border-[#bfdbfe]', text: 'text-[#1e3a8a]', icon: 'fa-star' },
                                     { t: 'SUPERVISORS', keywords: ['supervisor', 'ซุปเปอร์', 'sup'], border: 'border-[#e9d5ff]', text: 'text-[#581c87]', icon: 'fa-shield-halved' },
                                     { t: 'LEADERS', keywords: ['leader', 'หัวหน้า', 'lead'], border: 'border-[#6ee7b7]', text: 'text-[#064e3b]', icon: 'fa-medal' },
                                     { t: 'OFFICE', keywords: ['office', 'ออฟฟิศ', 'สำนักงาน'], border: 'border-[#86efac]', text: 'text-[#14532d]', icon: 'fa-briefcase' },
-                                    { t: 'COST', keywords: ['cost', 'คอส', 'ต้นทุน'], border: 'border-[#fecdd3]', text: 'text-[#881337]', icon: 'fa-calculator' }
+                                    { t: 'COST', keywords: ['cost', 'คอส', 'ต้นทุน'], border: 'border-[#fecdd3]', text: 'text-[#881337]', icon: 'fa-calculator' },
+                                    { t: 'INTERN / TRANSLATOR', keywords: ['intern', 'translator', 'ล่าม', 'นักศึกษา', 'ฝึกงาน'], border: 'border-[#fde68a]', text: 'text-[#92400e]', icon: 'fa-language' }
                                 ].map(g => {
-                                    const baseEmps = ['MANAGERS', 'OFFICE', 'COST'].includes(g.t) ? dynamicEmployees : filtered;
+                                    const baseEmps = ['MANAGERS', 'OFFICE', 'COST', 'INTERN / TRANSLATOR'].includes(g.t) ? dynamicEmployees : filtered;
                                     const matchedEmps = baseEmps.filter(e => {
                                         const grp = String(e.group || '').toLowerCase();
                                         const rol = String(e.role || '').toLowerCase();
