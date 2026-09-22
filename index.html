@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ระบบบันทึกเวลาเข้างาน</title>
-  <!-- ใช้ Relative Path รองรับ GitHub Pages -->
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <!-- ✨ แก้ไขเส้นทางไฟล์ตรงนี้เอา js/ ออก -->
   <script src="./api-config.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,7 +22,6 @@
       overflow-x: hidden;
     }
 
-    /* Ambient orbs */
     body::before, body::after {
       content: '';
       position: fixed;
@@ -45,14 +42,56 @@
     .api-warning {
       background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);
       color: #fca5a5; padding: 10px 20px; border-radius: 12px;
-      margin-bottom: 24px; font-size: 0.85em; display: none; z-index: 1; position: relative;
+      margin-bottom: 24px; font-size: 0.9em; display: none; z-index: 1; position: relative; text-align: center;
     }
-    .api-warning a { color: #fbbf24; text-decoration: underline; margin-left: 5px; }
 
     .menu-cards {
       display: flex; flex-direction: column; gap: 16px; max-width: 350px; width: 100%; position: relative; z-index: 1;
     }
 
+    /* สไตล์สำหรับกล่องเมนูสแกนที่แยกตามไลน์ */
+    .scan-section {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+    }
+    .scan-header { display: flex; align-items: center; margin-bottom: 16px; }
+    .scan-header .card-icon {
+      width: 50px; height: 50px; border-radius: 16px;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 24px; margin-right: 16px; flex-shrink: 0;
+      background: rgba(16, 185, 129, 0.2); color: #34d399;
+    }
+    .line-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .line-btn {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+      padding: 12px;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1.05em;
+      font-family: 'Sarabun', sans-serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .line-btn:hover {
+      background: #34d399; color: #0f0f23;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .line-btn:active { transform: translateY(0); }
+
+    /* สไตล์ปุ่มเมนูอื่นๆ (คงเดิม) */
     .btn-menu {
       display: flex; align-items: center; padding: 20px;
       background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
@@ -67,20 +106,17 @@
       font-size: 24px; margin-right: 16px; flex-shrink: 0;
     }
     
-    /* สีกำหนดแยกตามปุ่ม */
     .btn-register .card-icon { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
-    .btn-scan .card-icon { background: rgba(16, 185, 129, 0.2); color: #34d399; }
     .btn-config .card-icon { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
     .btn-dashboard .card-icon { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
     .btn-faresult .card-icon { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
-    .btn-fastock .card-icon { background: rgba(20, 184, 166, 0.2); color: #2dd4bf; } /* สี Teal สำหรับเมนู Stock */
+    .btn-fastock .card-icon { background: rgba(20, 184, 166, 0.2); color: #2dd4bf; }
 
     .card-text { flex-grow: 1; }
     .card-title { font-size: 1.1em; font-weight: 600; margin-bottom: 4px; }
     .card-desc { font-size: 0.8em; color: #94a3b8; }
     .card-arrow { font-size: 1.5em; color: #475569; }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
@@ -91,26 +127,36 @@
     <p class="subtitle">Face Recognition &amp; GPS Attendance</p>
   </div>
 
-  <div id="apiWarning" class="api-warning">
-    ⚠️ ยังไม่ได้ตั้งค่า API —
-    <a href="./config.html">ไปตั้งค่าก่อน</a>
-  </div>
+  <div id="apiWarning" class="api-warning"></div>
 
   <div class="menu-cards">
+
+    <!-- 🌟 โซนสแกนเข้างานที่แยกปุ่มตามไลน์ 🌟 -->
+    <div class="scan-section">
+      <div class="scan-header">
+        <div class="card-icon">📷</div>
+        <div class="card-text">
+          <div class="card-title">สแกนเข้างาน (เลือกไลน์)</div>
+          <div class="card-desc">คลิกที่หมายเลขไลน์เพื่อเปิดกล้อง</div>
+        </div>
+      </div>
+      
+      <div class="line-grid">
+        <button class="line-btn" onclick="scanForLine('1')">Line 1</button>
+        <button class="line-btn" onclick="scanForLine('2')">Line 2</button>
+        <button class="line-btn" onclick="scanForLine('5')">Line 5</button>
+        <button class="line-btn" onclick="scanForLine('6')">Line 6</button>
+        <button class="line-btn" onclick="scanForLine('8')">Line 8</button>
+        <button class="line-btn" onclick="scanForLine('11')">Line 11</button>
+      </div>
+    </div>
+
+    <!-- ปุ่มเมนูอื่นๆ ยังคงเดิม -->
     <a href="./register.html" class="btn-menu btn-register">
       <div class="card-icon">👤</div>
       <div class="card-text">
         <div class="card-title">ลงทะเบียนพนักงาน</div>
         <div class="card-desc">บันทึกข้อมูลใบหน้าใหม่</div>
-      </div>
-      <span class="card-arrow">›</span>
-    </a>
-
-    <a href="./scan.html" class="btn-menu btn-scan">
-      <div class="card-icon">📷</div>
-      <div class="card-text">
-        <div class="card-title">สแกนเข้างาน</div>
-        <div class="card-desc">ยืนยันตัวตนด้วยใบหน้า + GPS</div>
       </div>
       <span class="card-arrow">›</span>
     </a>
@@ -124,7 +170,6 @@
       <span class="card-arrow">›</span>
     </a>
 
-    <!-- ปุ่มลัดเข้า Dashboard -->
     <a href="./dashboard.html" class="btn-menu btn-dashboard">
       <div class="card-icon">📊</div>
       <div class="card-text">
@@ -134,7 +179,6 @@
       <span class="card-arrow">›</span>
     </a>
 
-    <!-- ปุ่ม Production Plan VS Result -->
     <a href="./faresult.html" class="btn-menu btn-faresult">
       <div class="card-icon">📈</div>
       <div class="card-text">
@@ -144,8 +188,7 @@
       <span class="card-arrow">›</span>
     </a>
 
-    <!-- ปุ่มใหม่ FA-Stock Management (เชื่อมโยงไปยังไฟล์ "FA Stock Management" บน GitHub) -->
-    <a href="./FA%20Stock%20Management" class="btn-menu btn-fastock">
+    <a href="./FA%20Stock%20Management.html" class="btn-menu btn-fastock">
       <div class="card-icon">📦</div>
       <div class="card-text">
         <div class="card-title">FA-Stock Management</div>
@@ -156,19 +199,42 @@
   </div>
 
   <script>
-    // ✨ แก้ไขเป็น URL ใหม่ที่เพิ่ง Deploy มา
-    const HARDCODED_API_URL = 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec';
-    
-    // ตั้งค่าลงใน LocalStorage ทันที เพื่อให้หน้าสแกน (scan.html) และลงทะเบียน (register.html) ใช้งานได้อัตโนมัติ
-    if (!localStorage.getItem('gasApiUrl') || localStorage.getItem('gasApiUrl') !== HARDCODED_API_URL) {
-        localStorage.setItem('gasApiUrl', HARDCODED_API_URL);
+    // ==========================================
+    // ฐานข้อมูล API ของแต่ละไลน์
+    // ==========================================
+    const apiUrls = {
+      '1': 'https://script.google.com/macros/s/AKfycbwt5uHBF2HoW1LB7aaRRx8Xg5NZXj7k1kIKzlzM8kbceN8jC5lb8kaImjPONP3UKPk4Vw/exec',
+      '2': 'https://script.google.com/macros/s/AKfycbyiRjUwktsisHwsnB7X1MiI7LeDlSF1Khu9xUALyHgmcuAsYLEDqYjs6i3wQdca5PQv6A/exec',
+      '5': 'https://script.google.com/macros/s/AKfycby_HBrzddTA-8gNpk9j2bSKAyWmUOeXanIQmPI_N-udlkS0ZcKXeoXickUhYlZZYgi96Q/exec',
+      '6': 'https://script.google.com/macros/s/AKfycbwQ_FetWsN1eCu2MFdMzIT-Ktco6JwBjInvOmYp4rfKmxfCtLET1eSJ5-irfOs1QvBelQ/exec',
+      '8': 'https://script.google.com/macros/s/AKfycbwL4qjY16sEcFlbXZymGNQHuFr2AKTPh58HMaomiwveT7HR_mWy6Zkf2KqiL3THLhHK/exec',
+      '11': 'https://script.google.com/macros/s/AKfycbx0bOHSGljg61fdtaquem3G7IxeV1_bCOB3T51Ejh4vNNPPd-X8Eu2IlyqPl4tjoq5IMA/exec'
+    };
+
+    // ฟังก์ชันทำงานเมื่อคลิกปุ่ม Line
+    function scanForLine(line) {
+      const apiUrl = apiUrls[line];
+      if(apiUrl) {
+        // 1. บันทึก URL ของไลน์นั้นลงในความจำเครื่อง
+        localStorage.setItem('gasApiUrl', apiUrl);
+        
+        // 2. เปลี่ยนหน้าไปยังสแกน (ไฟล์ scan.html ไม่ต้องแก้โค้ดเลย ระบบจะดึงค่าใหม่ไปใช้อัตโนมัติ)
+        window.location.href = './scan.html';
+      } else {
+        alert('เกิดข้อผิดพลาด: ไม่พบ API สำหรับไลน์นี้');
+      }
     }
 
+    // ตรวจสอบสถานะการเชื่อมต่อ (ให้คำแนะนำตอนเปิดใช้งานครั้งแรก)
     const savedUrl = localStorage.getItem('gasApiUrl');
+    const warningElement = document.getElementById('apiWarning');
     
-    // หากไม่มี URL (ซึ่งเป็นไปไม่ได้แล้วเพราะเราฝังไว้) ค่อยแสดงป้ายเตือน
     if (!savedUrl || savedUrl.trim() === '') {
-      document.getElementById('apiWarning').style.display = 'block';
+      warningElement.innerHTML = '💡 <b>กรุณากดเลือกปุ่ม Line ที่ต้องการสแกนด้านล่าง</b><br><span style="font-size:0.85em; opacity:0.9;">ระบบจะทำการเชื่อมต่อฐานข้อมูลให้โดยอัตโนมัติ</span>';
+      warningElement.style.display = 'block';
+      warningElement.style.backgroundColor = 'rgba(16, 185, 129, 0.15)';
+      warningElement.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      warningElement.style.color = '#34d399';
     }
   </script>
 </body>
