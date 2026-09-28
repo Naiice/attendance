@@ -93,6 +93,70 @@
         #root { position: relative; z-index: 1; }
         #root > div > main { background: transparent; }
         @media print { #digital-background { display: none !important; } }
+
+        /* Clean production workspace theme */
+        :root { --suite-ink: #14283f; --suite-blue: #2563eb; --suite-line: #e2e9f1; }
+        body { color: var(--suite-ink); }
+        #digital-globe { opacity: .65; }
+        #digital-background::after { opacity: .12; }
+        #root .suite-nav { display: grid; grid-template-columns: auto minmax(0,1fr); height: auto;
+            padding: 0; gap: 0; background: #12263e; border: 0; box-shadow: 0 4px 20px #14283f0d; }
+        .suite-brand { padding: 18px 28px; }
+        .suite-brand > div:first-child { background: #2c6bed; box-shadow: none; border-radius: 12px; }
+        .suite-brand h1 { color: #fff; font-size: 17px; font-style: normal; letter-spacing: -.3px; font-weight: 700; }
+        .suite-brand p { color: #a7bdd4; font-size: 9px; letter-spacing: 1.6px; margin-top: 7px; }
+        #root .suite-tabs { order: initial; width: 100%; min-width: 0; justify-content: flex-end; gap: 4px; padding: 12px 24px 12px 8px; }
+        .suite-tabs button { color: #bed0e2; border: 1px solid transparent; background: transparent; border-radius: 9px; box-shadow: none; min-height: 40px; }
+        .suite-tabs button:hover { background: #ffffff0d; color: white; }
+        .suite-tabs button[aria-current="page"] { background: #2563eb; color: #fff; border-color: #5185f0; box-shadow: 0 3px 10px #00000012; }
+        #root .suite-filters { grid-column: 1 / -1; width: 100%; min-width: 0; margin: 0;
+            padding: 12px 28px; background: #ffffffed; border: 0; border-bottom: 1px solid var(--suite-line); gap: 16px; }
+        .suite-filters > div { border: 0; background: #f0f4f8; border-radius: 10px; padding: 4px; }
+        .suite-filters button { min-height: 34px; font-size: 11px; color: #526780; border-radius: 7px; font-weight: 700; }
+        .suite-filters button[aria-pressed="true"] { background: #fff; color: #1d4ed8; box-shadow: 0 1px 5px #14283f18; }
+        .suite-filters > button:last-child { margin-left: auto; }
+        #root button:focus-visible, #root input:focus-visible, #root select:focus-visible {
+            outline: 3px solid #60a5fa; outline-offset: 3px; }
+        #root > div > main > .w-full { max-width: 1800px; }
+        #dashboard-capture-area { border-radius: 20px; border-color: var(--suite-line); box-shadow: 0 8px 32px #1e3a5f06; }
+        #dashboard-capture-area h2 { font-style: normal; font-weight: 700; letter-spacing: -.6px; }
+        #dashboard-capture-area > hr { border-color: var(--suite-line); }
+        #dashboard-capture-area > div:first-of-type + div button { transition: background-color .15s, box-shadow .15s; }
+        #root .suite-kpi { position: relative; border-radius: 14px; padding: 15px 20px; border-color: #e1e9f2;
+            background: linear-gradient(145deg,#fff,#f8fafd); box-shadow: 0 3px 10px #14283f04; gap: 14px; }
+        .suite-kpi > i { background: #edf4ff; padding: 11px; border-radius: 11px; font-size: 18px; }
+        .suite-kpi > div > p:first-child { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; color: #14283f; }
+        .suite-kpi > div > p:last-child { font-size: 10px; font-weight: 500; color: #62758c; margin-top: 7px; }
+        #root .suite-kpi:last-child { background: #eef7f5; border-color: #cfe7e0; }
+        .suite-kpi:last-child > i { background: #dff1eb; }
+        .map-card { border-radius: 16px; box-shadow: 0 4px 16px #14283f08; }
+        #root main > div > .bg-white { border-radius: 20px; border-color: var(--suite-line); }
+        #root main table thead { background: #f3f6fa; }
+        #root main table th { color: #526780; }
+        #root > div > footer { background: #ffffff80; border-color: var(--suite-line); padding: 18px 20px; }
+        #root > div > footer > div { color: #70839a; font-style: normal; letter-spacing: 1px; font-weight: 500; }
+        @media (max-width: 1199px) {
+            #root .suite-nav { grid-template-columns: minmax(0,1fr); }
+            .suite-brand { padding: 16px 20px 6px; }
+            #root .suite-tabs { justify-content: flex-start; padding: 10px 20px 14px; }
+            #root .suite-filters { padding: 10px 20px; }
+        }
+        @media (max-width: 639px) {
+            #root .suite-nav { position: relative; }
+            #root .suite-tabs { padding-left: 16px; padding-right: 16px; }
+            #root .suite-filters { gap: 10px; padding: 10px 16px; }
+            .suite-filters button { min-height: 36px; }
+            #root .suite-kpi { padding: 14px 10px; gap: 9px; }
+            .suite-kpi > div > p:first-child { font-size: 24px; }
+            #dashboard-capture-area { border-radius: 16px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #root *, #root *::before, #root *::after { animation: none !important; transition: none !important; }
+        }
+        @media print {
+            #root .suite-nav { display: none !important; }
+            #root .suite-kpi { background: white; box-shadow: none; }
+        }
     </style>
 </head>
 <body>
@@ -1439,7 +1503,7 @@
                                         WOR MAP / <span className="text-slate-500 font-bold">平面图</span>
                                     </h2>
                                     <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1 flex items-center gap-2 print-hidden">
-                                        SYNCING FROM SHEET: <span className="text-slate-400">ATTENDANCE</span>
+                                        ภาพรวมกำลังคน <span className="text-slate-400">/ WORKFORCE OVERVIEW</span>
                                     </p>
                                 </div>
                             </div>
@@ -1512,28 +1576,28 @@
                             })}
                         </div>
                         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 shrink-0 w-full xl:w-auto justify-start xl:justify-end">
-                            <div className="bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
+                            <div className="suite-kpi bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
                                 <i className="fa-solid fa-users text-[#3b82f6] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.total}</p>
                                     <p className="text-[9px] font-black text-slate-400 mt-1">ทั้งหมด <span className="font-bold">总数</span></p>
                                 </div>
                             </div>
-                            <div className="bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
+                            <div className="suite-kpi bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
                                 <i className="fa-solid fa-id-badge text-[#06b6d4] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.came}</p>
                                     <p className="text-[9px] font-black text-slate-400 mt-1">มาจริงรวมคนมาสาย <span className="font-bold">实到含迟到</span></p>
                                 </div>
                             </div>
-                            <div className="bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
+                            <div className="suite-kpi bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
                                 <i className="fa-solid fa-user-check text-[#10b981] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.normal}</p>
                                     <p className="text-[9px] font-black text-slate-400 mt-1">มาปกติก่อนเริ่มงาน <span className="font-bold">正常准时</span></p>
                                 </div>
                             </div>
-                            <div className="bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
+                            <div className="suite-kpi bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
                                 <i className="fa-solid fa-arrow-trend-up text-[#10b981] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.rate}%</p>
@@ -3470,8 +3534,8 @@
 
             return (
                 <div className="min-h-screen flex flex-col">
-                    <nav className="glass-nav border-b sticky top-0 z-50 flex flex-wrap xl:flex-nowrap items-center justify-between px-4 lg:px-6 py-3 xl:py-0 xl:h-16 gap-y-3 shadow-sm">
-                        <div className="flex items-center gap-3 shrink-0">
+                    <nav className="suite-nav glass-nav border-b sticky top-0 z-50 flex flex-wrap xl:flex-nowrap items-center justify-between px-4 lg:px-6 py-3 xl:py-0 xl:h-16 gap-y-3 shadow-sm">
+                        <div className="suite-brand flex items-center gap-3 shrink-0">
                             <div className="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100"><i className="fa-solid fa-industry text-base"></i></div>
                             <div>
                                 <h1 className="text-base font-black italic uppercase text-slate-800 tracking-tighter leading-none">Haier A01 Suite</h1>
@@ -3479,7 +3543,7 @@
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-start sm:justify-center gap-2 order-last xl:order-none w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0 hide-scrollbar shrink-0">
+                        <div className="suite-tabs flex items-center justify-start sm:justify-center gap-2 order-last xl:order-none w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0 hide-scrollbar shrink-0">
                             {[
                                 { id: 'dashboard', l: 'หน้าหลัก', zh: '首页', i: 'fa-chart-pie', act: () => setView('dashboard') },
                                 { id: 'attendance', l: 'เช็คเวลา', zh: '考勤', i: 'fa-user-check', act: () => setView('attendance') },
@@ -3488,7 +3552,7 @@
                                 { id: 'leave-stats', l: 'สถิติการลา', zh: '请假统计', i: 'fa-calendar-minus', act: () => setView('leave-stats') },
                                 { id: 'rba60', l: 'RBA 60', zh: '工时管控', i: 'fa-business-time', act: () => setView('rba60') }
                             ].map(t => (
-                                <button key={t.id} onClick={t.act} className={`whitespace-nowrap shrink-0 px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-[12px] font-bold flex items-center gap-2 transition-all border ${view===t.id ? 'bg-blue-50 text-blue-600 border-blue-100 shadow-sm' : 'text-slate-500 hover:bg-slate-50 border-transparent hover:border-slate-200'}`}>
+                                <button key={t.id} aria-current={view === t.id ? "page" : undefined} onClick={t.act} className={`whitespace-nowrap shrink-0 px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-[12px] font-bold flex items-center gap-2 transition-all border ${view===t.id ? 'bg-blue-50 text-blue-600 border-blue-100 shadow-sm' : 'text-slate-500 hover:bg-slate-50 border-transparent hover:border-slate-200'}`}>
                                     <i className={`fa-solid ${t.i}`}></i> 
                                     <span className="uppercase flex items-center gap-1.5">
                                         {t.l} <span className="text-[10px] font-medium opacity-70 hidden sm:inline-block">{t.zh}</span>
@@ -3497,17 +3561,17 @@
                             ))}
                         </div>
 
-                        <div className="flex items-center gap-2 sm:gap-3 xl:border-l xl:border-slate-200 xl:pl-6 shrink-0 ml-auto overflow-x-auto hide-scrollbar pb-1 xl:pb-0">
+                        <div className="suite-filters flex items-center gap-2 sm:gap-3 xl:border-l xl:border-slate-200 xl:pl-6 shrink-0 ml-auto overflow-x-auto hide-scrollbar pb-1 xl:pb-0">
                             <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200 shrink-0">
                                 {['Shift A', 'Shift B'].map(s => (
-                                    <button key={s} onClick={()=>setActiveShift(s)} className={`whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black transition-all ${activeShift===s?'bg-white text-blue-600 shadow-sm':'text-slate-400 hover:text-slate-600'}`}>
+                                    <button key={s} aria-pressed={activeShift === s} onClick={()=>setActiveShift(s)} className={`whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black transition-all ${activeShift===s?'bg-white text-blue-600 shadow-sm':'text-slate-400 hover:text-slate-600'}`}>
                                         {s}
                                     </button>
                                 ))}
                             </div>
                             <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
                                 {['ALL', 'LINE 1', 'LINE 2', 'LINE 3', 'LINE 4', 'LINE 5', 'LINE 6', 'LINE 7', 'LINE 8', 'LINE 11'].map(l => (
-                                    <button key={l} onClick={()=>setSelectedLine(l)} className={`whitespace-nowrap px-2 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedLine===l?'bg-white text-blue-600 shadow-sm':'text-slate-400 hover:text-slate-600'}`}>{l}</button>
+                                    <button key={l} aria-pressed={selectedLine === l} onClick={()=>setSelectedLine(l)} className={`whitespace-nowrap px-2 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedLine===l?'bg-white text-blue-600 shadow-sm':'text-slate-400 hover:text-slate-600'}`}>{l}</button>
                                 ))}
                             </div>
                             {view !== 'ot' && (
