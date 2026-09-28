@@ -82,9 +82,21 @@
             .map-card, .bg-white { border: 1px solid #e2e8f0 !important; }
             @page { size: landscape; margin: 10mm; }
         }
+
+        /* Ambient digital globe: decorative layer behind all application content. */
+        body { background: #edf4fb; }
+        #digital-background { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+            background: radial-gradient(ellipse at 90% 35%, #dbeafe 0%, transparent 60%), linear-gradient(135deg, #f8fafc, #edf5fb); }
+        #digital-background::after { content: ''; position: absolute; inset: 0; opacity: .25;
+            background-image: linear-gradient(#93b5d322 1px, transparent 1px), linear-gradient(90deg, #93b5d322 1px, transparent 1px); background-size: 56px 56px; }
+        #digital-globe { width: 100%; height: 100%; display: block; }
+        #root { position: relative; z-index: 1; }
+        #root > div > main { background: transparent; }
+        @media print { #digital-background { display: none !important; } }
     </style>
 </head>
 <body>
+    <div id="digital-background" aria-hidden="true"><canvas id="digital-globe"></canvas></div>
     <div id="root"></div>
 
     <script type="text/babel">
@@ -3560,6 +3572,87 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<MainApp />);
+    </script>
+
+    <script>
+    (() => {
+        const canvas = document.getElementById('digital-globe');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let width = 0, height = 0, frame = 0, angle = 0, lastTime = 0;
+        const TAU = Math.PI * 2;
+        function project(lat, lon, radius, cx, cy) {
+            const x = Math.cos(lat) * Math.sin(lon + angle);
+            const y = Math.sin(lat);
+            const z = Math.cos(lat) * Math.cos(lon + angle);
+            const tilt = -.24;
+            return { x: cx + radius * (x * Math.cos(tilt) - y * Math.sin(tilt)),
+                y: cy + radius * (x * Math.sin(tilt) + y * Math.cos(tilt)), z };
+        }
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            const radius = Math.min(width < 640 ? width * .65 : width * .29, height * .48);
+            const cx = width * (width < 640 ? .9 : .84), cy = height * .48;
+            const glow = ctx.createRadialGradient(cx, cy, radius * .1, cx, cy, radius * 1.4);
+            glow.addColorStop(0, 'rgba(59,130,246,.07)'); glow.addColorStop(1, 'rgba(59,130,246,0)');
+            ctx.fillStyle = glow; ctx.fillRect(0, 0, width, height);
+            function curve(points) {
+                for (let i = 1; i < points.length; i++) {
+                    const a = points[i - 1], b = points[i];
+                    ctx.strokeStyle = `rgba(30,110,185,${(a.z + b.z) / 2 > 0 ? .19 : .045})`;
+                    ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+                }
+            }
+            for (let lat = -75; lat <= 75; lat += 15) {
+                const points = [];
+                for (let step = 0; step <= 72; step++) points.push(project(lat * Math.PI / 180, step / 72 * TAU, radius, cx, cy));
+                curve(points);
+            }
+            for (let lon = 0; lon < 180; lon += 15) {
+                const points = [];
+                for (let step = 0; step <= 72; step++) points.push(project(step / 72 * TAU, lon * Math.PI / 180, radius, cx, cy));
+                curve(points);
+            }
+            for (let i = 0; i < 66; i++) {
+                const lat = Math.asin(1 - 2 * (i + .5) / 66), lon = i * 2.39996;
+                const p = project(lat,lon,radius,cx,cy);
+                if (p.z < 0) continue;
+                ctx.fillStyle = `rgba(14,145,200,${.2 + p.z * .3})`;
+                ctx.beginPath(); ctx.arc(p.x,p.y,1.8,0,TAU); ctx.fill();
+            }
+            for (let orbit = 0; orbit < 2; orbit++) {
+                ctx.save(); ctx.translate(cx,cy); ctx.rotate(-.4 + orbit * .85);
+                ctx.strokeStyle = 'rgba(14,165,200,.16)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.ellipse(0,0,radius * 1.22,radius * .42,0,0,TAU); ctx.stroke();
+                const phase = angle * (orbit ? -2 : 2) + orbit * 2;
+                ctx.fillStyle = 'rgba(14,145,200,.5)'; ctx.beginPath();
+                ctx.arc(Math.cos(phase)*radius*1.22,Math.sin(phase)*radius*.42,3,0,TAU);ctx.fill();ctx.restore();
+            }
+        }
+        function tick(time) {
+            if (document.hidden || reduceMotion.matches) { frame = 0; return; }
+            if (time - lastTime >= 40) {
+                angle += Math.min(time - lastTime, 100) * .00007;
+                lastTime = time; draw();
+            }
+            frame = requestAnimationFrame(tick);
+        }
+        function resume() {
+            cancelAnimationFrame(frame); frame = 0; lastTime = performance.now(); draw();
+            if (!document.hidden && !reduceMotion.matches) frame = requestAnimationFrame(tick);
+        }
+        function resize() {
+            width = window.innerWidth; height = window.innerHeight;
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr,0,0,dpr,0,0); draw();
+        }
+        window.addEventListener('resize',resize);
+        document.addEventListener('visibilitychange',resume);
+        reduceMotion.addEventListener('change',resume);
+        resize(); resume();
+    })();
     </script>
 </body>
 </html>
