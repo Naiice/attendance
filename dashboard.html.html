@@ -192,13 +192,63 @@
             .haier-companion img, .haier-companion .mascot-shadow { animation: none; }
         }
         @media print { .haier-companion { display: none !important; } }
-    </style>
+    
+        #root .suite-nav { grid-template-columns: auto minmax(0,1fr) auto; }
+        #root .suite-tabs { grid-column: 2; grid-row: 1; }
+        #root .suite-filters { grid-column: 1 / -1; }
+        .suite-language { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: 3px; padding: 10px 16px 10px 0; }
+        .suite-language button { color: #c7d8ea; border: 1px solid #ffffff20; background: transparent; border-radius: 7px;
+            padding: 7px 9px; min-height: 36px; font-size: 12px; white-space: nowrap; cursor: pointer; line-height: 1.6; }
+        .suite-language button[aria-pressed="true"] { color: #10283f; background: #fff; border-color: #fff; }
+        .suite-language button:hover { border-color: #9fc5f5; }
+        html[lang="my"] body { font-family: 'Noto Sans Myanmar','Myanmar Text',Sarabun,sans-serif; line-height: 1.8; }
+        html[lang="my"] #root button, html[lang="my"] #root th { line-height: 1.8; }
+        html[lang="my"] #root .tracking-widest { letter-spacing: normal; }
+        @media(max-width: 1535px) {
+            #root .suite-nav { grid-template-columns: minmax(0,1fr) auto; }
+            .suite-language { grid-column: 2; }
+            #root .suite-tabs { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; padding-left: 20px; }
+        }
+        @media(max-width: 639px) {
+            .suite-brand { padding: 12px 16px 4px; }
+            .suite-language { grid-column: 1 / -1; grid-row: 2; padding: 8px 16px; }
+            #root .suite-tabs { grid-row: 3; }
+        }
+</style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap">
 </head>
 <body>
     <div id="digital-background" aria-hidden="true"><canvas id="digital-globe"></canvas></div>
     <div id="root"></div>
 
-    <script type="text/babel">
+    
+    <script>
+    window.HaierI18n = (() => {
+        const messages = {"หน้าหลัก":{"th":"หน้าหลัก","en":"Overview","zh":"首页","my":"ပင်မစာမျက်နှာ"},"เช็คเวลา":{"th":"เช็คเวลา","en":"Attendance","zh":"考勤","my":"အလုပ်တက်ချိန်"},"บันทึก OT":{"th":"บันทึก OT","en":"Record OT","zh":"加班记录","my":"အချိန်ပိုမှတ်တမ်း"},"สถิติการลา":{"th":"สถิติการลา","en":"Leave statistics","zh":"请假统计","my":"ခွင့်စာရင်း"},"Production Management":{"th":"Production Management","en":"Production Management","zh":"生产管理","my":"ထုတ်လုပ်မှုစီမံခန့်ခွဲရေး"},"Skill:":{"th":"Skill:","en":"Skill:","zh":"技能：","my":"ကျွမ်းကျင်မှု -"},"มีข้อมูลในชีต":{"th":"มีข้อมูลในชีต","en":"Data available","zh":"有数据","my":"အချက်အလက်ရှိသည်"},"วันนี้":{"th":"วันนี้","en":"Today","zh":"今天","my":"ယနေ့"},"มีพนักงานลาออกรวม":{"th":"มีพนักงานลาออกรวม","en":"Total resignations:","zh":"离职总人数：","my":"အလုပ်ထွက်စုစုပေါင်း -"},"คน":{"th":"คน","en":"people","zh":"人","my":"ဦး"},"ในช่วง 7 วันที่ผ่านมา":{"th":"ในช่วง 7 วันที่ผ่านมา","en":"Over the past 7 days","zh":"过去7天内","my":"လွန်ခဲ့သော ၇ ရက်အတွင်း"},"วิเคราะห์ข้อมูล":{"th":"วิเคราะห์ข้อมูล","en":"Analysis","zh":"数据分析","my":"အချက်အလက်သုံးသပ်ချက်"},"เลือกดูสถิติแยกตามไลน์การผลิต":{"th":"เลือกดูสถิติแยกตามไลน์การผลิต","en":"View statistics by line","zh":"按产线查看统计","my":"လိုင်းအလိုက်စာရင်းကြည့်ရန်"},"สัดส่วนสถานะการทำงาน":{"th":"สัดส่วนสถานะการทำงาน","en":"Attendance status breakdown","zh":"考勤状态占比","my":"အလုပ်တက်အခြေအနေအချိုးအစား"},"พนักงานทั้งหมด":{"th":"พนักงานทั้งหมด","en":"All employees","zh":"全部员工","my":"ဝန်ထမ်းအားလုံး"},"สรุปข้อมูล":{"th":"สรุปข้อมูล","en":"Summary","zh":"汇总","my":"အကျဉ်းချုပ်"},"พนักงานส่วนใหญ่มีสถานะ":{"th":"พนักงานส่วนใหญ่มีสถานะ","en":"Most employees are","zh":"大多数员工状态为","my":"ဝန်ထမ်းအများစု၏အခြေအနေ"},"นำเป็นอันดับหนึ่ง จำนวน":{"th":"นำเป็นอันดับหนึ่ง จำนวน","en":"Ranked first, with","zh":"排名第一，共","my":"ပထမအများဆုံး၊ အရေအတွက်"},"คน (":{"th":"คน (","en":"people (","zh":"人（","my":"ဦး ("},"ตามมาด้วยสถานะ":{"th":"ตามมาด้วยสถานะ","en":"Followed by","zh":"其次为","my":"ထို့နောက်"},"จำนวน":{"th":"จำนวน","en":"Count","zh":"数量","my":"အရေအတွက်"},"อัตราเข้างานแต่ละไลน์":{"th":"อัตราเข้างานแต่ละไลน์","en":"Attendance rate by line","zh":"各产线出勤率","my":"လိုင်းအလိုက်အလုပ်တက်နှုန်း"},"สรุปข้อมูลการเข้างาน":{"th":"สรุปข้อมูลการเข้างาน","en":"Attendance summary","zh":"考勤汇总","my":"အလုပ်တက်အကျဉ်းချုပ်"},"ไลน์ที่มีอัตราการมาทำงาน":{"th":"ไลน์ที่มีอัตราการมาทำงาน","en":"Line with attendance rate","zh":"出勤率对应产线","my":"အလုပ်တက်နှုန်းရှိသောလိုင်း"},"สูงสุด":{"th":"สูงสุด","en":"Highest","zh":"最高","my":"အမြင့်ဆုံး"},"คือ":{"th":"คือ","en":"is","zh":"为","my":"ဖြစ်သည်"},"%) และ":{"th":"%) และ","en":"%) and","zh":"%）及","my":"%) နှင့်"},"ต่ำสุด":{"th":"ต่ำสุด","en":"Lowest","zh":"最低","my":"အနိမ့်ဆုံး"},"สรุปสถานะแยกตามจุดการผลิต":{"th":"สรุปสถานะแยกตามจุดการผลิต","en":"Status by production section","zh":"各生产区域状态","my":"ထုတ်လုပ်မှုနေရာအလိုက်အခြေအနေ"},"ทั้งหมด":{"th":"ทั้งหมด","en":"Total","zh":"总数","my":"စုစုပေါင်း"},"อัตราเข้างาน":{"th":"อัตราเข้างาน","en":"Attendance rate","zh":"出勤率","my":"အလုပ်တက်နှုန်း"},"มา/สาย":{"th":"มา/สาย","en":"Present / Late","zh":"出勤 / 迟到","my":"အလုပ်တက် / နောက်ကျ"},"ลา":{"th":"ลา","en":"Leave","zh":"请假","my":"ခွင့်"},"ขาดงาน":{"th":"ขาดงาน","en":"Absent","zh":"旷工","my":"ပျက်ကွက်"},"แนวโน้ม 7 วันย้อนหลัง":{"th":"แนวโน้ม 7 วันย้อนหลัง","en":"Past 7-day trend","zh":"最近7天趋势","my":"လွန်ခဲ့သော ၇ ရက် လမ်းကြောင်း"},"อัตราการมาทำงาน (%) อ้างอิงเฉพาะกะ":{"th":"อัตราการมาทำงาน (%) อ้างอิงเฉพาะกะ","en":"Attendance rate (%) for shift","zh":"所选班次出勤率（%）","my":"ရွေးထားသောဆိုင်း အလုပ်တက်နှုန်း (%)"},"ไลน์":{"th":"ไลน์","en":"Line","zh":"产线","my":"လိုင်း"},"สรุปแนวโน้ม":{"th":"สรุปแนวโน้ม","en":"Trend summary","zh":"趋势汇总","my":"လမ်းကြောင်းအကျဉ်းချုပ်"},"อัตราเฉลี่ย 7 วันล่าสุดอยู่ที่":{"th":"อัตราเฉลี่ย 7 วันล่าสุดอยู่ที่","en":"Last 7-day average:","zh":"最近7天平均值：","my":"လွန်ခဲ့သော ၇ ရက်ပျမ်းမျှ -"},"โดยวันนี้มีแนวโน้ม":{"th":"โดยวันนี้มีแนวโน้ม","en":"Today's trend:","zh":"今日趋势：","my":"ယနေ့လမ်းကြောင်း -"},"แนวโน้มคนลาออก":{"th":"แนวโน้มคนลาออก","en":"Resignation trend","zh":"离职趋势","my":"အလုပ်ထွက်လမ်းကြောင်း"},"จำนวน (คน) อ้างอิงเฉพาะกะ":{"th":"จำนวน (คน) อ้างอิงเฉพาะกะ","en":"Headcount for shift","zh":"所选班次人数","my":"ဆိုင်းအလိုက်ဝန်ထမ်းအရေအတွက်"},"สรุปข้อมูลลาออก":{"th":"สรุปข้อมูลลาออก","en":"Resignation summary","zh":"离职汇总","my":"အလုပ်ထွက်အကျဉ်းချုပ်"},"ติดตามชั่วโมงการทำงาน (7 วัน) อ้างอิงเฉพาะ":{"th":"ติดตามชั่วโมงการทำงาน (7 วัน) อ้างอิงเฉพาะ","en":"Track work hours (7 days) for","zh":"跟踪7天工时，条件为","my":"၇ ရက်အလုပ်ချိန်စောင့်ကြည့်ရန်"},"และ":{"th":"และ","en":"and","zh":"及","my":"နှင့်"},"ช่วงวันที่:":{"th":"ช่วงวันที่:","en":"Date range:","zh":"日期范围：","my":"ရက်စွဲအပိုင်းအခြား -"},"Export CSV":{"th":"Export CSV","en":"Export CSV","zh":"导出 CSV","my":"CSV ထုတ်ယူရန်"},"รูป":{"th":"รูป","en":"Photo","zh":"照片","my":"ဓာတ်ပုံ"},"รหัส":{"th":"รหัส","en":"ID","zh":"工号","my":"ဝန်ထမ်းအမှတ်"},"ชื่อ-นามสกุล":{"th":"ชื่อ-นามสกุล","en":"Full name","zh":"姓名","my":"အမည်"},"ตำแหน่ง/กลุ่ม":{"th":"ตำแหน่ง/กลุ่ม","en":"Position / Group","zh":"岗位 / 班组","my":"တာဝန် / အဖွဲ့"},"เวลาปกติ (ชม.)":{"th":"เวลาปกติ (ชม.)","en":"Regular hours","zh":"正常工时","my":"ပုံမှန်အလုပ်ချိန်"},"โอที (ชม.)":{"th":"โอที (ชม.)","en":"OT hours","zh":"加班小时","my":"အချိန်ပိုနာရီ"},"รวมเวลาทำงาน":{"th":"รวมเวลาทำงาน","en":"Total work hours","zh":"总工时","my":"စုစုပေါင်းအလုပ်ချိန်"},"ชม.":{"th":"ชม.","en":"hrs","zh":"小时","my":"နာရီ"},"ไม่พบข้อมูลพนักงานสำหรับช่วงเวลานี้":{"th":"ไม่พบข้อมูลพนักงานสำหรับช่วงเวลานี้","en":"No employee data for this period","zh":"此期间无员工数据","my":"ဤကာလအတွက် ဝန်ထမ်းအချက်အလက်မရှိ"},"แจ้งเตือน: อัตราการขาด/ลางานสูงผิดปกติ":{"th":"แจ้งเตือน: อัตราการขาด/ลางานสูงผิดปกติ","en":"Alert: unusually high absence / leave","zh":"警告：缺勤 / 请假率异常高","my":"သတိပေးချက် - ပျက်ကွက် / ခွင့်နှုန်းများနေသည်"},"พบพนักงานขาดและลางานจำนวน":{"th":"พบพนักงานขาดและลางานจำนวน","en":"Absent / on-leave employees:","zh":"缺勤及请假人数：","my":"ပျက်ကွက် / ခွင့်ယူဝန်ထမ်း -"},"(คิดเป็น":{"th":"(คิดเป็น","en":"(representing","zh":"（占比","my":"(ရာခိုင်နှုန်း"},"% ของพนักงานในกะ/ไลน์นี้) ซึ่งเกินเกณฑ์เฝ้าระวัง 10% อาจส่งผลกระทบต่อเป้าหมายการผลิต":{"th":"% ของพนักงานในกะ/ไลน์นี้) ซึ่งเกินเกณฑ์เฝ้าระวัง 10% อาจส่งผลกระทบต่อเป้าหมายการผลิต","en":"% of this shift / line), above the 10% threshold; production targets may be affected.","zh":"%），超过10%的预警标准，可能影响生产目标。","my":"% သည် ဤဆိုင်း / လိုင်း၏ ၁၀% သတ်မှတ်ချက်ထက်ကျော်၍ ထုတ်လုပ်မှုပန်းတိုင်ကို ထိခိုက်နိုင်သည်။"},"WOR MAP /":{"th":"WOR MAP /","en":"Workforce map","zh":"人员分布图","my":"ဝန်ထမ်းနေရာပြမြေပုံ"},"ภาพรวมกำลังคน":{"th":"ภาพรวมกำลังคน","en":"Workforce overview","zh":"人员概况","my":"ဝန်ထမ်းအင်အားခြုံငုံသုံးသပ်ချက်"},"/ WORKFORCE OVERVIEW":{"th":"/ WORKFORCE OVERVIEW","en":"","zh":"","my":""},"ประจำวันที่:":{"th":"ประจำวันที่:","en":"Date:","zh":"日期：","my":"ရက်စွဲ -"},"ข้อมูล:":{"th":"ข้อมูล:","en":"Data:","zh":"数据：","my":"အချက်အလက် -"},"เฝ้าระวัง - 预警":{"th":"เฝ้าระวัง - 预警","en":"Watchlist","zh":"预警","my":"စောင့်ကြည့်စာရင်း"},"คนมาทำงาน - 出勤":{"th":"คนมาทำงาน - 出勤","en":"Present employees","zh":"出勤人员","my":"အလုပ်တက်သူများ"},"ดูผู้ขาด/ลา - 缺勤/请假":{"th":"ดูผู้ขาด/ลา - 缺勤/请假","en":"Absent / On leave","zh":"缺勤 / 请假","my":"ပျက်ကွက် / ခွင့်ယူသူများ"},"มาจริงรวมคนมาสาย":{"th":"มาจริงรวมคนมาสาย","en":"Present, including late","zh":"实到含迟到","my":"နောက်ကျသူအပါအဝင် အလုပ်တက်သူ"},"มาปกติก่อนเริ่มงาน":{"th":"มาปกติก่อนเริ่มงาน","en":"Arrived on time","zh":"准时到岗","my":"အချိန်မီရောက်ရှိ"},"มาทำงาน %":{"th":"มาทำงาน %","en":"Attendance %","zh":"出勤率 %","my":"အလုပ်တက်နှုန်း %"},"เฝ้าระวัง: รายชื่อที่ขาด/ลางานเกิน 3 วัน (ในรอบ 7 วัน)":{"th":"เฝ้าระวัง: รายชื่อที่ขาด/ลางานเกิน 3 วัน (ในรอบ 7 วัน)","en":"Watchlist: absence / leave over 3 days in 7","zh":"预警：7天内缺勤 / 请假超过3天","my":"စောင့်ကြည့်စာရင်း - ၇ ရက်အတွင်း ၃ ရက်ကျော် ပျက်ကွက် / ခွင့်"},"พบกลุ่มเสี่ยงทั้งหมด":{"th":"พบกลุ่มเสี่ยงทั้งหมด","en":"Employees on watchlist:","zh":"预警人数：","my":"စောင့်ကြည့်စာရင်းဝင် -"},"* นับเฉพาะพนักงานที่มีสถานะ ขาดงาน, ลาป่วย, ลากิจ, ลาพักร้อน หรือ ลาอื่นๆ":{"th":"* นับเฉพาะพนักงานที่มีสถานะ ขาดงาน, ลาป่วย, ลากิจ, ลาพักร้อน หรือ ลาอื่นๆ","en":"* Counts absence, sick, personal, annual and other leave only","zh":"* 仅统计旷工、病假、事假、年假及其他假","my":"* ပျက်ကွက်၊ ဆေးခွင့်၊ ကိုယ်ရေးကိုယ်တာခွင့်၊ နှစ်ပတ်လည်နှင့် အခြားခွင့်သာ ရေတွက်သည်"},"รหัสพนักงาน":{"th":"รหัสพนักงาน","en":"Employee ID","zh":"工号","my":"ဝန်ထမ်းအမှတ်"},"สายการผลิต / กลุ่ม":{"th":"สายการผลิต / กลุ่ม","en":"Production line / Group","zh":"产线 / 班组","my":"ထုတ်လုပ်မှုလိုင်း / အဖွဲ့"},"รวมวันหยุด (ใน 7 วัน)":{"th":"รวมวันหยุด (ใน 7 วัน)","en":"Days off (7 days)","zh":"休息天数（7天）","my":"နားရက် (၇ ရက်အတွင်း)"},"วัน":{"th":"วัน","en":"days","zh":"天","my":"ရက်"},"ไม่มีพนักงานที่หยุดงานเกิน 3 วันในช่วง 7 วันนี้":{"th":"ไม่มีพนักงานที่หยุดงานเกิน 3 วันในช่วง 7 วันนี้","en":"No employees off for over 3 days in this 7-day period","zh":"这7天内无人休假超过3天","my":"၇ ရက်အတွင်း ၃ ရက်ကျော်နားသူမရှိ"},"จัดการรายชื่อพนักงานที่ไม่ได้มาทำงาน - 缺勤/请假管理":{"th":"จัดการรายชื่อพนักงานที่ไม่ได้มาทำงาน - 缺勤/请假管理","en":"Manage absent / leave list","zh":"缺勤 / 请假管理","my":"ပျက်ကွက် / ခွင့်စာရင်း စီမံရန်"},"รวมทั้งหมด":{"th":"รวมทั้งหมด","en":"Total","zh":"合计","my":"စုစုပေါင်း"},"สถานะเดิม":{"th":"สถานะเดิม","en":"Current status","zh":"原状态","my":"လက်ရှိအခြေအနေ"},"เปลี่ยนสถานะใหม่":{"th":"เปลี่ยนสถานะใหม่","en":"New status","zh":"新状态","my":"အခြေအနေအသစ်"},"มาครบทุกคน ไม่มีผู้ขาด/ลางาน":{"th":"มาครบทุกคน ไม่มีผู้ขาด/ลางาน","en":"Everyone is present","zh":"全员出勤，无缺勤 / 请假","my":"အားလုံးအလုပ်တက်သည်"},"เลือกเพื่ออัปเดต":{"th":"เลือกเพื่ออัปเดต","en":"Select to update","zh":"选择以更新","my":"ပြင်ဆင်ရန်ရွေးပါ"},"รายการ":{"th":"รายการ","en":"items","zh":"项","my":"ခု"},"บันทึกสถานะลง Google Sheets":{"th":"บันทึกสถานะลง Google Sheets","en":"Save status to Google Sheets","zh":"保存状态到 Google Sheets","my":"Google Sheets သို့ အခြေအနေသိမ်းရန်"},"รายชื่อพนักงานที่มาทำงาน - 出勤管理":{"th":"รายชื่อพนักงานที่มาทำงาน - 出勤管理","en":"Present employee list","zh":"出勤人员名单","my":"အလုပ်တက်သူစာရင်း"},"ไม่มีพนักงานมาทำงานในข้อมูลที่เลือก":{"th":"ไม่มีพนักงานมาทำงานในข้อมูลที่เลือก","en":"No present employees for this selection","zh":"所选条件下无出勤人员","my":"ရွေးထားသောအချက်အလက်တွင် အလုပ်တက်သူမရှိ"},"ตรวจสอบเวลาการมาทำงาน":{"th":"ตรวจสอบเวลาการมาทำงาน","en":"Check attendance","zh":"查询考勤","my":"အလုပ်တက်ချိန်စစ်ဆေးရန်"},"รอบตัดเงินเดือน วันที่ 21 ถึง วันที่ 20 ของเดือนถัดไป":{"th":"รอบตัดเงินเดือน วันที่ 21 ถึง วันที่ 20 ของเดือนถัดไป","en":"Payroll period: 21st to 20th of next month","zh":"工资周期：每月21日至次月20日","my":"လစာကာလ - ၂၁ ရက်မှ နောက်လ ၂၀ ရက်အထိ"},"ค้นหา":{"th":"ค้นหา","en":"Search","zh":"查询","my":"ရှာဖွေရန်"},"ลาออกเมื่อ":{"th":"ลาออกเมื่อ","en":"Resigned on","zh":"离职日期","my":"အလုပ်ထွက်ရက်"},"เลือกรอบเงินเดือน":{"th":"เลือกรอบเงินเดือน","en":"Select payroll period","zh":"选择工资周期","my":"လစာကာလရွေးရန်"},"มาทำงานปกติ":{"th":"มาทำงานปกติ","en":"On-time attendance","zh":"正常出勤","my":"ပုံမှန်အလုပ်တက်"},"มาสาย":{"th":"มาสาย","en":"Late","zh":"迟到","my":"နောက်ကျ"},"ลาหยุด/ลากิจ/ลาป่วย":{"th":"ลาหยุด/ลากิจ/ลาป่วย","en":"Leave / Personal / Sick","zh":"休假 / 事假 / 病假","my":"ခွင့် / ကိုယ်ရေးကိုယ်တာ / ဆေးခွင့်"},"ชั่วโมงโอทีรวม":{"th":"ชั่วโมงโอทีรวม","en":"Total OT hours","zh":"加班总小时","my":"စုစုပေါင်းအချိန်ပိုနာရီ"},"รายละเอียดการลงเวลาและโอที":{"th":"รายละเอียดการลงเวลาและโอที","en":"Attendance and overtime details","zh":"考勤及加班明细","my":"အလုပ်တက်ချိန်နှင့် အချိန်ပိုအသေးစိတ်"},"ทำกะเช้า":{"th":"ทำกะเช้า","en":"Day shift","zh":"白班","my":"နေ့ဆိုင်း"},"ทำกะดึก":{"th":"ทำกะดึก","en":"Night shift","zh":"夜班","my":"ညဆိုင်း"},"วันที่มีข้อมูล":{"th":"วันที่มีข้อมูล","en":"days with records","zh":"有记录天数","my":"မှတ်တမ်းရှိသောရက်"},"วันที่ (DATE)":{"th":"วันที่ (DATE)","en":"Date","zh":"日期","my":"ရက်စွဲ"},"สถานะ (STATUS)":{"th":"สถานะ (STATUS)","en":"Status","zh":"状态","my":"အခြေအနေ"},"กะ (SHIFT)":{"th":"กะ (SHIFT)","en":"Shift","zh":"班次","my":"အလုပ်ဆိုင်း"},"โอที (OT)":{"th":"โอที (OT)","en":"Overtime","zh":"加班","my":"အချိန်ပို"},"ไม่พบข้อมูลการลงเวลาในรอบนี้":{"th":"ไม่พบข้อมูลการลงเวลาในรอบนี้","en":"No attendance records in this period","zh":"本周期无考勤记录","my":"ဤကာလအတွက် အလုပ်တက်မှတ်တမ်းမရှိ"},"กรุณากรอกรหัสพนักงานเพื่อค้นหาข้อมูล":{"th":"กรุณากรอกรหัสพนักงานเพื่อค้นหาข้อมูล","en":"Enter an employee ID to search","zh":"请输入工号查询","my":"ရှာဖွေရန် ဝန်ထမ်းအမှတ်ထည့်ပါ"},"สถิติการลา (รายสัปดาห์)":{"th":"สถิติการลา (รายสัปดาห์)","en":"Weekly leave statistics","zh":"每周请假统计","my":"အပတ်စဉ်ခွင့်စာရင်း"},"ข้อมูล 7 วัน อ้างอิงเฉพาะ":{"th":"ข้อมูล 7 วัน อ้างอิงเฉพาะ","en":"7-day data for","zh":"7天数据，条件为","my":"၇ ရက်အချက်အလက်အတွက်"},"สิ้นสุดวันที่:":{"th":"สิ้นสุดวันที่:","en":"End date:","zh":"截止日期：","my":"နောက်ဆုံးရက် -"},"เปรียบเทียบยอดลารวมแต่ละไลน์":{"th":"เปรียบเทียบยอดลารวมแต่ละไลน์","en":"Total leave by line","zh":"各产线请假总数对比","my":"လိုင်းအလိုက်ခွင့်စုစုပေါင်း"},"ครั้ง":{"th":"ครั้ง","en":"times","zh":"次","my":"ကြိမ်"},"แนวโน้มยอดลารายวัน (":{"th":"แนวโน้มยอดลารายวัน (","en":"Daily leave trend (","zh":"每日请假趋势（","my":"နေ့စဉ်ခွင့်လမ်းကြောင်း ("},"วันที่คนลามากที่สุดคือ":{"th":"วันที่คนลามากที่สุดคือ","en":"Day with most leave:","zh":"请假人数最多的日期：","my":"ခွင့်အများဆုံးရက် -"},"(ลารวม":{"th":"(ลารวม","en":"(total leave:","zh":"（请假合计：","my":"(စုစုပေါင်းခွင့် -"},"คน)":{"th":"คน)","en":"people)","zh":"人）","my":"ဦး)"},"รายชื่อพนักงานที่ลา (ในรอบสัปดาห์)":{"th":"รายชื่อพนักงานที่ลา (ในรอบสัปดาห์)","en":"Weekly leave list","zh":"本周请假名单","my":"အပတ်စဉ်ခွင့်စာရင်း"},"พบ":{"th":"พบ","en":"Found","zh":"共","my":"တွေ့ရှိ"},"ตำแหน่ง":{"th":"ตำแหน่ง","en":"Position","zh":"岗位","my":"တာဝန်"},"สังกัด":{"th":"สังกัด","en":"Contractor","zh":"所属公司","my":"သက်ဆိုင်ရာကုမ္ပဏီ"},"รวม (วัน)":{"th":"รวม (วัน)","en":"Total days","zh":"合计天数","my":"စုစုပေါင်းရက်"},"ไม่มีพนักงานลาหรือขาดงานในสัปดาห์นี้":{"th":"ไม่มีพนักงานลาหรือขาดงานในสัปดาห์นี้","en":"No absence or leave this week","zh":"本周无请假或缺勤","my":"ယခုအပတ် ပျက်ကွက် / ခွင့်ယူသူမရှိ"},"ตำแหน่งสำคัญ":{"th":"ตำแหน่งสำคัญ","en":"Key positions","zh":"关键岗位","my":"အဓိကတာဝန်များ"},"ข้อมูลอ้างอิงเฉพาะ":{"th":"ข้อมูลอ้างอิงเฉพาะ","en":"Data for","zh":"数据条件为","my":"အချက်အလက်အတွက်"},"พนักงานสำคัญทั้งหมด":{"th":"พนักงานสำคัญทั้งหมด","en":"All key-position employees","zh":"关键岗位总人数","my":"အဓိကတာဝန်ရှိဝန်ထမ်းအားလုံး"},"รายชื่อพนักงาน (Employees List)":{"th":"รายชื่อพนักงาน (Employees List)","en":"Employee list","zh":"员工名单","my":"ဝန်ထမ်းစာရင်း"},"รหัส (ID)":{"th":"รหัส (ID)","en":"Employee ID","zh":"工号","my":"ဝန်ထမ်းအမှတ်"},"ชื่อ-นามสกุล (Name)":{"th":"ชื่อ-นามสกุล (Name)","en":"Full name","zh":"姓名","my":"အမည်"},"ไลน์ (Line)":{"th":"ไลน์ (Line)","en":"Line","zh":"产线","my":"လိုင်း"},"ตำแหน่งหลัก (Role)":{"th":"ตำแหน่งหลัก (Role)","en":"Primary role","zh":"主要岗位","my":"အဓိကတာဝန်"},"ตำแหน่งเสริม 1 (Role 2)":{"th":"ตำแหน่งเสริม 1 (Role 2)","en":"Additional role 1","zh":"辅助岗位 1","my":"အပိုတာဝန် ၁"},"ตำแหน่งเสริม 2 (Role 3)":{"th":"ตำแหน่งเสริม 2 (Role 3)","en":"Additional role 2","zh":"辅助岗位 2","my":"အပိုတာဝန် ၂"},"ตำแหน่งเสริม 3 (Role 4)":{"th":"ตำแหน่งเสริม 3 (Role 4)","en":"Additional role 3","zh":"辅助岗位 3","my":"အပိုတာဝန် ၃"},"สังกัด (Contract)":{"th":"สังกัด (Contract)","en":"Contractor","zh":"所属公司","my":"သက်ဆိုင်ရာကုမ္ပဏီ"},"รูป (Pic)":{"th":"รูป (Pic)","en":"Photo","zh":"照片","my":"ဓာတ်ပုံ"},"ไม่พบพนักงานในตำแหน่งสำคัญสำหรับเงื่อนไขที่เลือก":{"th":"ไม่พบพนักงานในตำแหน่งสำคัญสำหรับเงื่อนไขที่เลือก","en":"No key-position employees match","zh":"所选条件下无关键岗位员工","my":"ရွေးချယ်မှုနှင့်ကိုက်ညီသော အဓိကတာဝန်ရှိဝန်ထမ်းမရှိ"},"สรุปจำนวน (Summary)":{"th":"สรุปจำนวน (Summary)","en":"Headcount summary","zh":"人数汇总","my":"ဝန်ထမ်းအရေအတွက်အကျဉ်းချုပ်"},"OT Dashboard V6.3":{"th":"OT Dashboard V6.3","en":"OT Dashboard V6.3","zh":"加班看板 V6.3","my":"အချိန်ပိုစာရင်း V6.3"},"Syncing with Grand Summary":{"th":"Syncing with Grand Summary","en":"Syncing summary","zh":"正在同步汇总","my":"အကျဉ်းချုပ်ကို ချိတ်ဆက်နေသည်"},"Line":{"th":"Line","en":"Line","zh":"产线","my":"လိုင်း"},"สถานะ":{"th":"สถานะ","en":"Status","zh":"状态","my":"အခြေအနေ"},"ID / Employee Name":{"th":"ID / Employee Name","en":"ID / Employee name","zh":"工号 / 姓名","my":"ဝန်ထမ်းအမှတ် / အမည်"},"hrs":{"th":"hrs","en":"hrs","zh":"小时","my":"နာရီ"},"SAVED":{"th":"SAVED","en":"Saved","zh":"已保存","my":"သိမ်းပြီး"},"ยืนยันการบันทึก OT":{"th":"ยืนยันการบันทึก OT","en":"Confirm overtime entry","zh":"确认加班记录","my":"အချိန်ပိုမှတ်တမ်းအတည်ပြုရန်"},"คุณต้องการบันทึกข้อมูลล่วงเวลา (OT) ให้กับกลุ่ม":{"th":"คุณต้องการบันทึกข้อมูลล่วงเวลา (OT) ให้กับกลุ่ม","en":"Save overtime for group","zh":"是否为该班组保存加班记录","my":"အဖွဲ့အတွက် အချိန်ပိုမှတ်တမ်းသိမ်းရန်"},"ใช่หรือไม่?":{"th":"ใช่หรือไม่?","en":"Confirm?","zh":"是否确认？","my":"အတည်ပြုမလား။"},"จำนวนพนักงาน":{"th":"จำนวนพนักงาน","en":"Headcount","zh":"员工人数","my":"ဝန်ထမ်းအရေအတွက်"},"ชั่วโมง OT / คน":{"th":"ชั่วโมง OT / คน","en":"OT hours / person","zh":"加班小时 / 人","my":"တစ်ဦးလျှင် အချိန်ပိုနာရီ"},"วันที่ทำรายการ":{"th":"วันที่ทำรายการ","en":"Entry date","zh":"记录日期","my":"မှတ်တမ်းရက်စွဲ"},"ยกเลิก":{"th":"ยกเลิก","en":"Cancel","zh":"取消","my":"ပယ်ဖျက်ရန်"},"ยืนยันบันทึก":{"th":"ยืนยันบันทึก","en":"Confirm and save","zh":"确认保存","my":"အတည်ပြုပြီးသိမ်းရန်"},"พื้นที่หวงห้าม":{"th":"พื้นที่หวงห้าม","en":"Authorized access","zh":"授权访问","my":"ခွင့်ပြုချက်လိုအပ်သောနေရာ"},"กรุณากรอกรหัสผ่านเพื่อบันทึก OT":{"th":"กรุณากรอกรหัสผ่านเพื่อบันทึก OT","en":"Enter password to record OT","zh":"请输入密码以记录加班","my":"အချိန်ပိုမှတ်တမ်းတင်ရန် စကားဝှက်ထည့်ပါ"},"ปลดล็อคระบบ":{"th":"ปลดล็อคระบบ","en":"Unlock","zh":"解锁","my":"ဖွင့်ရန်"},"มาปกติ":{"th":"มาปกติ","en":"On time","zh":"正常准时","my":"အချိန်မီရောက်"},"สาย":{"th":"สาย","en":"Late","zh":"迟到","my":"နောက်ကျ"},"ลาป่วย":{"th":"ลาป่วย","en":"Sick leave","zh":"病假","my":"ဆေးခွင့်"},"ลากิจ":{"th":"ลากิจ","en":"Personal leave","zh":"事假","my":"ကိုယ်ရေးကိုယ်တာခွင့်"},"ลาพักร้อน":{"th":"ลาพักร้อน","en":"Annual leave","zh":"年假","my":"နှစ်ပတ်လည်ခွင့်"},"ลาอื่นๆ":{"th":"ลาอื่นๆ","en":"Other leave","zh":"其他假","my":"အခြားခွင့်"},"ลาออก":{"th":"ลาออก","en":"Resigned","zh":"离职","my":"အလုပ်ထွက်"},"ไม่มีข้อมูล":{"th":"ไม่มีข้อมูล","en":"No data","zh":"无数据","my":"အချက်အလက်မရှိ"},"หัวไลน์":{"th":"หัวไลน์","en":"Front assembly","zh":"前装","my":"လိုင်းအစ"},"กลางไลน์":{"th":"กลางไลน์","en":"Middle assembly","zh":"中装","my":"လိုင်းအလယ်"},"ห้องทดสอบ":{"th":"ห้องทดสอบ","en":"Test room","zh":"测试房","my":"စမ်းသပ်ခန်း"},"ท้ายไลน์":{"th":"ท้ายไลน์","en":"Final assembly","zh":"后装","my":"လိုင်းအဆုံး"},"ค้นหารหัส หรือ ชื่อพนักงาน...":{"th":"ค้นหารหัส หรือ ชื่อพนักงาน...","en":"Search employee ID or name...","zh":"搜索工号或姓名…","my":"ဝန်ထမ်းအမှတ် သို့မဟုတ် အမည်ရှာရန်…"},"ใส่รหัสพนักงาน...":{"th":"ใส่รหัสพนักงาน...","en":"Enter employee ID...","zh":"输入工号…","my":"ဝန်ထမ်းအမှတ်ထည့်ပါ…"},"ระบุรหัสผ่าน (Password)":{"th":"ระบุรหัสผ่าน (Password)","en":"Enter password","zh":"输入密码","my":"စကားဝှက်ထည့်ပါ"},"รหัสผ่านไม่ถูกต้อง":{"th":"รหัสผ่านไม่ถูกต้อง","en":"Incorrect password","zh":"密码错误","my":"စကားဝှက်မမှန်ပါ"},"กรุณากรอกรหัสพนักงานก่อนค้นหา":{"th":"กรุณากรอกรหัสพนักงานก่อนค้นหา","en":"Enter an employee ID first","zh":"请先输入工号","my":"ဝန်ထမ်းအမှတ်ကို ဦးစွာထည့်ပါ"},"คนมาทำงาน":{"th":"คนมาทำงาน","en":"Present employees","zh":"出勤人员","my":"အလုပ်တက်သူများ"},"ดูรายชื่อผู้ขาด/ลา":{"th":"ดูรายชื่อผู้ขาด/ลา","en":"View absent / leave list","zh":"查看缺勤 / 请假名单","my":"ပျက်ကွက် / ခွင့်စာရင်းကြည့်ရန်"},"เฝ้าระวังพนักงานที่ขาด/ลาเกิน 3 วัน":{"th":"เฝ้าระวังพนักงานที่ขาด/ลาเกิน 3 วัน","en":"Monitor absence / leave over 3 days","zh":"关注缺勤 / 请假超过3天的员工","my":"၃ ရက်ကျော် ပျက်ကွက် / ခွင့်ယူသူများစောင့်ကြည့်ရန်"},"แชร์เข้า WeChat":{"th":"แชร์เข้า WeChat","en":"Share to WeChat","zh":"分享到微信","my":"WeChat သို့မျှဝေရန်"},"ดาวน์โหลด CSV":{"th":"ดาวน์โหลด CSV","en":"Download CSV","zh":"下载 CSV","my":"CSV ဒေါင်းလုဒ်"},"พิมพ์รายงาน (PDF)":{"th":"พิมพ์รายงาน (PDF)","en":"Print report (PDF)","zh":"打印报表（PDF）","my":"အစီရင်ခံစာပုံနှိပ်ရန် (PDF)"},"กำลังแคป...":{"th":"กำลังแคป...","en":"Capturing...","zh":"正在截图…","my":"ပုံဖမ်းယူနေသည်…"},"ไม่พบผลการค้นหา":{"th":"ไม่พบผลการค้นหา","en":"No search results","zh":"无搜索结果","my":"ရှာဖွေမှုရလဒ်မရှိ"},"ไม่พบพนักงานในกะ/ไลน์นี้":{"th":"ไม่พบพนักงานในกะ/ไลน์นี้","en":"No employees in this shift / line","zh":"此班次 / 产线无员工","my":"ဤဆိုင်း / လိုင်းတွင် ဝန်ထမ်းမရှိ"},"เกิน 55 ชั่วโมง":{"th":"เกิน 55 ชั่วโมง","en":"Over 55 hours","zh":"超过55小时","my":"၅၅ နာရီကျော်"},"ALL":{"th":"ALL","en":"All lines","zh":"全部产线","my":"လိုင်းအားလုံး"},"Shift A":{"th":"Shift A","en":"Shift A","zh":"A班","my":"ဆိုင်း A"},"Shift B":{"th":"Shift B","en":"Shift B","zh":"B班","my":"ဆိုင်း B"},"Supervisor":{"th":"Supervisor","en":"Supervisor","zh":"主管","my":"ကြီးကြပ်ရေးမှူး"},"Leader":{"th":"Leader","en":"Leader","zh":"组长","my":"အဖွဲ့ခေါင်းဆောင်"},"Welding":{"th":"Welding","en":"Welding","zh":"焊接","my":"ဂဟေဆော်"},"Vacuum / Charging":{"th":"Vacuum / Charging","en":"Vacuum / Charging","zh":"抽真空 / 充注","my":"လေဟာနယ်စုပ် / အအေးဓာတ်ငွေ့ဖြည့်"},"Pinch-off":{"th":"Pinch-off","en":"Pinch-off","zh":"封口","my":"ပိုက်ပိတ်"},"Cooling / Test":{"th":"Cooling / Test","en":"Cooling / Test","zh":"测试","my":"စမ်းသပ်"},"Screw":{"th":"Screw","en":"Screw","zh":"打螺丝","my":"ဝက်အူတပ်"},"Vacuum":{"th":"Vacuum","en":"Vacuum","zh":"抽真空","my":"လေဟာနယ်စုပ်"},"Testing":{"th":"Testing","en":"Testing","zh":"测试","my":"စမ်းသပ်"},"Machine":{"th":"Machine","en":"Machine","zh":"设备","my":"စက်"},"New Employee":{"th":"New Employee","en":"New employee","zh":"新员工","my":"ဝန်ထမ်းအသစ်"},"Key Position":{"th":"Key Position","en":"Key position","zh":"关键岗位","my":"အဓိကတာဝန်"},"ออฟฟิศ":{"th":"ออฟฟิศ","en":"Office","zh":"办公室","my":"ရုံး"},"คอส":{"th":"คอส","en":"Cost","zh":"成本","my":"ကုန်ကျစရိတ်"},"เกิดข้อผิดพลาดในการแคปเจอร์หน้าจอ":{"th":"เกิดข้อผิดพลาดในการแคปเจอร์หน้าจอ","en":"Screen capture failed","zh":"截图失败","my":"မျက်နှာပြင်ပုံဖမ်းယူမှု မအောင်မြင်ပါ"},"| กะการทำงาน:":{"th":"| กะการทำงาน:","en":"| Shift:","zh":"| 班次：","my":"| ဆိုင်း -"},"工时管控":{"th":"","en":"","zh":"","my":""},"警告：缺勤/请假率异常高":{"th":"","en":"","zh":"","my":""},"发现缺勤和请假员工":{"th":"","en":"","zh":"","my":""},"人":{"th":"","en":"","zh":"","my":""},"，占比":{"th":"","en":"","zh":"","my":""},"%，超过 10% 的预警标准，可能影响生产目標":{"th":"","en":"","zh":"","my":""},"平面图":{"th":"","en":"","zh":"","my":""},"总数":{"th":"","en":"","zh":"","my":""},"实到含迟到":{"th":"","en":"","zh":"","my":""},"正常准时":{"th":"","en":"","zh":"","my":""},"出勤率":{"th":"","en":"","zh":"","my":""},"个人考勤查询":{"th":"","en":"","zh":"","my":""},"正常":{"th":"","en":"","zh":"","my":""},"迟到":{"th":"","en":"","zh":"","my":""},"请假":{"th":"","en":"","zh":"","my":""},"旷工":{"th":"","en":"","zh":"","my":""},"加班":{"th":"","en":"","zh":"","my":""},"关键岗位":{"th":"","en":"","zh":"","my":""},"มกราคม":{"th":"มกราคม","en":"January","zh":"1月","my":"ဇန်နဝါရီ"},"กุมภาพันธ์":{"th":"กุมภาพันธ์","en":"February","zh":"2月","my":"ဖေဖော်ဝါရီ"},"มีนาคม":{"th":"มีนาคม","en":"March","zh":"3月","my":"မတ်"},"เมษายน":{"th":"เมษายน","en":"April","zh":"4月","my":"ဧပြီ"},"พฤษภาคม":{"th":"พฤษภาคม","en":"May","zh":"5月","my":"မေ"},"มิถุนายน":{"th":"มิถุนายน","en":"June","zh":"6月","my":"ဇွန်"},"กรกฎาคม":{"th":"กรกฎาคม","en":"July","zh":"7月","my":"ဇူလိုင်"},"สิงหาคม":{"th":"สิงหาคม","en":"August","zh":"8月","my":"ဩဂုတ်"},"กันยายน":{"th":"กันยายน","en":"September","zh":"9月","my":"စက်တင်ဘာ"},"ตุลาคม":{"th":"ตุลาคม","en":"October","zh":"10月","my":"အောက်တိုဘာ"},"พฤศจิกายน":{"th":"พฤศจิกายน","en":"November","zh":"11月","my":"နိုဝင်ဘာ"},"ธันวาคม":{"th":"ธันวาคม","en":"December","zh":"12月","my":"ဒီဇင်ဘာ"},"อา":{"th":"อา","en":"Su","zh":"日","my":"နွေ"},"จ":{"th":"จ","en":"Mo","zh":"一","my":"လာ"},"อ":{"th":"อ","en":"Tu","zh":"二","my":"ဂါ"},"พ":{"th":"พ","en":"We","zh":"三","my":"ဟူး"},"พฤ":{"th":"พฤ","en":"Th","zh":"四","my":"ကြာ"},"ศ":{"th":"ศ","en":"Fr","zh":"五","my":"သော"},"ส":{"th":"ส","en":"Sa","zh":"六","my":"နေ"}};
+        const supported = ['th','en','zh','my'];
+        let language = 'th';
+        try { const saved = localStorage.getItem('haier-ui-language'); if (supported.includes(saved)) language = saved; } catch (_) {}
+        function tr(text) {
+            if (typeof text !== 'string') return text;
+            const entry = messages[text.trim()];
+            if (entry) return entry[language] ?? entry.th;
+            const line = text.match(/^LINE (\d+)$/i);
+            if (line) return ({th:'LINE ',en:'LINE ',zh:'产线 ',my:'လိုင်း '})[language] + line[1];
+            return text;
+        }
+        function setLanguage(next) {
+            if (!supported.includes(next)) return;
+            language = next; document.documentElement.lang = next;
+            try { localStorage.setItem('haier-ui-language', next); } catch (_) {}
+            window.dispatchEvent(new Event('haier-language-change'));
+        }
+        document.documentElement.lang = language;
+        return {tr, setLanguage, getLanguage:()=>language, locale:()=>({th:'th-TH',en:'en-GB',zh:'zh-CN',my:'my-MM'})[language]};
+    })();
+    </script>
+<script type="text/babel">
+        const tr = window.HaierI18n.tr;
+
         const { useState, useEffect, useMemo, useRef } = React;
 
         const OT_ACCESS_PASSWORD = "admina01";
@@ -329,11 +379,11 @@
                             <p className="text-[13px] font-bold whitespace-nowrap">{employee?.name || 'ไม่ระบุชื่อ'}</p>
                             <div className="flex items-center justify-center gap-1.5 mt-1.5">
                                 <div className={`w-1.5 h-1.5 rounded-full ${config.bg}`}></div>
-                                <p className="text-[10px] text-slate-300">{status}</p>
+                                <p className="text-[10px] text-slate-300">{tr(status)}</p>
                             </div>
                             {keyData && keyData.label && (
                                 <div className="mt-1 pt-1 border-t border-slate-700 w-full">
-                                    <span className="text-[8px] text-slate-400 uppercase font-bold tracking-tighter">Skill: {keyData.label}</span>
+                                    <span className="text-[8px] text-slate-400 uppercase font-bold tracking-tighter">{tr("Skill:")} {tr(keyData.label)}</span>
                                 </div>
                             )}
                         </div>
@@ -431,7 +481,7 @@
                             <div className="flex items-center justify-between mb-4 px-2">
                                 <button onClick={(e) => { e.stopPropagation(); changeMonth(-1); }} className="text-slate-400 hover:text-blue-600 transition-colors w-6 h-6 flex items-center justify-center"><i className="fa-solid fa-chevron-left text-sm"></i></button>
                                 <div className="text-center leading-tight">
-                                    <p className="text-[15px] font-black text-slate-800">{thaiMonths[month]}</p>
+                                    <p className="text-[15px] font-black text-slate-800">{tr(thaiMonths[month])}</p>
                                     <p className="text-[11px] font-bold text-slate-400 mt-0.5">{year}</p>
                                 </div>
                                 <button onClick={(e) => { e.stopPropagation(); changeMonth(1); }} className="text-slate-400 hover:text-blue-600 transition-colors w-6 h-6 flex items-center justify-center"><i className="fa-solid fa-chevron-right text-sm"></i></button>
@@ -439,7 +489,7 @@
 
                             <div className="grid grid-cols-7 mb-3 text-center">
                                 {daysOfWeek.map(d => (
-                                    <div key={d} className="text-[11px] font-black text-slate-300">{d}</div>
+                                    <div key={d} className="text-[11px] font-black text-slate-300">{tr(d)}</div>
                                 ))}
                             </div>
 
@@ -450,9 +500,9 @@
                             <div className="mt-2 pt-4 border-t border-slate-50 flex items-center justify-between px-2">
                                 <div className="flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                                    <span className="text-[10px] font-bold text-slate-400">มีข้อมูลในชีต</span>
+                                    <span className="text-[10px] font-bold text-slate-400">{tr("มีข้อมูลในชีต")}</span>
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); setToday(); }} className="text-[11px] font-black text-[#2563eb] hover:text-blue-800 transition-colors">วันนี้</button>
+                                <button onClick={(e) => { e.stopPropagation(); setToday(); }} className="text-[11px] font-black text-[#2563eb] hover:text-blue-800 transition-colors">{tr("วันนี้")}</button>
                             </div>
                         </div>
                     )}
@@ -539,7 +589,7 @@
 
                 const tot = dayEmps.length;
                 const rate = tot > 0 ? (pres/tot)*100 : 0;
-                const displayDate = new Date(date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+                const displayDate = new Date(date).toLocaleDateString(window.HaierI18n.locale(), { day: 'numeric', month: 'short' });
                 return { date, displayDate, rate, present: pres, total: tot, resigns };
             });
 
@@ -576,7 +626,7 @@
 
             const totalResign7Days = trendData.reduce((acc, curr) => acc + curr.resigns, 0);
             let resignTrendText = totalResign7Days > 0 
-                ? <>มีพนักงานลาออกรวม <span className="text-rose-600 font-black bg-white px-1.5 py-0.5 rounded shadow-sm">{totalResign7Days} คน</span> ในช่วง 7 วันที่ผ่านมา</> 
+                ? <>{tr("มีพนักงานลาออกรวม")} <span className="text-rose-600 font-black bg-white px-1.5 py-0.5 rounded shadow-sm">{totalResign7Days} {tr("คน")}</span> {tr("ในช่วง 7 วันที่ผ่านมา")}</> 
                 : "ไม่มีพนักงานลาออกในรอบ 7 วันที่ผ่านมา ถือเป็นสัญญาณที่ดี";
 
             const sectionStats = useMemo(() => {
@@ -605,13 +655,13 @@
                         <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
                             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-filter text-lg"></i></div>
                             <div>
-                                <span className="text-[15px] font-black text-slate-800 uppercase tracking-widest block leading-tight">วิเคราะห์ข้อมูล</span>
-                                <span className="text-[11px] font-bold text-slate-400">เลือกดูสถิติแยกตามไลน์การผลิต</span>
+                                <span className="text-[15px] font-black text-slate-800 uppercase tracking-widest block leading-tight">{tr("วิเคราะห์ข้อมูล")}</span>
+                                <span className="text-[11px] font-bold text-slate-400">{tr("เลือกดูสถิติแยกตามไลน์การผลิต")}</span>
                             </div>
                         </div>
                         <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto hide-scrollbar w-full md:w-auto">
                             {['ALL', 'LINE 1', 'LINE 2', 'LINE 3', 'LINE 4', 'LINE 5', 'LINE 6', 'LINE 7', 'LINE 8', 'LINE 11'].map(l => (
-                                <button key={l} onClick={()=>setDashLine(l)} className={`px-5 py-2 rounded-xl text-[12px] font-black transition-all whitespace-nowrap ${dashLine===l?'bg-white text-blue-600 shadow-md border border-slate-200':'text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}>{l}</button>
+                                <button key={l} onClick={()=>setDashLine(l)} className={`px-5 py-2 rounded-xl text-[12px] font-black transition-all whitespace-nowrap ${dashLine===l?'bg-white text-blue-600 shadow-md border border-slate-200':'text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}>{tr(l)}</button>
                             ))}
                         </div>
                     </div>
@@ -620,15 +670,13 @@
                         <div className="bg-white border border-slate-100 p-6 md:p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between h-full">
                             <div className="w-full">
                                 <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-6 w-full text-left flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-chart-pie text-sm"></i></div> 
-                                    สัดส่วนสถานะการทำงาน
-                                </h3>
+                                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-chart-pie text-sm"></i></div> {tr("สัดส่วนสถานะการทำงาน")} </h3>
                                 <div className="relative w-48 h-48 md:w-56 md:h-56 flex-shrink-0 mx-auto">
                                     <div className="w-full h-full rounded-full shadow-[inset_0_2px_15px_rgba(0,0,0,0.06)] transition-transform hover:scale-105 duration-500" style={{ background: conicGradientStr }}></div>
                                     <div className="absolute inset-0 m-auto w-[120px] h-[120px] md:w-[140px] md:h-[140px] bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-[5px] border-white/50 backdrop-blur-sm">
                                         <div className="text-center">
                                             <p className="text-[28px] md:text-[36px] font-black text-slate-800 leading-none">{totalEmps}</p>
-                                            <p className="text-[10px] md:text-[11px] font-black text-slate-400 mt-1 uppercase tracking-wider">พนักงานทั้งหมด</p>
+                                            <p className="text-[10px] md:text-[11px] font-black text-slate-400 mt-1 uppercase tracking-wider">{tr("พนักงานทั้งหมด")}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -637,8 +685,8 @@
                                         <div key={i} className="flex items-center gap-2 text-[12px] font-bold text-slate-600 bg-slate-50/80 px-3 py-2.5 rounded-xl border border-slate-100/50 hover:bg-slate-100 transition-colors">
                                             <div className="w-3 h-3 rounded-full shadow-sm flex-shrink-0" style={{ backgroundColor: d.hexColor }}></div>
                                             <span className="w-full flex justify-between items-center whitespace-nowrap tracking-tight">
-                                                <span>{d.label} <span className="text-slate-400 ml-1">{d.zh}</span></span> 
-                                                <span className="font-black text-slate-800 ml-1">{d.count} คน <span className="text-slate-400 text-[10px] ml-0.5 font-bold">({d.percent.toFixed(1)}%)</span></span>
+                                                <span>{tr(d.label)} <span className="text-slate-400 ml-1">{''}</span></span> 
+                                                <span className="font-black text-slate-800 ml-1">{d.count} {tr("คน")} <span className="text-slate-400 text-[10px] ml-0.5 font-bold">({d.percent.toFixed(1)}%)</span></span>
                                             </span>
                                         </div>
                                     ))}
@@ -647,11 +695,10 @@
                             <div className="w-full mt-8 bg-blue-50/50 rounded-2xl p-5 border border-blue-100/50 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500 opacity-5 rounded-bl-[100%] pointer-events-none"></div>
                                 <h4 className="text-[12px] font-black text-blue-800 uppercase flex items-center gap-1.5 mb-2.5">
-                                    <i className="fa-solid fa-lightbulb text-amber-500"></i> สรุปข้อมูล
-                                </h4>
+                                    <i className="fa-solid fa-lightbulb text-amber-500"></i> {tr("สรุปข้อมูล")} </h4>
                                 <p className="text-[13px] font-bold text-slate-600 leading-relaxed">
                                     {topPie ? (
-                                        <>พนักงานส่วนใหญ่มีสถานะ <span className="text-slate-800 font-black px-1.5 py-0.5 bg-white rounded shadow-sm">{topPie.label}</span> นำเป็นอันดับหนึ่ง จำนวน {topPie.count} คน ({topPie.percent.toFixed(1)}%) {secondPie && <>ตามมาด้วยสถานะ <span className="text-slate-800 font-black px-1.5 py-0.5 bg-white rounded shadow-sm">{secondPie.label}</span> จำนวน {secondPie.count} คน ({secondPie.percent.toFixed(1)}%)</>}</>
+                                        <>{tr("พนักงานส่วนใหญ่มีสถานะ")} <span className="text-slate-800 font-black px-1.5 py-0.5 bg-white rounded shadow-sm">{tr(topPie.label)}</span> {tr("นำเป็นอันดับหนึ่ง จำนวน")} {topPie.count} {tr("คน (")}{topPie.percent.toFixed(1)}%) {secondPie && <>{tr("ตามมาด้วยสถานะ")} <span className="text-slate-800 font-black px-1.5 py-0.5 bg-white rounded shadow-sm">{tr(secondPie.label)}</span> {tr("จำนวน")} {secondPie.count} {tr("คน (")}{secondPie.percent.toFixed(1)}%)</>}</>
                                     ) : "ไม่มีข้อมูลสำหรับกะและวันที่เลือก"}
                                 </p>
                             </div>
@@ -660,9 +707,7 @@
                         <div className="bg-white border border-slate-100 p-6 md:p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between h-full">
                             <div className="w-full flex-1 flex flex-col">
                                 <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-6 w-full text-left flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-chart-column text-sm"></i></div> 
-                                    อัตราเข้างานแต่ละไลน์
-                                </h3>
+                                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-chart-column text-sm"></i></div> {tr("อัตราเข้างานแต่ละไลน์")} </h3>
                                 <div className="flex-1 flex items-end justify-around gap-2 mt-4 pb-6 border-b-2 border-slate-100 relative pt-8 min-h-[220px]">
                                     <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-30 pb-6 pt-8">
                                         <div className="border-t border-dashed border-slate-300 w-full"></div>
@@ -672,12 +717,11 @@
                                     {barData.map((d, i) => (
                                         <div key={i} className="flex flex-col items-center gap-3 relative z-10 w-full group">
                                             <div className="text-[12px] font-black text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-white px-3 py-1.5 rounded-xl shadow-lg border border-slate-100 whitespace-nowrap z-20">
-                                                <i className="fa-solid fa-users text-emerald-500 mr-1 text-[11px]"></i> {d.present} / {d.total} คน
-                                            </div>
+                                                <i className="fa-solid fa-users text-emerald-500 mr-1 text-[11px]"></i> {d.present} / {d.total} {tr("คน")} </div>
                                             <div className="w-full max-w-[56px] h-48 bg-slate-50 rounded-[1rem] relative overflow-hidden flex items-end border border-slate-100">
                                                 <div className="w-full transition-all duration-1000 rounded-[1rem] bg-gradient-to-t from-emerald-500 to-teal-400 shadow-[0_-5px_15px_rgba(16,185,129,0.2)]" style={{ height: `${d.percent}%` }}></div>
                                             </div>
-                                            <span className="text-[12px] font-black text-slate-500 uppercase mt-3">{d.name}</span>
+                                            <span className="text-[12px] font-black text-slate-500 uppercase mt-3">{tr(d.name)}</span>
                                             <span className="text-[12px] font-black text-emerald-600 bg-emerald-50/50 shadow-sm border border-emerald-100/50 px-3 py-1 rounded-lg">{d.percent.toFixed(0)}%</span>
                                         </div>
                                     ))}
@@ -686,11 +730,10 @@
                             <div className="w-full mt-8 bg-emerald-50/50 rounded-2xl p-5 border border-emerald-100/50 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500 opacity-5 rounded-bl-[100%] pointer-events-none"></div>
                                 <h4 className="text-[12px] font-black text-emerald-800 uppercase flex items-center gap-1.5 mb-2.5">
-                                    <i className="fa-solid fa-ranking-star text-amber-500"></i> สรุปข้อมูลการเข้างาน
-                                </h4>
+                                    <i className="fa-solid fa-ranking-star text-amber-500"></i> {tr("สรุปข้อมูลการเข้างาน")} </h4>
                                 <p className="text-[13px] font-bold text-slate-600 leading-relaxed">
                                     {topBar && bottomBar ? (
-                                        <>ไลน์ที่มีอัตราการมาทำงาน <span className="text-emerald-600 font-black">สูงสุด</span> คือ <span className="text-slate-800 font-black px-1.5 py-0.5 bg-white rounded shadow-sm">{topBar.name}</span> ({topBar.percent.toFixed(0)}%) และ <span className="text-rose-500 font-black">ต่ำสุด</span> คือ <span className="text-slate-800 font-black px-1.5 py-0.5 bg-white rounded shadow-sm">{bottomBar.name}</span> ({bottomBar.percent.toFixed(0)}%)</>
+                                        <>{tr("ไลน์ที่มีอัตราการมาทำงาน")} <span className="text-emerald-600 font-black">{tr("สูงสุด")}</span> {tr("คือ")} <span className="text-slate-800 font-black px-1.5 py-0.5 bg-white rounded shadow-sm">{tr(topBar.name)}</span> ({topBar.percent.toFixed(0)}{tr("%) และ")} <span className="text-rose-500 font-black">{tr("ต่ำสุด")}</span> {tr("คือ")} <span className="text-slate-800 font-black px-1.5 py-0.5 bg-white rounded shadow-sm">{tr(bottomBar.name)}</span> ({bottomBar.percent.toFixed(0)}%)</>
                                     ) : "ยังไม่มีข้อมูลบุคลากรในไลน์การผลิต"}
                                 </p>
                             </div>
@@ -699,9 +742,7 @@
 
                     <div className="w-full mb-8 bg-white border border-slate-100 p-6 md:p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
                         <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-6 w-full text-left flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-layer-group text-sm"></i></div> 
-                            สรุปสถานะแยกตามจุดการผลิต
-                        </h3>
+                            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-layer-group text-sm"></i></div> {tr("สรุปสถานะแยกตามจุดการผลิต")} </h3>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                             {sectionStats.map((sec) => (
@@ -709,18 +750,18 @@
                                     <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-purple-100 to-transparent opacity-50 rounded-bl-full pointer-events-none group-hover:scale-125 transition-transform duration-500"></div>
                                     <div className="flex justify-between items-start mb-4 relative z-10">
                                         <div>
-                                            <h4 className="text-[16px] font-black text-slate-800 leading-tight">{sec.name}</h4>
-                                            <p className="text-[10px] font-bold text-slate-400 tracking-wide uppercase mt-0.5">{sec.sub}</p>
+                                            <h4 className="text-[16px] font-black text-slate-800 leading-tight">{tr(sec.name)}</h4>
+                                            <p className="text-[10px] font-bold text-slate-400 tracking-wide uppercase mt-0.5">{''}</p>
                                         </div>
                                         <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-sm text-center min-w-[48px]">
                                             <span className="block text-[15px] font-black text-slate-700 leading-none">{sec.total}</span>
-                                            <span className="block text-[8px] font-bold text-slate-400 mt-1 uppercase">ทั้งหมด</span>
+                                            <span className="block text-[8px] font-bold text-slate-400 mt-1 uppercase">{tr("ทั้งหมด")}</span>
                                         </div>
                                     </div>
                                     
                                     <div className="mb-5 relative z-10">
                                         <div className="flex justify-between text-[11px] font-black mb-1.5">
-                                            <span className="text-slate-500 uppercase tracking-wide">อัตราเข้างาน</span>
+                                            <span className="text-slate-500 uppercase tracking-wide">{tr("อัตราเข้างาน")}</span>
                                             <span className="text-emerald-600">{sec.presentPercent}%</span>
                                         </div>
                                         <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
@@ -731,15 +772,15 @@
                                     <div className="grid grid-cols-3 gap-2 text-center border-t border-slate-200/80 pt-4 relative z-10">
                                         <div className="bg-white rounded-xl py-2 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100">
                                             <span className="block text-[16px] font-black text-emerald-500 leading-none">{sec.presentCount}</span>
-                                            <span className="block text-[9px] font-bold text-slate-400 mt-1">มา/สาย</span>
+                                            <span className="block text-[9px] font-bold text-slate-400 mt-1">{tr("มา/สาย")}</span>
                                         </div>
                                         <div className="bg-white rounded-xl py-2 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100">
                                             <span className="block text-[16px] font-black text-amber-500 leading-none">{sec.leaveCount}</span>
-                                            <span className="block text-[9px] font-bold text-slate-400 mt-1">ลา</span>
+                                            <span className="block text-[9px] font-bold text-slate-400 mt-1">{tr("ลา")}</span>
                                         </div>
                                         <div className="bg-white rounded-xl py-2 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-slate-100">
                                             <span className="block text-[16px] font-black text-rose-500 leading-none">{sec.absentCount}</span>
-                                            <span className="block text-[9px] font-bold text-slate-400 mt-1">ขาดงาน</span>
+                                            <span className="block text-[9px] font-bold text-slate-400 mt-1">{tr("ขาดงาน")}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -751,10 +792,8 @@
                         <div className="bg-white border border-slate-100 p-6 md:p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between h-full">
                             <div className="w-full flex-1 flex flex-col">
                                 <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-1 w-full text-left flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-chart-area text-sm"></i></div> 
-                                    แนวโน้ม 7 วันย้อนหลัง
-                                </h3>
-                                <p className="text-[11px] font-bold text-slate-400 mb-6 tracking-wide ml-11">อัตราการมาทำงาน (%) อ้างอิงเฉพาะกะ <span className="font-black text-orange-500 bg-orange-50 px-2 py-0.5 rounded-md ml-1">{activeShift}</span> ไลน์ <span className="font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md ml-1">{dashLine}</span></p>
+                                    <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-chart-area text-sm"></i></div> {tr("แนวโน้ม 7 วันย้อนหลัง")} </h3>
+                                <p className="text-[11px] font-bold text-slate-400 mb-6 tracking-wide ml-11">{tr("อัตราการมาทำงาน (%) อ้างอิงเฉพาะกะ")} <span className="font-black text-orange-500 bg-orange-50 px-2 py-0.5 rounded-md ml-1">{tr(activeShift)}</span> {tr("ไลน์")} <span className="font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md ml-1">{tr(dashLine)}</span></p>
                                 
                                 <div className="flex-1 w-full relative mt-4 h-[180px]">
                                     <svg viewBox="-10 -15 200 145" className="w-full h-full overflow-visible">
@@ -786,10 +825,8 @@
                             <div className="w-full mt-8 bg-orange-50/50 rounded-2xl p-5 border border-orange-100/50 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500 opacity-5 rounded-bl-[100%] pointer-events-none"></div>
                                 <h4 className="text-[12px] font-black text-orange-800 uppercase flex items-center gap-1.5 mb-2.5">
-                                    <i className="fa-solid fa-chart-line text-amber-500"></i> สรุปแนวโน้ม
-                                </h4>
-                                <p className="text-[13px] font-bold text-slate-600 leading-relaxed">
-                                    อัตราเฉลี่ย 7 วันล่าสุดอยู่ที่ <span className="text-slate-800 font-black bg-white px-1.5 py-0.5 rounded shadow-sm">{avgRate.toFixed(1)}%</span> โดยวันนี้มีแนวโน้ม <span className={`font-black ${trendColor}`}><i className={`fa-solid ${trendIcon} mr-1`}></i>{trendText}</span>
+                                    <i className="fa-solid fa-chart-line text-amber-500"></i> {tr("สรุปแนวโน้ม")} </h4>
+                                <p className="text-[13px] font-bold text-slate-600 leading-relaxed"> {tr("อัตราเฉลี่ย 7 วันล่าสุดอยู่ที่")} <span className="text-slate-800 font-black bg-white px-1.5 py-0.5 rounded shadow-sm">{avgRate.toFixed(1)}%</span> {tr("โดยวันนี้มีแนวโน้ม")} <span className={`font-black ${trendColor}`}><i className={`fa-solid ${trendIcon} mr-1`}></i>{trendText}</span>
                                 </p>
                             </div>
                         </div>
@@ -797,10 +834,8 @@
                         <div className="bg-white border border-slate-100 p-6 md:p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between h-full">
                             <div className="w-full flex-1 flex flex-col">
                                 <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-1 w-full text-left flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-user-xmark text-sm"></i></div> 
-                                    แนวโน้มคนลาออก
-                                </h3>
-                                <p className="text-[11px] font-bold text-slate-400 mb-6 tracking-wide ml-11">จำนวน (คน) อ้างอิงเฉพาะกะ <span className="font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md ml-1">{activeShift}</span> ไลน์ <span className="font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md ml-1">{dashLine}</span></p>
+                                    <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shadow-sm"><i className="fa-solid fa-user-xmark text-sm"></i></div> {tr("แนวโน้มคนลาออก")} </h3>
+                                <p className="text-[11px] font-bold text-slate-400 mb-6 tracking-wide ml-11">{tr("จำนวน (คน) อ้างอิงเฉพาะกะ")} <span className="font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md ml-1">{tr(activeShift)}</span> {tr("ไลน์")} <span className="font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md ml-1">{tr(dashLine)}</span></p>
                                 
                                 <div className="flex-1 w-full relative mt-4 h-[180px]">
                                     <svg viewBox="-10 -15 200 145" className="w-full h-full overflow-visible">
@@ -831,8 +866,7 @@
                             <div className="w-full mt-8 bg-rose-50/50 rounded-2xl p-5 border border-rose-100/50 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500 opacity-5 rounded-bl-[100%] pointer-events-none"></div>
                                 <h4 className="text-[12px] font-black text-rose-800 uppercase flex items-center gap-1.5 mb-2.5">
-                                    <i className="fa-solid fa-user-minus text-amber-500"></i> สรุปข้อมูลลาออก
-                                </h4>
+                                    <i className="fa-solid fa-user-minus text-amber-500"></i> {tr("สรุปข้อมูลลาออก")} </h4>
                                 <p className="text-[13px] font-bold text-slate-600 leading-relaxed">
                                     {resignTrendText}
                                 </p>
@@ -999,10 +1033,9 @@
                                 </div>
                                 <div>
                                     <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                                        RBA 60 <span className="text-slate-400 text-lg">工时管控</span>
+                                        RBA 60 <span className="text-slate-400 text-lg">{tr("工时管控")}</span>
                                     </h2>
-                                    <p className="text-[12px] font-bold text-slate-500 mt-1">
-                                        ติดตามชั่วโมงการทำงาน (7 วัน) อ้างอิงเฉพาะ <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md mx-1">{activeShift}</span> และ <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md mx-1">{selectedLine}</span>
+                                    <p className="text-[12px] font-bold text-slate-500 mt-1"> {tr("ติดตามชั่วโมงการทำงาน (7 วัน) อ้างอิงเฉพาะ")} <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md mx-1">{tr(activeShift)}</span> {tr("และ")} <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md mx-1">{tr(selectedLine)}</span>
                                     </p>
                                 </div>
                             </div>
@@ -1010,7 +1043,7 @@
                             <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 px-4 shadow-inner w-full lg:flex-1 lg:max-w-md">
                                 <i className="fa-solid fa-search text-slate-400"></i>
                                 <input 
-                                    type="text" placeholder="ค้นหารหัส หรือ ชื่อพนักงาน..." 
+                                    type="text" placeholder={tr("ค้นหารหัส หรือ ชื่อพนักงาน...")} 
                                     value={searchTerm} onChange={e => setSearchTerm(e.target.value)} 
                                     className="bg-transparent border-none text-[13px] font-bold outline-none text-slate-800 w-full" 
                                 />
@@ -1018,15 +1051,15 @@
 
                             <div className="flex flex-wrap items-center gap-3 shrink-0">
                                 <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200">
-                                    <span className="text-[11px] font-black text-slate-400 pl-3 uppercase tracking-wider whitespace-nowrap">ช่วงวันที่:</span>
+                                    <span className="text-[11px] font-black text-slate-400 pl-3 uppercase tracking-wider whitespace-nowrap">{tr("ช่วงวันที่:")}</span>
                                     <select 
                                         value={selectedRangeId} 
                                         onChange={(e) => setSelectedRangeId(e.target.value)}
                                         className="bg-white border border-slate-200 text-[13px] font-black text-blue-600 outline-none pr-8 py-2 pl-3 rounded-xl cursor-pointer shadow-sm min-w-[180px]"
                                     >
                                         {availableRanges.map(range => {
-                                            const startStr = new Date(range.startDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-                                            const endStr = new Date(range.endDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+                                            const startStr = new Date(range.startDate).toLocaleDateString(window.HaierI18n.locale(), { day: 'numeric', month: 'short' });
+                                            const endStr = new Date(range.endDate).toLocaleDateString(window.HaierI18n.locale(), { day: 'numeric', month: 'short', year: 'numeric' });
                                             return (
                                                 <option key={range.id} value={range.id}>
                                                     {startStr} - {endStr}
@@ -1036,8 +1069,7 @@
                                     </select>
                                 </div>
                                 <button onClick={handleExportCSV} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-full font-black text-[13px] shadow-sm transition-colors flex items-center gap-2">
-                                    <i className="fa-solid fa-file-csv"></i> Export CSV
-                                </button>
+                                    <i className="fa-solid fa-file-csv"></i> {tr("Export CSV")} </button>
                             </div>
                         </div>
 
@@ -1048,20 +1080,20 @@
                                         <div className="bg-slate-50 border-b border-slate-200 p-4">
                                             <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
                                                 <i className="fa-solid fa-grip-lines text-slate-400"></i> {line}
-                                                <span className="bg-blue-100 text-blue-600 text-[11px] px-2 py-1 rounded-lg ml-2">{groupedData[line].length} คน</span>
+                                                <span className="bg-blue-100 text-blue-600 text-[11px] px-2 py-1 rounded-lg ml-2">{groupedData[line].length} {tr("คน")}</span>
                                             </h3>
                                         </div>
                                         <div className="overflow-x-auto hide-scrollbar custom-scrollbar w-full">
                                             <table className="w-full text-left text-sm min-w-[800px]">
                                                 <thead className="bg-slate-50/50 text-slate-500 font-black text-[11px] uppercase tracking-widest border-b border-slate-200 sticky top-0 z-10">
                                                     <tr>
-                                                        <th className="px-4 py-4 w-16 text-center">รูป</th>
-                                                        <th className="px-4 py-4">รหัส</th>
-                                                        <th className="px-4 py-4">ชื่อ-นามสกุล</th>
-                                                        <th className="px-4 py-4">ตำแหน่ง/กลุ่ม</th>
-                                                        <th className="px-4 py-4 text-center">เวลาปกติ (ชม.)</th>
-                                                        <th className="px-4 py-4 text-center">โอที (ชม.)</th>
-                                                        <th className="px-4 py-4 text-center">รวมเวลาทำงาน</th>
+                                                        <th className="px-4 py-4 w-16 text-center">{tr("รูป")}</th>
+                                                        <th className="px-4 py-4">{tr("รหัส")}</th>
+                                                        <th className="px-4 py-4">{tr("ชื่อ-นามสกุล")}</th>
+                                                        <th className="px-4 py-4">{tr("ตำแหน่ง/กลุ่ม")}</th>
+                                                        <th className="px-4 py-4 text-center">{tr("เวลาปกติ (ชม.)")}</th>
+                                                        <th className="px-4 py-4 text-center">{tr("โอที (ชม.)")}</th>
+                                                        <th className="px-4 py-4 text-center">{tr("รวมเวลาทำงาน")}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100 font-bold text-slate-600">
@@ -1093,8 +1125,7 @@
                                                                 </td>
                                                                 <td className="px-4 py-3 text-center">
                                                                     <span className={`px-3 py-1.5 rounded-lg text-[12px] font-black shadow-sm flex items-center justify-center w-fit mx-auto gap-2 ${isOver ? 'bg-red-500 text-white shadow-red-200' : 'bg-emerald-100 text-emerald-700'}`}>
-                                                                        {emp.totalHours.toFixed(1)} ชม.
-                                                                        {isOver && <i className="fa-solid fa-triangle-exclamation text-white animate-pulse" title="เกิน 55 ชั่วโมง"></i>}
+                                                                        {emp.totalHours.toFixed(1)} {tr("ชม.")} {isOver && <i className="fa-solid fa-triangle-exclamation text-white animate-pulse" title={tr("เกิน 55 ชั่วโมง")}></i>}
                                                                     </span>
                                                                 </td>
                                                             </tr>
@@ -1108,7 +1139,7 @@
                             ) : (
                                 <div className="text-center py-20 bg-slate-50 rounded-[2rem] border border-slate-100">
                                     <i className="fa-solid fa-clipboard-user text-4xl text-slate-300 mb-4"></i>
-                                    <p className="font-bold text-slate-500">ไม่พบข้อมูลพนักงานสำหรับช่วงเวลานี้</p>
+                                    <p className="font-bold text-slate-500">{tr("ไม่พบข้อมูลพนักงานสำหรับช่วงเวลานี้")}</p>
                                 </div>
                             )}
                         </div>
@@ -1173,7 +1204,7 @@
                 } catch (error) {
                     console.error("Capture error:", error);
                     if (actionBtns) actionBtns.style.opacity = '1';
-                    alert("เกิดข้อผิดพลาดในการแคปเจอร์หน้าจอ");
+                    alert(tr("เกิดข้อผิดพลาดในการแคปเจอร์หน้าจอ"));
                     setIsCapturing(false);
                 }
             };
@@ -1517,13 +1548,9 @@
                                 <i className="fa-solid fa-triangle-exclamation text-lg"></i>
                             </div>
                             <div>
-                                <h3 className="text-red-800 font-black text-[14px] uppercase tracking-widest flex items-center gap-2">
-                                    แจ้งเตือน: อัตราการขาด/ลางานสูงผิดปกติ 
-                                    <span className="text-red-600 text-[11px] font-bold">警告：缺勤/请假率异常高</span>
+                                <h3 className="text-red-800 font-black text-[14px] uppercase tracking-widest flex items-center gap-2"> {tr("แจ้งเตือน: อัตราการขาด/ลางานสูงผิดปกติ")} <span className="text-red-600 text-[11px] font-bold">{tr("警告：缺勤/请假率异常高")}</span>
                                 </h3>
-                                <p className="text-red-600 text-[13px] mt-1 font-bold leading-relaxed">
-                                    พบพนักงานขาดและลางานจำนวน <span className="font-black bg-white px-1.5 py-0.5 rounded shadow-sm">{absentCount} คน</span> (คิดเป็น {absentRate.toFixed(1)}% ของพนักงานในกะ/ไลน์นี้) ซึ่งเกินเกณฑ์เฝ้าระวัง 10% อาจส่งผลกระทบต่อเป้าหมายการผลิต<br/>
-                                    <span className="text-red-500 text-[11px]">发现缺勤和请假员工 <span className="font-black bg-white/60 px-1 py-0.5 rounded">{absentCount} 人</span>，占比 {absentRate.toFixed(1)}%，超过 10% 的预警标准，可能影响生产目標</span>
+                                <p className="text-red-600 text-[13px] mt-1 font-bold leading-relaxed"> {tr("พบพนักงานขาดและลางานจำนวน")} <span className="font-black bg-white px-1.5 py-0.5 rounded shadow-sm">{absentCount} {tr("คน")}</span> {tr("(คิดเป็น")} {absentRate.toFixed(1)}{tr("% ของพนักงานในกะ/ไลน์นี้) ซึ่งเกินเกณฑ์เฝ้าระวัง 10% อาจส่งผลกระทบต่อเป้าหมายการผลิต")}<br/>
                                 </p>
                             </div>
                         </div>
@@ -1534,11 +1561,9 @@
                             <div className="flex items-center gap-4 shrink-0">
                                 <div className="w-3 h-12 bg-blue-500 rounded-full"></div>
                                 <div>
-                                    <h2 className="text-2xl sm:text-3xl font-black italic text-slate-800 flex items-center gap-2">
-                                        WOR MAP / <span className="text-slate-500 font-bold">平面图</span>
+                                    <h2 className="text-2xl sm:text-3xl font-black italic text-slate-800 flex items-center gap-2"> {tr("WOR MAP /")} <span className="text-slate-500 font-bold">{tr("平面图")}</span>
                                     </h2>
-                                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1 flex items-center gap-2 print-hidden">
-                                        ภาพรวมกำลังคน <span className="text-slate-400">/ WORKFORCE OVERVIEW</span>
+                                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1 flex items-center gap-2 print-hidden"> {tr("ภาพรวมกำลังคน")} <span className="text-slate-400">{tr("/ WORKFORCE OVERVIEW")}</span>
                                     </p>
                                 </div>
                             </div>
@@ -1546,7 +1571,7 @@
                             <div className="print-hidden w-full sm:w-auto flex items-center gap-3 bg-slate-50 p-2.5 rounded-full border border-slate-200 px-4 shadow-inner min-w-[200px] shrink-0">
                                 <i className="fa-solid fa-search text-slate-400"></i>
                                 <input 
-                                    type="text" placeholder="ค้นหารหัส หรือ ชื่อพนักงาน..." 
+                                    type="text" placeholder={tr("ค้นหารหัส หรือ ชื่อพนักงาน...")} 
                                     value={searchTerm} onChange={e => setSearchTerm(e.target.value)} 
                                     className="bg-transparent border-none text-[13px] font-bold outline-none text-slate-800 w-full" 
                                 />
@@ -1557,37 +1582,37 @@
                             </div>
                             
                             <div className="hidden print:block border-l-2 border-slate-200 pl-4">
-                                <p className="text-sm font-black text-slate-800">ประจำวันที่: {new Date(rawDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                                <p className="text-xs font-bold text-slate-500 mt-1">ข้อมูล: {selectedLine} | กะการทำงาน: {activeShift}</p>
+                                <p className="text-sm font-black text-slate-800">{tr("ประจำวันที่:")} {new Date(rawDate).toLocaleDateString(window.HaierI18n.locale(), { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                <p className="text-xs font-bold text-slate-500 mt-1">{tr("ข้อมูล:")} {tr(selectedLine)} {tr("| กะการทำงาน:")} {tr(activeShift)}</p>
                             </div>
                         </div>
 
                         <div id="dashboard-action-buttons" className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-2.5 w-full xl:w-auto justify-start xl:justify-end print-hidden shrink-0 transition-opacity duration-200">
-                            <button onClick={() => setShowWarningModal(true)} className="col-span-2 md:col-span-1 shrink-0 bg-rose-600 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold relative border-none outline-none" title="เฝ้าระวังพนักงานที่ขาด/ลาเกิน 3 วัน">
-                                <i className="fa-solid fa-triangle-exclamation"></i> <span className="whitespace-nowrap inline">เฝ้าระวัง - 预警</span>
+                            <button onClick={() => setShowWarningModal(true)} className="col-span-2 md:col-span-1 shrink-0 bg-rose-600 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold relative border-none outline-none" title={tr("เฝ้าระวังพนักงานที่ขาด/ลาเกิน 3 วัน")}>
+                                <i className="fa-solid fa-triangle-exclamation"></i> <span className="whitespace-nowrap inline">{tr("เฝ้าระวัง - 预警")}</span>
                                 {warningEmployees.length > 0 && (
                                     <span className="absolute -top-2 -right-2 bg-rose-900 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border border-rose-400 shadow-sm">{warningEmployees.length}</span>
                                 )}
                             </button>
 
-                            <button onClick={() => setShowPresentModal(true)} className="shrink-0 bg-emerald-500 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold border-none outline-none" title="คนมาทำงาน">
-                                <i className="fa-solid fa-user-check"></i> <span className="whitespace-nowrap hidden sm:inline">คนมาทำงาน - 出勤</span>
+                            <button onClick={() => setShowPresentModal(true)} className="shrink-0 bg-emerald-500 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold border-none outline-none" title={tr("คนมาทำงาน")}>
+                                <i className="fa-solid fa-user-check"></i> <span className="whitespace-nowrap hidden sm:inline">{tr("คนมาทำงาน - 出勤")}</span>
                             </button>
 
-                            <button onClick={() => setShowAbsentModal(true)} className="shrink-0 bg-amber-500 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold border-none outline-none" title="ดูรายชื่อผู้ขาด/ลา">
-                                <i className="fa-solid fa-user-slash"></i> <span className="whitespace-nowrap hidden sm:inline">ดูผู้ขาด/ลา - 缺勤/请假</span>
+                            <button onClick={() => setShowAbsentModal(true)} className="shrink-0 bg-amber-500 text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold border-none outline-none" title={tr("ดูรายชื่อผู้ขาด/ลา")}>
+                                <i className="fa-solid fa-user-slash"></i> <span className="whitespace-nowrap hidden sm:inline">{tr("ดูผู้ขาด/ลา - 缺勤/请假")}</span>
                             </button>
 
-                            <button onClick={handleShareWeChat} disabled={isCapturing} className="shrink-0 bg-[#07c160] text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold border-none outline-none disabled:opacity-50" title="แชร์เข้า WeChat">
+                            <button onClick={handleShareWeChat} disabled={isCapturing} className="shrink-0 bg-[#07c160] text-white px-4 h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer gap-2 text-[13px] font-bold border-none outline-none disabled:opacity-50" title={tr("แชร์เข้า WeChat")}>
                                 {isCapturing ? <i className="fa-solid fa-spinner fa-spin text-lg"></i> : <i className="fa-brands fa-weixin text-lg"></i>}
-                                <span className="whitespace-nowrap hidden sm:inline">{isCapturing ? 'กำลังแคป...' : 'WeChat'}</span>
+                                <span className="whitespace-nowrap hidden sm:inline">{isCapturing ? tr("กำลังแคป...") : 'WeChat'}</span>
                             </button>
 
                             <div className="flex gap-2">
-                                <button onClick={handleDownloadCSV} className="flex-1 sm:w-10 sm:flex-none shrink-0 bg-emerald-500 text-white h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer border-none outline-none" title="ดาวน์โหลด CSV">
+                                <button onClick={handleDownloadCSV} className="flex-1 sm:w-10 sm:flex-none shrink-0 bg-emerald-500 text-white h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer border-none outline-none" title={tr("ดาวน์โหลด CSV")}>
                                     <i className="fa-solid fa-file-csv text-sm"></i>
                                 </button>
-                                <button onClick={() => window.print()} className="flex-1 sm:w-10 sm:flex-none shrink-0 bg-slate-700 text-white h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer border-none outline-none" title="พิมพ์รายงาน (PDF)">
+                                <button onClick={() => window.print()} className="flex-1 sm:w-10 sm:flex-none shrink-0 bg-slate-700 text-white h-10 rounded-[14px] flex items-center justify-center shadow-md transform hover:scale-105 active:scale-90 transition-all cursor-pointer border-none outline-none" title={tr("พิมพ์รายงาน (PDF)")}>
                                     <i className="fa-solid fa-file-pdf text-sm"></i>
                                 </button>
                             </div>
@@ -1604,7 +1629,7 @@
                                             <i className="fa-solid fa-user text-white text-[10px]"></i>
                                         </div>
                                         <span className="text-[11px] font-black text-slate-700">
-                                            {l.label} <span className="text-slate-500 font-bold ml-0.5">{l.zh}</span>
+                                            {tr(l.label)} <span className="text-slate-500 font-bold ml-0.5">{''}</span>
                                         </span>
                                     </div>
                                 )
@@ -1615,28 +1640,28 @@
                                 <i className="fa-solid fa-users text-[#3b82f6] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.total}</p>
-                                    <p className="text-[9px] font-black text-slate-400 mt-1">ทั้งหมด <span className="font-bold">总数</span></p>
+                                    <p className="text-[9px] font-black text-slate-400 mt-1">{tr("ทั้งหมด")} <span className="font-bold">{tr("总数")}</span></p>
                                 </div>
                             </div>
                             <div className="suite-kpi bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
                                 <i className="fa-solid fa-id-badge text-[#06b6d4] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.came}</p>
-                                    <p className="text-[9px] font-black text-slate-400 mt-1">มาจริงรวมคนมาสาย <span className="font-bold">实到含迟到</span></p>
+                                    <p className="text-[9px] font-black text-slate-400 mt-1">{tr("มาจริงรวมคนมาสาย")} <span className="font-bold">{tr("实到含迟到")}</span></p>
                                 </div>
                             </div>
                             <div className="suite-kpi bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
                                 <i className="fa-solid fa-user-check text-[#10b981] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.normal}</p>
-                                    <p className="text-[9px] font-black text-slate-400 mt-1">มาปกติก่อนเริ่มงาน <span className="font-bold">正常准时</span></p>
+                                    <p className="text-[9px] font-black text-slate-400 mt-1">{tr("มาปกติก่อนเริ่มงาน")} <span className="font-bold">{tr("正常准时")}</span></p>
                                 </div>
                             </div>
                             <div className="suite-kpi bg-white border border-slate-200 px-5 py-2.5 rounded-[1.2rem] shadow-sm flex flex-col sm:flex-row items-center justify-center gap-3 min-w-[100px]">
                                 <i className="fa-solid fa-arrow-trend-up text-[#10b981] text-[20px]"></i>
                                 <div className="text-center leading-tight">
                                     <p className="text-[18px] font-black text-slate-800 leading-none">{stats.rate}%</p>
-                                    <p className="text-[9px] font-black text-slate-400 mt-1">มาทำงาน % <span className="font-bold">出勤率</span></p>
+                                    <p className="text-[9px] font-black text-slate-400 mt-1">{tr("มาทำงาน %")} <span className="font-bold">{tr("出勤率")}</span></p>
                                 </div>
                             </div>
                         </div>
@@ -1704,8 +1729,8 @@
                                                         {topHalf.map((e, i) => <PersonMapIcon key={i} employee={e} groupName={sec.name} tooltipPos="bottom" />)}
                                                     </div>
                                                     <div className="bg-[#f8fafc] rounded-[2rem] p-4 w-[80%] max-w-[220px] text-center shadow-[0_15px_30px_rgba(0,0,0,0.1)] border border-slate-200 relative my-2">
-                                                        <h4 className="text-[16px] sm:text-[20px] font-black italic text-slate-800 leading-none">{sec.name}</h4>
-                                                        <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 mt-1">{sec.sub}</p>
+                                                        <h4 className="text-[16px] sm:text-[20px] font-black italic text-slate-800 leading-none">{tr(sec.name)}</h4>
+                                                        <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 mt-1">{''}</p>
                                                         <div className="mt-3 flex items-center justify-center mx-auto w-fit bg-white px-4 py-1.5 rounded-full border shadow-sm">
                                                             <span className="text-lg font-black text-emerald-500">{presCount}</span>
                                                             <span className="text-slate-300 font-light mx-2">/</span>
@@ -1768,31 +1793,25 @@
                                     <h3 className="text-xl font-black text-rose-800 flex items-center gap-3">
                                         <div className="w-10 h-10 bg-rose-200 text-rose-600 rounded-xl flex items-center justify-center">
                                             <i className="fa-solid fa-triangle-exclamation"></i>
-                                        </div>
-                                        เฝ้าระวัง: รายชื่อที่ขาด/ลางานเกิน 3 วัน (ในรอบ 7 วัน)
-                                    </h3>
+                                        </div> {tr("เฝ้าระวัง: รายชื่อที่ขาด/ลางานเกิน 3 วัน (ในรอบ 7 วัน)")} </h3>
                                     <button onClick={() => setShowWarningModal(false)} className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors shadow-sm">
                                         <i className="fa-solid fa-xmark text-lg"></i>
                                     </button>
                                 </div>
                                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
                                     <div className="flex flex-wrap gap-3 mb-6">
-                                        <div className="bg-rose-600 text-white px-4 py-2.5 rounded-xl shadow-sm text-sm font-black flex items-center gap-2">
-                                            พบกลุ่มเสี่ยงทั้งหมด <span className="bg-white/20 px-2.5 py-0.5 rounded-md">{warningEmployees.length}</span> คน
-                                        </div>
-                                        <div className="bg-slate-50 text-slate-500 border border-slate-200 px-4 py-2.5 rounded-xl shadow-sm text-xs font-bold flex items-center">
-                                            * นับเฉพาะพนักงานที่มีสถานะ ขาดงาน, ลาป่วย, ลากิจ, ลาพักร้อน หรือ ลาอื่นๆ
-                                        </div>
+                                        <div className="bg-rose-600 text-white px-4 py-2.5 rounded-xl shadow-sm text-sm font-black flex items-center gap-2"> {tr("พบกลุ่มเสี่ยงทั้งหมด")} <span className="bg-white/20 px-2.5 py-0.5 rounded-md">{warningEmployees.length}</span> {tr("คน")} </div>
+                                        <div className="bg-slate-50 text-slate-500 border border-slate-200 px-4 py-2.5 rounded-xl shadow-sm text-xs font-bold flex items-center"> {tr("* นับเฉพาะพนักงานที่มีสถานะ ขาดงาน, ลาป่วย, ลากิจ, ลาพักร้อน หรือ ลาอื่นๆ")} </div>
                                     </div>
                                     
                                     <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                                         <table className="w-full text-left text-sm">
                                             <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-widest border-b border-slate-200">
                                                 <tr>
-                                                    <th className="px-6 py-4">รหัสพนักงาน</th>
-                                                    <th className="px-6 py-4">ชื่อ-นามสกุล</th>
-                                                    <th className="px-6 py-4">สายการผลิต / กลุ่ม</th>
-                                                    <th className="px-6 py-4 text-center">รวมวันหยุด (ใน 7 วัน)</th>
+                                                    <th className="px-6 py-4">{tr("รหัสพนักงาน")}</th>
+                                                    <th className="px-6 py-4">{tr("ชื่อ-นามสกุล")}</th>
+                                                    <th className="px-6 py-4">{tr("สายการผลิต / กลุ่ม")}</th>
+                                                    <th className="px-6 py-4 text-center">{tr("รวมวันหยุด (ใน 7 วัน)")}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 font-bold text-slate-600">
@@ -1807,17 +1826,14 @@
                                                             </td>
                                                             <td className="px-6 py-4 text-center">
                                                                 <span className="bg-rose-100 text-rose-600 px-3.5 py-1 rounded-full text-[12px] font-black shadow-sm inline-block">
-                                                                    {emp.absentCount7Days} วัน
-                                                                </span>
+                                                                    {emp.absentCount7Days} {tr("วัน")} </span>
                                                             </td>
                                                         </tr>
                                                     ))
                                                 ) : (
                                                     <tr>
                                                         <td colSpan="4" className="px-6 py-12 text-center text-slate-400 italic font-bold">
-                                                            <i className="fa-regular fa-circle-check text-2xl block mb-2 opacity-50"></i>
-                                                            ไม่มีพนักงานที่หยุดงานเกิน 3 วันในช่วง 7 วันนี้
-                                                        </td>
+                                                            <i className="fa-regular fa-circle-check text-2xl block mb-2 opacity-50"></i> {tr("ไม่มีพนักงานที่หยุดงานเกิน 3 วันในช่วง 7 วันนี้")} </td>
                                                     </tr>
                                                 )}
                                             </tbody>
@@ -1835,23 +1851,20 @@
                                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
                                         <div className="w-10 h-10 bg-amber-100 text-amber-500 rounded-xl flex items-center justify-center">
                                             <i className="fa-solid fa-user-slash"></i>
-                                        </div>
-                                        จัดการรายชื่อพนักงานที่ไม่ได้มาทำงาน - 缺勤/请假管理
-                                    </h3>
+                                        </div> {tr("จัดการรายชื่อพนักงานที่ไม่ได้มาทำงาน - 缺勤/请假管理")} </h3>
                                     <button onClick={() => setShowAbsentModal(false)} className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors shadow-sm">
                                         <i className="fa-solid fa-xmark text-lg"></i>
                                     </button>
                                 </div>
                                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
                                     <div className="flex flex-wrap gap-3 mb-6">
-                                        <div className="bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-sm text-sm font-black flex items-center gap-2">
-                                            รวมทั้งหมด <span className="bg-white/20 px-2.5 py-0.5 rounded-md">{nonPresentEmployees.length}</span>
+                                        <div className="bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-sm text-sm font-black flex items-center gap-2"> {tr("รวมทั้งหมด")} <span className="bg-white/20 px-2.5 py-0.5 rounded-md">{nonPresentEmployees.length}</span>
                                         </div>
                                         {Object.entries(absenceSummary).map(([status, count]) => {
                                             const config = STATUS_LEGEND.find(l => status.includes(l.label)) || { bg: 'bg-slate-200', color: 'text-slate-500' };
                                             return (
                                                 <div key={status} className={`px-4 py-2.5 rounded-xl shadow-sm border border-slate-100 text-sm font-bold flex items-center gap-2 bg-slate-50 ${config.color}`}>
-                                                    {status} <span className={`px-2.5 py-0.5 rounded-md text-white font-black ${config.bg}`}>{count}</span>
+                                                    {tr(status)} <span className={`px-2.5 py-0.5 rounded-md text-white font-black ${config.bg}`}>{count}</span>
                                                 </div>
                                             );
                                         })}
@@ -1870,11 +1883,11 @@
                                                                 className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer" 
                                                             />
                                                         </th>
-                                                        <th className="px-4 py-4">รหัสพนักงาน</th>
-                                                        <th className="px-4 py-4">ชื่อ-นามสกุล</th>
-                                                        <th className="px-4 py-4">สายการผลิต / กลุ่ม</th>
-                                                        <th className="px-4 py-4 text-center">สถานะเดิม</th>
-                                                        <th className="px-4 py-4">เปลี่ยนสถานะใหม่</th>
+                                                        <th className="px-4 py-4">{tr("รหัสพนักงาน")}</th>
+                                                        <th className="px-4 py-4">{tr("ชื่อ-นามสกุล")}</th>
+                                                        <th className="px-4 py-4">{tr("สายการผลิต / กลุ่ม")}</th>
+                                                        <th className="px-4 py-4 text-center">{tr("สถานะเดิม")}</th>
+                                                        <th className="px-4 py-4">{tr("เปลี่ยนสถานะใหม่")}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100 font-bold text-slate-600">
@@ -1901,7 +1914,7 @@
                                                                     </td>
                                                                     <td className="px-4 py-4 text-center">
                                                                         <span className={`${config.bg} text-white px-3 py-1 rounded-full text-[10px] font-black shadow-sm inline-block`}>
-                                                                            {emp.status}
+                                                                            {tr(emp.status)}
                                                                         </span>
                                                                     </td>
                                                                     <td className="px-4 py-4">
@@ -1912,7 +1925,7 @@
                                                                                 ${updateData.checked ? 'border-amber-400 bg-white text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}
                                                                         >
                                                                             {STATUS_LEGEND.filter(l => l.label !== 'ไม่มีข้อมูล').map(l => (
-                                                                                <option key={l.label} value={l.label}>{l.label} - {l.zh}</option>
+                                                                                <option key={l.label} value={l.label}>{tr(l.label)}</option>
                                                                             ))}
                                                                         </select>
                                                                     </td>
@@ -1922,9 +1935,7 @@
                                                     ) : (
                                                         <tr>
                                                             <td colSpan="6" className="px-6 py-12 text-center text-slate-400 italic font-bold">
-                                                                <i className="fa-regular fa-face-smile text-2xl block mb-2 opacity-50"></i>
-                                                                มาครบทุกคน ไม่มีผู้ขาด/ลางาน
-                                                            </td>
+                                                                <i className="fa-regular fa-face-smile text-2xl block mb-2 opacity-50"></i> {tr("มาครบทุกคน ไม่มีผู้ขาด/ลางาน")} </td>
                                                         </tr>
                                                     )}
                                                 </tbody>
@@ -1933,9 +1944,7 @@
                                     </div>
                                 </div>
                                 <div className="p-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4">
-                                    <div className="text-sm font-bold text-slate-600">
-                                        เลือกเพื่ออัปเดต <span className="text-amber-600 font-black bg-white px-2 py-0.5 rounded border border-amber-100 shadow-sm mx-1">{Object.values(absentUpdates).filter(u => u.checked).length}</span> รายการ
-                                    </div>
+                                    <div className="text-sm font-bold text-slate-600"> {tr("เลือกเพื่ออัปเดต")} <span className="text-amber-600 font-black bg-white px-2 py-0.5 rounded border border-amber-100 shadow-sm mx-1">{Object.values(absentUpdates).filter(u => u.checked).length}</span> {tr("รายการ")} </div>
                                     <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
                                         {absentSaveStatus && (
                                             <span className={`text-[12px] font-black px-3 py-1.5 rounded-full bg-white shadow-sm border ${absentSaveStatus.type === 'success' ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100'}`}>
@@ -1947,9 +1956,7 @@
                                             disabled={isSavingAbsent || Object.values(absentUpdates).filter(u => u.checked).length === 0}
                                             className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-[1rem] font-black text-sm transition-all shadow-md flex items-center justify-center gap-2"
                                         >
-                                            {isSavingAbsent ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-floppy-disk"></i>}
-                                            บันทึกสถานะลง Google Sheets
-                                        </button>
+                                            {isSavingAbsent ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-floppy-disk"></i>} {tr("บันทึกสถานะลง Google Sheets")} </button>
                                     </div>
                                 </div>
                             </div>
@@ -1963,23 +1970,20 @@
                                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
                                         <div className="w-10 h-10 bg-emerald-100 text-emerald-500 rounded-xl flex items-center justify-center">
                                             <i className="fa-solid fa-user-check"></i>
-                                        </div>
-                                        รายชื่อพนักงานที่มาทำงาน - 出勤管理
-                                    </h3>
+                                        </div> {tr("รายชื่อพนักงานที่มาทำงาน - 出勤管理")} </h3>
                                     <button onClick={() => setShowPresentModal(false)} className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 transition-colors shadow-sm">
                                         <i className="fa-solid fa-xmark text-lg"></i>
                                     </button>
                                 </div>
                                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
                                     <div className="flex flex-wrap gap-3 mb-6">
-                                        <div className="bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-sm text-sm font-black flex items-center gap-2">
-                                            รวมทั้งหมด <span className="bg-white/20 px-2.5 py-0.5 rounded-md">{presentEmployees.length}</span>
+                                        <div className="bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-sm text-sm font-black flex items-center gap-2"> {tr("รวมทั้งหมด")} <span className="bg-white/20 px-2.5 py-0.5 rounded-md">{presentEmployees.length}</span>
                                         </div>
                                         {Object.entries(presenceSummary).map(([status, count]) => {
                                             const config = STATUS_LEGEND.find(l => status.includes(l.label)) || { bg: 'bg-slate-200', color: 'text-slate-500' };
                                             return (
                                                 <div key={status} className={`px-4 py-2.5 rounded-xl shadow-sm border border-slate-100 text-sm font-bold flex items-center gap-2 bg-slate-50 ${config.color}`}>
-                                                    {status} <span className={`px-2.5 py-0.5 rounded-md text-white font-black ${config.bg}`}>{count}</span>
+                                                    {tr(status)} <span className={`px-2.5 py-0.5 rounded-md text-white font-black ${config.bg}`}>{count}</span>
                                                 </div>
                                             );
                                         })}
@@ -1998,11 +2002,11 @@
                                                                 className="w-4 h-4 rounded text-emerald-500 accent-emerald-500 cursor-pointer" 
                                                             />
                                                         </th>
-                                                        <th className="px-4 py-4">รหัสพนักงาน</th>
-                                                        <th className="px-4 py-4">ชื่อ-นามสกุล</th>
-                                                        <th className="px-4 py-4">สายการผลิต / กลุ่ม</th>
-                                                        <th className="px-4 py-4 text-center">สถานะเดิม</th>
-                                                        <th className="px-4 py-4">เปลี่ยนสถานะใหม่</th>
+                                                        <th className="px-4 py-4">{tr("รหัสพนักงาน")}</th>
+                                                        <th className="px-4 py-4">{tr("ชื่อ-นามสกุล")}</th>
+                                                        <th className="px-4 py-4">{tr("สายการผลิต / กลุ่ม")}</th>
+                                                        <th className="px-4 py-4 text-center">{tr("สถานะเดิม")}</th>
+                                                        <th className="px-4 py-4">{tr("เปลี่ยนสถานะใหม่")}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100 font-bold text-slate-600">
@@ -2029,7 +2033,7 @@
                                                                     </td>
                                                                     <td className="px-4 py-4 text-center">
                                                                         <span className={`${config.bg} text-white px-3 py-1 rounded-full text-[10px] font-black shadow-sm inline-block`}>
-                                                                            {emp.status}
+                                                                            {tr(emp.status)}
                                                                         </span>
                                                                     </td>
                                                                     <td className="px-4 py-4">
@@ -2040,7 +2044,7 @@
                                                                                 ${updateData.checked ? 'border-emerald-400 bg-white text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}
                                                                         >
                                                                             {STATUS_LEGEND.filter(l => l.label !== 'ไม่มีข้อมูล').map(l => (
-                                                                                <option key={l.label} value={l.label}>{l.label} - {l.zh}</option>
+                                                                                <option key={l.label} value={l.label}>{tr(l.label)}</option>
                                                                             ))}
                                                                         </select>
                                                                     </td>
@@ -2050,9 +2054,7 @@
                                                     ) : (
                                                         <tr>
                                                             <td colSpan="6" className="px-6 py-12 text-center text-slate-400 italic font-bold">
-                                                                <i className="fa-regular fa-face-frown text-2xl block mb-2 opacity-50"></i>
-                                                                ไม่มีพนักงานมาทำงานในข้อมูลที่เลือก
-                                                            </td>
+                                                                <i className="fa-regular fa-face-frown text-2xl block mb-2 opacity-50"></i> {tr("ไม่มีพนักงานมาทำงานในข้อมูลที่เลือก")} </td>
                                                         </tr>
                                                     )}
                                                 </tbody>
@@ -2061,9 +2063,7 @@
                                     </div>
                                 </div>
                                 <div className="p-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4">
-                                    <div className="text-sm font-bold text-slate-600">
-                                        เลือกเพื่ออัปเดต <span className="text-emerald-600 font-black bg-white px-2 py-0.5 rounded border border-emerald-100 shadow-sm mx-1">{Object.values(presentUpdates).filter(u => u.checked).length}</span> รายการ
-                                    </div>
+                                    <div className="text-sm font-bold text-slate-600"> {tr("เลือกเพื่ออัปเดต")} <span className="text-emerald-600 font-black bg-white px-2 py-0.5 rounded border border-emerald-100 shadow-sm mx-1">{Object.values(presentUpdates).filter(u => u.checked).length}</span> {tr("รายการ")} </div>
                                     <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
                                         {presentSaveStatus && (
                                             <span className={`text-[12px] font-black px-3 py-1.5 rounded-full bg-white shadow-sm border ${presentSaveStatus.type === 'success' ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100'}`}>
@@ -2075,9 +2075,7 @@
                                             disabled={isSavingPresent || Object.values(presentUpdates).filter(u => u.checked).length === 0}
                                             className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-[1rem] font-black text-sm transition-all shadow-md flex items-center justify-center gap-2"
                                         >
-                                            {isSavingPresent ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-floppy-disk"></i>}
-                                            บันทึกสถานะลง Google Sheets
-                                        </button>
+                                            {isSavingPresent ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-floppy-disk"></i>} {tr("บันทึกสถานะลง Google Sheets")} </button>
                                     </div>
                                 </div>
                             </div>
@@ -2123,7 +2121,7 @@
             const handleSearch = (e) => {
                 if(e) e.preventDefault();
                 if (!searchId.trim()) {
-                    alert('กรุณากรอกรหัสพนักงานก่อนค้นหา');
+                    alert(tr("กรุณากรอกรหัสพนักงานก่อนค้นหา"));
                     return;
                 }
                 
@@ -2208,9 +2206,9 @@
                             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-[1.5rem] flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">
                                 <i className="fa-solid fa-user-clock"></i>
                             </div>
-                            <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">ตรวจสอบเวลาการมาทำงาน <br/><span className="text-slate-400 text-xl sm:text-2xl">个人考勤查询</span></h2>
+                            <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">{tr("ตรวจสอบเวลาการมาทำงาน")} <br/><span className="text-slate-400 text-xl sm:text-2xl">{tr("个人考勤查询")}</span></h2>
                             <div className="mt-2 inline-block bg-slate-50 border border-slate-100 px-4 sm:px-6 py-1.5 rounded-full">
-                                <p className="text-slate-400 text-[11px] sm:text-[13px] font-bold">รอบตัดเงินเดือน วันที่ 21 ถึง วันที่ 20 ของเดือนถัดไป</p>
+                                <p className="text-slate-400 text-[11px] sm:text-[13px] font-bold">{tr("รอบตัดเงินเดือน วันที่ 21 ถึง วันที่ 20 ของเดือนถัดไป")}</p>
                             </div>
                         </div>
 
@@ -2221,13 +2219,12 @@
                                 </div>
                                 <input 
                                     type="text" value={searchId} onChange={(e)=>setSearchId(e.target.value)}
-                                    placeholder="ใส่รหัสพนักงาน..." 
+                                    placeholder={tr("ใส่รหัสพนักงาน...")} 
                                     className="w-full bg-slate-50 border border-slate-100 rounded-[1.2rem] pl-14 pr-5 py-4 font-black text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all text-lg"
                                 />
                             </div>
                             <button type="submit" className="w-full sm:w-auto bg-blue-600 text-white px-10 py-4 rounded-[1.2rem] font-black hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2">
-                                <i className="fa-solid fa-magnifying-glass"></i> ค้นหา
-                            </button>
+                                <i className="fa-solid fa-magnifying-glass"></i> {tr("ค้นหา")} </button>
                         </form>
 
                         {searchedEmp ? (
@@ -2253,20 +2250,20 @@
                                             </span>
                                             {searchedEmp.resignedDate && (
                                                 <span className="bg-red-50 border border-red-100 px-4 py-1.5 rounded-full text-[11px] font-black text-red-500 flex items-center gap-2">
-                                                    <i className="fa-solid fa-user-xmark text-[10px]"></i> ลาออกเมื่อ {new Date(searchedEmp.resignedDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                    <i className="fa-solid fa-user-xmark text-[10px]"></i> {tr("ลาออกเมื่อ")} {new Date(searchedEmp.resignedDate).toLocaleDateString(window.HaierI18n.locale(), { day: 'numeric', month: 'short', year: 'numeric' })}
                                                 </span>
                                             )}
                                         </div>
                                     </div>
                                     <div className="w-full md:w-auto mt-4 md:mt-0">
                                         <div className="bg-slate-50/50 p-2 rounded-2xl border border-slate-100">
-                                            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3 mb-1">เลือกรอบเงินเดือน</label>
+                                            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3 mb-1">{tr("เลือกรอบเงินเดือน")}</label>
                                             <select 
                                                 value={selectedCycle} 
                                                 onChange={(e)=>setSelectedCycle(e.target.value)}
                                                 className="bg-white border-none text-[13px] font-black text-blue-600 outline-none pr-8 py-2.5 pl-3 rounded-xl cursor-pointer w-full shadow-sm"
                                             >
-                                                {payrollCycles.map(c => <option key={c.start} value={c.start}>{c.label}</option>)}
+                                                {payrollCycles.map(c => <option key={c.start} value={c.start}>{tr(c.label)}</option>)}
                                             </select>
                                         </div>
                                     </div>
@@ -2274,50 +2271,48 @@
 
                                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                     <div className="bg-white border border-slate-100 p-4 sm:p-6 rounded-[2rem] text-center shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">มาทำงานปกติ <span className="font-bold block text-emerald-400">正常</span></p>
-                                        <p className="text-3xl sm:text-4xl font-black text-emerald-500 leading-none mb-1">{getStats.normal}<span className="text-xl sm:text-3xl opacity-50">/{getStats.details.length}</span> <span className="text-xs text-slate-400">วัน</span></p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{tr("มาทำงานปกติ")} <span className="font-bold block text-emerald-400">{tr("正常")}</span></p>
+                                        <p className="text-3xl sm:text-4xl font-black text-emerald-500 leading-none mb-1">{getStats.normal}<span className="text-xl sm:text-3xl opacity-50">/{getStats.details.length}</span> <span className="text-xs text-slate-400">{tr("วัน")}</span></p>
                                     </div>
                                     <div className="bg-white border border-slate-100 p-4 sm:p-6 rounded-[2rem] text-center shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">มาสาย <span className="font-bold block text-orange-400">迟到</span></p>
-                                        <p className="text-3xl sm:text-4xl font-black text-orange-500 leading-none mb-1">{getStats.late} <span className="text-xs text-slate-400">วัน</span></p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{tr("มาสาย")} <span className="font-bold block text-orange-400">{tr("迟到")}</span></p>
+                                        <p className="text-3xl sm:text-4xl font-black text-orange-500 leading-none mb-1">{getStats.late} <span className="text-xs text-slate-400">{tr("วัน")}</span></p>
                                     </div>
                                     <div className="bg-white border border-slate-100 p-4 sm:p-6 rounded-[2rem] text-center shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">ลาหยุด/ลากิจ/ลาป่วย <span className="font-bold block text-slate-400">请假</span></p>
-                                        <p className="text-3xl sm:text-4xl font-black text-slate-300 leading-none mb-1">{getStats.leave} <span className="text-xs text-slate-400">วัน</span></p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{tr("ลาหยุด/ลากิจ/ลาป่วย")} <span className="font-bold block text-slate-400">{tr("请假")}</span></p>
+                                        <p className="text-3xl sm:text-4xl font-black text-slate-300 leading-none mb-1">{getStats.leave} <span className="text-xs text-slate-400">{tr("วัน")}</span></p>
                                     </div>
                                     <div className="bg-white border border-slate-100 p-4 sm:p-6 rounded-[2rem] text-center shadow-sm">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">ขาดงาน <span className="font-bold block text-red-400">旷工</span></p>
-                                        <p className="text-3xl sm:text-4xl font-black text-red-500 leading-none mb-1">{getStats.absent} <span className="text-xs text-slate-400">วัน</span></p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{tr("ขาดงาน")} <span className="font-bold block text-red-400">{tr("旷工")}</span></p>
+                                        <p className="text-3xl sm:text-4xl font-black text-red-500 leading-none mb-1">{getStats.absent} <span className="text-xs text-slate-400">{tr("วัน")}</span></p>
                                     </div>
                                     <div className="col-span-2 md:col-span-1 bg-white border border-slate-100 p-4 sm:p-6 rounded-[2rem] text-center shadow-sm bg-blue-50/20 border-blue-100">
-                                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 italic">ชั่วโมงโอทีรวม <span className="font-bold block text-blue-400">加班</span></p>
-                                        <p className="text-3xl sm:text-4xl font-black text-blue-600 leading-none mb-1">{getStats.ot.toFixed(1)} <span className="text-xs text-slate-400">ชม.</span></p>
+                                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 italic">{tr("ชั่วโมงโอทีรวม")} <span className="font-bold block text-blue-400">{tr("加班")}</span></p>
+                                        <p className="text-3xl sm:text-4xl font-black text-blue-600 leading-none mb-1">{getStats.ot.toFixed(1)} <span className="text-xs text-slate-400">{tr("ชม.")}</span></p>
                                     </div>
                                 </div>
 
                                 <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
                                     <div className="bg-slate-50/50 px-6 sm:px-10 py-5 flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-100 gap-4">
                                         <div>
-                                            <h4 className="text-lg font-black text-slate-800">รายละเอียดการลงเวลาและโอที</h4>
+                                            <h4 className="text-lg font-black text-slate-800">{tr("รายละเอียดการลงเวลาและโอที")}</h4>
                                             <div className="flex flex-wrap gap-2 sm:gap-3 mt-2">
                                                 <span className="text-[11px] font-black text-slate-50 bg-white px-3 py-1 rounded-full border shadow-sm flex items-center gap-1.5">
-                                                    <i className="fa-solid fa-sun text-orange-500"></i> ทำกะเช้า {getStats.dayShiftCount} วัน
-                                                </span>
+                                                    <i className="fa-solid fa-sun text-orange-500"></i> {tr("ทำกะเช้า")} {getStats.dayShiftCount} {tr("วัน")} </span>
                                                 <span className="text-[11px] font-black text-slate-500 bg-white px-3 py-1 rounded-full border shadow-sm flex items-center gap-1.5">
-                                                    <i className="fa-solid fa-moon text-indigo-500"></i> ทำกะดึก {getStats.nightShiftCount} วัน
-                                                </span>
+                                                    <i className="fa-solid fa-moon text-indigo-500"></i> {tr("ทำกะดึก")} {getStats.nightShiftCount} {tr("วัน")} </span>
                                             </div>
                                         </div>
-                                        <span className="text-[11px] font-bold text-slate-400 bg-white px-4 py-1.5 rounded-full border">ทั้งหมด {getStats.details.length} วันที่มีข้อมูล</span>
+                                        <span className="text-[11px] font-bold text-slate-400 bg-white px-4 py-1.5 rounded-full border">{tr("ทั้งหมด")} {getStats.details.length} {tr("วันที่มีข้อมูล")}</span>
                                     </div>
                                     <div className="max-h-[500px] overflow-x-auto overflow-y-auto custom-scrollbar">
                                         <table className="w-full text-left border-collapse min-w-[500px]">
                                             <thead className="bg-white sticky top-0 z-10 shadow-sm">
                                                 <tr>
-                                                    <th className="px-6 sm:px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b">วันที่ (DATE)</th>
-                                                    <th className="px-6 sm:px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b text-center">สถานะ (STATUS)</th>
-                                                    <th className="px-6 sm:px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b text-center">กะ (SHIFT)</th>
-                                                    <th className="px-6 sm:px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b text-right">โอที (OT)</th>
+                                                    <th className="px-6 sm:px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b">{tr("วันที่ (DATE)")}</th>
+                                                    <th className="px-6 sm:px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b text-center">{tr("สถานะ (STATUS)")}</th>
+                                                    <th className="px-6 sm:px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b text-center">{tr("กะ (SHIFT)")}</th>
+                                                    <th className="px-6 sm:px-10 py-4 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b text-right">{tr("โอที (OT)")}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -2334,11 +2329,11 @@
                                                     return (
                                                         <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
                                                             <td className="px-6 sm:px-10 py-4 sm:py-5 text-[12px] sm:text-sm font-bold text-slate-600 border-b border-slate-50">
-                                                                {new Date(d.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                                {new Date(d.date).toLocaleDateString(window.HaierI18n.locale(), { day: 'numeric', month: 'long', year: 'numeric' })}
                                                             </td>
                                                             <td className="px-6 sm:px-10 py-4 sm:py-5 border-b border-slate-50 text-center">
                                                                 <span className={`inline-block px-3 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-[11px] font-black ${bgClass} ${textClass} shadow-sm`}>
-                                                                    {d.status}
+                                                                    {tr(d.status)}
                                                                 </span>
                                                             </td>
                                                             <td className="px-6 sm:px-10 py-4 sm:py-5 border-b border-slate-50 text-center">
@@ -2354,7 +2349,7 @@
                                                 })}
                                                 {getStats.details.length === 0 && (
                                                     <tr>
-                                                        <td colSpan="4" className="px-10 py-20 text-center text-slate-300 italic font-bold">ไม่พบข้อมูลการลงเวลาในรอบนี้</td>
+                                                        <td colSpan="4" className="px-10 py-20 text-center text-slate-300 italic font-bold">{tr("ไม่พบข้อมูลการลงเวลาในรอบนี้")}</td>
                                                     </tr>
                                                 )}
                                             </tbody>
@@ -2365,7 +2360,7 @@
                         ) : (
                             <div className="text-center py-20 opacity-30 italic">
                                 <i className="fa-solid fa-magnifying-glass text-6xl mb-6 block text-slate-200"></i>
-                                <p className="font-bold text-slate-400">กรุณากรอกรหัสพนักงานเพื่อค้นหาข้อมูล</p>
+                                <p className="font-bold text-slate-400">{tr("กรุณากรอกรหัสพนักงานเพื่อค้นหาข้อมูล")}</p>
                             </div>
                         )}
                     </div>
@@ -2447,7 +2442,7 @@
                         }
                         if (isLeave(emp.statusesByDate?.[date])) count++;
                     });
-                    return { date, displayDate: new Date(date).toLocaleDateString('th-TH', {day:'numeric', month:'short'}), count };
+                    return { date, displayDate: new Date(date).toLocaleDateString(window.HaierI18n.locale(), {day:'numeric', month:'short'}), count };
                 });
             }, [employees, activeShift, selectedLine, weekDates]);
 
@@ -2495,17 +2490,14 @@
                                     <i className="fa-solid fa-calendar-minus"></i>
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                                        สถิติการลา (รายสัปดาห์)
-                                    </h2>
-                                    <p className="text-[12px] font-bold text-slate-500 mt-1">
-                                        ข้อมูล 7 วัน อ้างอิงเฉพาะ <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md mx-1">{activeShift}</span> และ <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md mx-1">{selectedLine}</span>
+                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2"> {tr("สถิติการลา (รายสัปดาห์)")} </h2>
+                                    <p className="text-[12px] font-bold text-slate-500 mt-1"> {tr("ข้อมูล 7 วัน อ้างอิงเฉพาะ")} <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md mx-1">{tr(activeShift)}</span> {tr("และ")} <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md mx-1">{tr(selectedLine)}</span>
                                     </p>
                                 </div>
                             </div>
                             
                             <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200 w-full sm:w-auto">
-                                <span className="text-[11px] font-black text-slate-400 pl-3 uppercase tracking-wider whitespace-nowrap">สิ้นสุดวันที่:</span>
+                                <span className="text-[11px] font-black text-slate-400 pl-3 uppercase tracking-wider whitespace-nowrap">{tr("สิ้นสุดวันที่:")}</span>
                                 <select 
                                     value={endDate} 
                                     onChange={(e) => setEndDate(e.target.value)}
@@ -2513,7 +2505,7 @@
                                 >
                                     {availableDates.map(date => (
                                         <option key={date} value={date}>
-                                            {new Date(date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            {new Date(date).toLocaleDateString(window.HaierI18n.locale(), { day: 'numeric', month: 'short', year: 'numeric' })}
                                         </option>
                                     ))}
                                 </select>
@@ -2523,8 +2515,7 @@
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                             <div className="bg-slate-50/50 rounded-2xl border border-slate-200 p-6 flex flex-col">
                                 <h3 className="text-[13px] font-black text-slate-700 uppercase tracking-widest mb-6 flex items-center gap-2">
-                                    <i className="fa-solid fa-chart-column text-indigo-400"></i> เปรียบเทียบยอดลารวมแต่ละไลน์
-                                </h3>
+                                    <i className="fa-solid fa-chart-column text-indigo-400"></i> {tr("เปรียบเทียบยอดลารวมแต่ละไลน์")} </h3>
                                 <div className="flex-1 flex items-end justify-around gap-2 mt-4 pb-2 relative h-[180px]">
                                     <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 pb-8">
                                         {[...Array(4)].map((_,i) => <div key={i} className="border-t border-dashed border-slate-400 w-full h-0"></div>)}
@@ -2536,8 +2527,7 @@
                                         return (
                                             <div key={i} className={`flex flex-col items-center gap-2 relative z-10 w-full group ${isSelectedLine ? '' : 'opacity-40 grayscale'}`}>
                                                 <div className="text-[10px] font-black text-slate-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200 absolute -top-6">
-                                                    {d.count} ครั้ง
-                                                </div>
+                                                    {d.count} {tr("ครั้ง")} </div>
                                                 <div className="w-full max-w-[40px] h-36 bg-slate-200/50 rounded-lg relative overflow-hidden flex items-end border border-slate-200 shadow-inner">
                                                     <div className="w-full transition-all duration-1000 rounded-lg bg-gradient-to-t from-indigo-500 to-indigo-300" style={{ height: `${hPct}%` }}></div>
                                                 </div>
@@ -2550,7 +2540,7 @@
 
                             <div className="bg-slate-50/50 rounded-2xl border border-slate-200 p-6 flex flex-col">
                                 <h3 className="text-[13px] font-black text-slate-700 uppercase tracking-widest mb-6 flex items-center gap-2">
-                                    <i className="fa-solid fa-chart-line text-rose-400"></i> แนวโน้มยอดลารายวัน ({selectedLine})
+                                    <i className="fa-solid fa-chart-line text-rose-400"></i> {tr("แนวโน้มยอดลารายวัน (")}{tr(selectedLine)})
                                 </h3>
                                 <div className="flex-1 flex items-end justify-around gap-1 mt-4 pb-2 relative h-[180px]">
                                     <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 pb-8">
@@ -2563,8 +2553,7 @@
                                         return (
                                             <div key={i} className="flex flex-col items-center gap-2 relative z-10 w-full group">
                                                 <div className="text-[10px] font-black text-slate-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-2 py-0.5 rounded shadow-sm border border-slate-200 absolute -top-6 whitespace-nowrap">
-                                                    {d.count} คน
-                                                </div>
+                                                    {d.count} {tr("คน")} </div>
                                                 <div className="w-full max-w-[32px] h-36 bg-slate-200/50 rounded-lg relative overflow-hidden flex items-end border border-slate-200 shadow-inner">
                                                     <div className={`w-full transition-all duration-1000 rounded-lg bg-gradient-to-t ${isMax ? 'from-rose-500 to-rose-300 shadow-[0_-5px_15px_rgba(244,63,94,0.3)]' : 'from-slate-400 to-slate-300'}`} style={{ height: `${hPct}%` }}></div>
                                                 </div>
@@ -2574,18 +2563,15 @@
                                     })}
                                 </div>
                                 {maxLeaveDay.count > 0 && (
-                                    <p className="text-[11px] font-bold text-center mt-3 text-slate-500">
-                                        วันที่คนลามากที่สุดคือ <span className="text-rose-600 font-black">{maxLeaveDay.displayDate}</span> (ลารวม {maxLeaveDay.count} คน)
-                                    </p>
+                                    <p className="text-[11px] font-bold text-center mt-3 text-slate-500"> {tr("วันที่คนลามากที่สุดคือ")} <span className="text-rose-600 font-black">{maxLeaveDay.displayDate}</span> {tr("(ลารวม")} {maxLeaveDay.count} {tr("คน)")} </p>
                                 )}
                             </div>
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
                             <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                                <i className="fa-solid fa-list-ul text-slate-400"></i> รายชื่อพนักงานที่ลา (ในรอบสัปดาห์)
-                            </h3>
-                            <span className="bg-rose-100 text-rose-600 px-3 py-1 rounded-lg text-[11px] font-black shadow-sm">พบ {tableData.length} รายการ</span>
+                                <i className="fa-solid fa-list-ul text-slate-400"></i> {tr("รายชื่อพนักงานที่ลา (ในรอบสัปดาห์)")} </h3>
+                            <span className="bg-rose-100 text-rose-600 px-3 py-1 rounded-lg text-[11px] font-black shadow-sm">{tr("พบ")} {tableData.length} {tr("รายการ")}</span>
                         </div>
                         
                         <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm bg-white">
@@ -2593,21 +2579,21 @@
                                 <table className="w-full text-left text-sm min-w-[800px]">
                                     <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-widest border-b border-slate-200 sticky top-0 z-10">
                                         <tr>
-                                            <th className="px-4 py-4 w-16 text-center">รูป</th>
-                                            <th className="px-4 py-4">รหัส</th>
-                                            <th className="px-4 py-4">ชื่อ-นามสกุล</th>
-                                            <th className="px-4 py-4 text-center">ไลน์</th>
-                                            <th className="px-4 py-4">ตำแหน่ง</th>
-                                            <th className="px-4 py-4 text-center">สังกัด</th>
+                                            <th className="px-4 py-4 w-16 text-center">{tr("รูป")}</th>
+                                            <th className="px-4 py-4">{tr("รหัส")}</th>
+                                            <th className="px-4 py-4">{tr("ชื่อ-นามสกุล")}</th>
+                                            <th className="px-4 py-4 text-center">{tr("ไลน์")}</th>
+                                            <th className="px-4 py-4">{tr("ตำแหน่ง")}</th>
+                                            <th className="px-4 py-4 text-center">{tr("สังกัด")}</th>
                                             {weekDates.map(d => (
                                                 <th key={d} className="px-2 py-4 text-center border-l border-slate-200">
                                                     <div className="flex flex-col items-center leading-tight">
-                                                        <span>{new Date(d).toLocaleDateString('th-TH', {day:'numeric'})}</span>
+                                                        <span>{new Date(d).toLocaleDateString(window.HaierI18n.locale(), {day:'numeric'})}</span>
                                                         <span className="text-[8px] opacity-60">{new Date(d).toLocaleDateString('en-US', {weekday:'short'})}</span>
                                                     </div>
                                                 </th>
                                             ))}
-                                            <th className="px-4 py-4 text-center border-l border-slate-200">รวม (วัน)</th>
+                                            <th className="px-4 py-4 text-center border-l border-slate-200">{tr("รวม (วัน)")}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 font-bold text-slate-600">
@@ -2659,9 +2645,7 @@
                                         ) : (
                                             <tr>
                                                 <td colSpan={7 + weekDates.length} className="px-6 py-16 text-center text-slate-400 italic font-bold">
-                                                    <i className="fa-regular fa-face-smile text-3xl block mb-3 opacity-30 text-emerald-500"></i>
-                                                    ไม่มีพนักงานลาหรือขาดงานในสัปดาห์นี้
-                                                </td>
+                                                    <i className="fa-regular fa-face-smile text-3xl block mb-3 opacity-30 text-emerald-500"></i> {tr("ไม่มีพนักงานลาหรือขาดงานในสัปดาห์นี้")} </td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -2789,11 +2773,9 @@
                                     <i className="fa-solid fa-star"></i>
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                                        ตำแหน่งสำคัญ <span className="text-slate-400 text-lg">关键岗位</span>
+                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2"> {tr("ตำแหน่งสำคัญ")} <span className="text-slate-400 text-lg">{tr("关键岗位")}</span>
                                     </h2>
-                                    <p className="text-[12px] font-bold text-slate-500 mt-1">
-                                        ข้อมูลอ้างอิงเฉพาะ <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md mx-1">{activeShift}</span> และ <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md mx-1">{selectedLine}</span>
+                                    <p className="text-[12px] font-bold text-slate-500 mt-1"> {tr("ข้อมูลอ้างอิงเฉพาะ")} <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md mx-1">{tr(activeShift)}</span> {tr("และ")} <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md mx-1">{tr(selectedLine)}</span>
                                     </p>
                                 </div>
                             </div>
@@ -2801,7 +2783,7 @@
                             <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 px-4 shadow-inner w-full lg:flex-1 lg:max-w-md xl:max-w-lg">
                                 <i className="fa-solid fa-search text-slate-400"></i>
                                 <input 
-                                    type="text" placeholder="ค้นหารหัส หรือ ชื่อพนักงาน..." 
+                                    type="text" placeholder={tr("ค้นหารหัส หรือ ชื่อพนักงาน...")} 
                                     value={searchTerm} onChange={e => setSearchTerm(e.target.value)} 
                                     className="bg-transparent border-none text-[13px] font-bold outline-none text-slate-800 w-full" 
                                 />
@@ -2809,34 +2791,32 @@
 
                             <div className="flex flex-wrap items-center gap-3 shrink-0">
                                 <div className="bg-slate-50 px-5 py-2.5 rounded-full border border-slate-200 shadow-sm flex items-center gap-3">
-                                    <span className="text-slate-500 font-bold text-sm">พนักงานสำคัญทั้งหมด</span>
-                                    <span className="text-xl font-black text-slate-800">{total} <span className="text-sm font-bold text-slate-400">คน</span></span>
+                                    <span className="text-slate-500 font-bold text-sm">{tr("พนักงานสำคัญทั้งหมด")}</span>
+                                    <span className="text-xl font-black text-slate-800">{total} <span className="text-sm font-bold text-slate-400">{tr("คน")}</span></span>
                                 </div>
                                 <button onClick={handleExportCSV} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-full font-black text-[13px] shadow-sm transition-colors flex items-center gap-2">
-                                    <i className="fa-solid fa-file-csv"></i> Export CSV
-                                </button>
+                                    <i className="fa-solid fa-file-csv"></i> {tr("Export CSV")} </button>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             <div className="lg:col-span-2 flex flex-col h-auto lg:h-[600px]">
                                 <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <i className="fa-solid fa-list-ul text-slate-400"></i> รายชื่อพนักงาน (Employees List)
-                                </h3>
+                                    <i className="fa-solid fa-list-ul text-slate-400"></i> {tr("รายชื่อพนักงาน (Employees List)")} </h3>
                                 <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex-1 flex flex-col bg-white">
                                     <div className="overflow-y-auto custom-scrollbar flex-1 w-full overflow-x-auto">
                                         <table className="w-full text-left text-sm min-w-[700px]">
                                             <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-widest border-b border-slate-200 sticky top-0 z-10">
                                                 <tr>
-                                                    <th className="px-4 sm:px-5 py-4 w-20 text-center">รหัส (ID)</th>
-                                                    <th className="px-4 sm:px-5 py-4">ชื่อ-นามสกุล (Name)</th>
-                                                    <th className="px-4 sm:px-5 py-4 w-24 text-center">ไลน์ (Line)</th>
-                                                    <th className="px-4 sm:px-5 py-4">ตำแหน่งหลัก (Role)</th>
-                                                    <th className="px-4 sm:px-5 py-4">ตำแหน่งเสริม 1 (Role 2)</th>
-                                                    <th className="px-4 sm:px-5 py-4">ตำแหน่งเสริม 2 (Role 3)</th>
-                                                    <th className="px-4 sm:px-5 py-4">ตำแหน่งเสริม 3 (Role 4)</th>
-                                                    <th className="px-4 sm:px-5 py-4 text-center">สังกัด (Contract)</th>
-                                                    <th className="px-4 sm:px-5 py-4 w-20 text-center">รูป (Pic)</th>
+                                                    <th className="px-4 sm:px-5 py-4 w-20 text-center">{tr("รหัส (ID)")}</th>
+                                                    <th className="px-4 sm:px-5 py-4">{tr("ชื่อ-นามสกุล (Name)")}</th>
+                                                    <th className="px-4 sm:px-5 py-4 w-24 text-center">{tr("ไลน์ (Line)")}</th>
+                                                    <th className="px-4 sm:px-5 py-4">{tr("ตำแหน่งหลัก (Role)")}</th>
+                                                    <th className="px-4 sm:px-5 py-4">{tr("ตำแหน่งเสริม 1 (Role 2)")}</th>
+                                                    <th className="px-4 sm:px-5 py-4">{tr("ตำแหน่งเสริม 2 (Role 3)")}</th>
+                                                    <th className="px-4 sm:px-5 py-4">{tr("ตำแหน่งเสริม 3 (Role 4)")}</th>
+                                                    <th className="px-4 sm:px-5 py-4 text-center">{tr("สังกัด (Contract)")}</th>
+                                                    <th className="px-4 sm:px-5 py-4 w-20 text-center">{tr("รูป (Pic)")}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 font-bold text-slate-600">
@@ -2854,7 +2834,7 @@
                                                             <td className="px-4 sm:px-5 py-3">
                                                                 <div className="flex flex-col items-start gap-1">
                                                                     <span className={`px-2.5 py-0.5 rounded text-[10px] font-black ${emp.category.light} ${emp.category.text} border shadow-sm border-white flex items-center gap-1.5`}>
-                                                                        <i className={`fa-solid ${emp.category.icon}`}></i> {emp.category.label}
+                                                                        <i className={`fa-solid ${emp.category.icon}`}></i> {tr(emp.category.label)}
                                                                     </span>
                                                                     <span className="text-[11px] text-slate-400 font-normal truncate max-w-[150px]" title={emp.role}>{emp.role || '-'}</span>
                                                                 </div>
@@ -2896,9 +2876,7 @@
                                                     )})
                                                 ) : (
                                                     <tr>
-                                                        <td colSpan="9" className="px-6 py-20 text-center text-slate-400 italic font-bold">
-                                                            ไม่พบพนักงานในตำแหน่งสำคัญสำหรับเงื่อนไขที่เลือก
-                                                        </td>
+                                                        <td colSpan="9" className="px-6 py-20 text-center text-slate-400 italic font-bold"> {tr("ไม่พบพนักงานในตำแหน่งสำคัญสำหรับเงื่อนไขที่เลือก")} </td>
                                                     </tr>
                                                 )}
                                             </tbody>
@@ -2909,8 +2887,7 @@
 
                             <div className="lg:col-span-1 flex flex-col h-auto lg:h-[600px] mt-6 lg:mt-0">
                                 <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <i className="fa-solid fa-chart-bar text-slate-400"></i> สรุปจำนวน (Summary)
-                                </h3>
+                                    <i className="fa-solid fa-chart-bar text-slate-400"></i> {tr("สรุปจำนวน (Summary)")} </h3>
                                 <div className="bg-slate-50/50 rounded-2xl border border-slate-200 p-6 shadow-inner flex-1 flex flex-col">
                                     <div className="flex-1 flex flex-col justify-center gap-4 relative mt-4">
                                         {KEY_ROLES.map((role) => {
@@ -2924,13 +2901,13 @@
                                                                 <i className={`fa-solid ${role.icon}`}></i>
                                                             </div>
                                                             <div>
-                                                                <span className="text-[12px] font-black text-slate-700 block leading-tight">{role.label}</span>
-                                                                <span className="text-[9px] font-bold text-slate-400">{role.sub} {role.zh}</span>
+                                                                <span className="text-[12px] font-black text-slate-700 block leading-tight">{tr(role.label)}</span>
+                                                                <span className="text-[9px] font-bold text-slate-400">{''} {''}</span>
                                                             </div>
                                                         </div>
                                                         <div className="text-right">
                                                             <span className={`text-lg font-black ${role.text}`}>{count}</span>
-                                                            <span className="text-[10px] font-bold text-slate-400 ml-1">คน</span>
+                                                            <span className="text-[10px] font-bold text-slate-400 ml-1">{tr("คน")}</span>
                                                         </div>
                                                     </div>
                                                     <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden shadow-inner">
@@ -3080,10 +3057,10 @@
                       <i className="fa-regular fa-clock text-white text-[24px] sm:text-[32px]"></i>
                     </div>
                     <div>
-                      <h1 className="text-xl sm:text-2xl font-black italic tracking-tighter text-slate-800 uppercase leading-none">OT Dashboard V6.3</h1>
+                      <h1 className="text-xl sm:text-2xl font-black italic tracking-tighter text-slate-800 uppercase leading-none">{tr("OT Dashboard V6.3")}</h1>
                       <div className="flex items-center gap-2 mt-2 sm:mt-3">
                         <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-sm"></div>
-                        <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase italic tracking-widest text-emerald-600">Syncing with Grand Summary</p>
+                        <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase italic tracking-widest text-emerald-600">{tr("Syncing with Grand Summary")}</p>
                       </div>
                     </div>
                   </div>
@@ -3092,7 +3069,7 @@
                     <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 px-4 shadow-inner w-full sm:flex-1 min-w-[200px]">
                       <i className="fa-solid fa-search text-slate-400"></i>
                       <input 
-                          type="text" placeholder="ค้นหารหัส หรือ ชื่อพนักงาน..." 
+                          type="text" placeholder={tr("ค้นหารหัส หรือ ชื่อพนักงาน...")} 
                           value={searchTerm} onChange={e => setSearchTerm(e.target.value)} 
                           className="bg-transparent border-none text-[13px] font-bold outline-none text-slate-800 w-full" 
                       />
@@ -3108,13 +3085,13 @@
                     <div className="flex w-full sm:w-auto gap-3 overflow-x-auto hide-scrollbar">
                         <div className="bg-slate-50 p-1.5 rounded-2xl flex border border-slate-200 shadow-inner shrink-0">
                         {['Shift A', 'Shift B'].map(s => (
-                            <button key={s} onClick={() => setShift(s)} className={`px-4 sm:px-8 py-2.5 rounded-[1rem] text-[10px] sm:text-[11px] font-black transition-all ${shift === s ? 'bg-white text-orange-600 shadow-md' : 'text-slate-400'}`}>{s}</button>
+                            <button key={s} onClick={() => setShift(s)} className={`px-4 sm:px-8 py-2.5 rounded-[1rem] text-[10px] sm:text-[11px] font-black transition-all ${shift === s ? 'bg-white text-orange-600 shadow-md' : 'text-slate-400'}`}>{tr(s)}</button>
                         ))}
                         </div>
                         <div className="bg-slate-50 p-1.5 rounded-2xl flex gap-1.5 border border-slate-200 shadow-inner shrink-0">
-                        <span className="px-2 sm:px-3 text-[9px] sm:text-[10px] font-black text-slate-400 uppercase flex items-center italic">Line</span>
+                        <span className="px-2 sm:px-3 text-[9px] sm:text-[10px] font-black text-slate-400 uppercase flex items-center italic">{tr("Line")}</span>
                         {[1, 2, 3, 4, 5, 6, 7, 8, 11].map(l => (
-                            <button key={l} onClick={() => setSelectedLine(l)} className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-[11px] sm:text-[13px] font-black transition-all border ${selectedLine === l ? 'bg-white text-orange-600 shadow-md border-orange-200 scale-110' : 'text-slate-400 border-transparent hover:bg-white/50'}`}>{l}</button>
+                            <button key={l} onClick={() => setSelectedLine(l)} className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-[11px] sm:text-[13px] font-black transition-all border ${selectedLine === l ? 'bg-white text-orange-600 shadow-md border-orange-200 scale-110' : 'text-slate-400 border-transparent hover:bg-white/50'}`}>{tr(l)}</button>
                         ))}
                         </div>
                         <button onClick={onRefresh} className="hidden sm:block p-3.5 bg-white text-slate-400 hover:text-orange-600 rounded-2xl border shadow-sm active:scale-90 hover:border-orange-200 shrink-0"><i className="fa-solid fa-arrows-rotate text-xl"></i></button>
@@ -3128,7 +3105,7 @@
                       <i className={`fa-solid ${status.type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'} text-2xl`}></i>
                     </div>
                     <div className="text-center sm:text-left w-full sm:w-auto">
-                      <p className="text-[14px] font-black uppercase italic leading-none">สถานะ</p>
+                      <p className="text-[14px] font-black uppercase italic leading-none">{tr("สถานะ")}</p>
                       <p className="text-[11px] font-bold opacity-80 mt-1.5">{status.msg}</p>
                     </div>
                     <button onClick={() => setStatus(null)} className="absolute top-4 right-4 sm:static sm:ml-auto text-slate-400 p-2"><i className="fa-solid fa-xmark text-xl"></i></button>
@@ -3154,12 +3131,12 @@
                       <div key={group.id} className="bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col h-[380px] overflow-hidden transition-all hover:shadow-md">
                         <div className="p-4 border-b flex items-center justify-between bg-slate-50/30">
                           <div>
-                            <h3 className="text-sm font-black text-slate-800 leading-none">{group.name}</h3>
-                            <span className="text-[9px] text-orange-500 font-bold uppercase tracking-wider">{group.sub}</span>
+                            <h3 className="text-sm font-black text-slate-800 leading-none">{tr(group.name)}</h3>
+                            <span className="text-[9px] text-orange-500 font-bold uppercase tracking-wider">{''}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="flex items-center bg-orange-100 border border-orange-200 rounded-xl px-2 py-1">
-                              <span className="text-[9px] font-black mr-1 text-orange-700 italic">ชม.</span>
+                              <span className="text-[9px] font-black mr-1 text-orange-700 italic">{tr("ชม.")}</span>
                               <input 
                                 type="number" step="0.5" value={settings.defaultHours} 
                                 onChange={e => setGroupState(p => ({...p, [group.id]: {...p[group.id], defaultHours: parseFloat(e.target.value) || 0}}))}
@@ -3184,11 +3161,10 @@
                              }}>
                                <i className={`fa-solid ${isAllSelected ? 'fa-square-check text-orange-600' : 'fa-square text-slate-300'} text-base`}></i>
                              </button>
-                             <span className="font-bold text-slate-400 italic uppercase">ID / Employee Name</span>
+                             <span className="font-bold text-slate-400 italic uppercase">{tr("ID / Employee Name")}</span>
                            </div>
                            <div className="text-orange-600 font-black bg-white px-2 py-0.5 rounded-lg border border-orange-100 shadow-sm">
-                             {totalHours.toFixed(1)} hrs
-                           </div>
+                             {totalHours.toFixed(1)} {tr("hrs")} </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar bg-white">
@@ -3214,14 +3190,13 @@
                                         {m.id}
                                         {hasExistingOT && !isSaved && (
                                             <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] bg-blue-50 text-blue-600 border border-blue-100 shadow-sm flex items-center gap-1">
-                                                <i className="fa-solid fa-clock"></i> {existingOTVal} ชม.
-                                            </span>
+                                                <i className="fa-solid fa-clock"></i> {existingOTVal} {tr("ชม.")} </span>
                                         )}
                                     </div>
                                     <div className="text-[10px] text-slate-500 truncate mt-1">{m.name}</div>
                                   </div>
                                   <div className="w-[20%] text-right">
-                                    {isSaved && <span className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase border border-emerald-100 flex items-center justify-center gap-1"><i className="fa-solid fa-check"></i> SAVED</span>}
+                                    {isSaved && <span className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded uppercase border border-emerald-100 flex items-center justify-center gap-1"><i className="fa-solid fa-check"></i> {tr("SAVED")}</span>}
                                   </div>
                                 </div>
                               );
@@ -3229,7 +3204,7 @@
                           ) : (
                             <div className="h-full flex flex-col items-center justify-center text-slate-300 opacity-50 italic py-10">
                               <i className="fa-solid fa-users text-2xl mb-2"></i>
-                              <p className="text-[10px] uppercase font-black">{searchTerm ? "ไม่พบผลการค้นหา" : "ไม่พบพนักงานในกะ/ไลน์นี้"}</p>
+                              <p className="text-[10px] uppercase font-black">{searchTerm ? tr("ไม่พบผลการค้นหา") : tr("ไม่พบพนักงานในกะ/ไลน์นี้")}</p>
                             </div>
                           )}
                         </div>
@@ -3246,23 +3221,21 @@
                                 <div className="w-16 h-16 bg-white text-orange-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">
                                     <i className="fa-solid fa-file-signature"></i>
                                 </div>
-                                <h3 className="text-xl font-black text-slate-800">ยืนยันการบันทึก OT</h3>
+                                <h3 className="text-xl font-black text-slate-800">{tr("ยืนยันการบันทึก OT")}</h3>
                             </div>
                             <div className="p-6">
-                                <p className="text-slate-600 text-[13px] font-bold text-center mb-6 leading-relaxed">
-                                    คุณต้องการบันทึกข้อมูลล่วงเวลา (OT) ให้กับกลุ่ม <span className="text-orange-600 font-black">{confirmDialog.groupName}</span> ใช่หรือไม่?
-                                </p>
+                                <p className="text-slate-600 text-[13px] font-bold text-center mb-6 leading-relaxed"> {tr("คุณต้องการบันทึกข้อมูลล่วงเวลา (OT) ให้กับกลุ่ม")} <span className="text-orange-600 font-black">{confirmDialog.groupName}</span> {tr("ใช่หรือไม่?")} </p>
                                 <div className="bg-slate-50 rounded-xl p-4 space-y-3 mb-8 border border-slate-100">
                                     <div className="flex justify-between items-center text-[12px]">
-                                        <span className="font-bold text-slate-500">จำนวนพนักงาน</span>
-                                        <span className="font-black text-slate-800">{groupState[confirmDialog.groupId].selectedIds.length} คน</span>
+                                        <span className="font-bold text-slate-500">{tr("จำนวนพนักงาน")}</span>
+                                        <span className="font-black text-slate-800">{groupState[confirmDialog.groupId].selectedIds.length} {tr("คน")}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[12px]">
-                                        <span className="font-bold text-slate-500">ชั่วโมง OT / คน</span>
-                                        <span className="font-black text-orange-600">{groupState[confirmDialog.groupId].defaultHours} ชม.</span>
+                                        <span className="font-bold text-slate-500">{tr("ชั่วโมง OT / คน")}</span>
+                                        <span className="font-black text-orange-600">{groupState[confirmDialog.groupId].defaultHours} {tr("ชม.")}</span>
                                     </div>
                                     <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-[12px]">
-                                        <span className="font-bold text-slate-500">วันที่ทำรายการ</span>
+                                        <span className="font-bold text-slate-500">{tr("วันที่ทำรายการ")}</span>
                                         <span className="font-black text-slate-800">{formatThaiDate(targetDate)}</span>
                                     </div>
                                 </div>
@@ -3270,15 +3243,12 @@
                                     <button 
                                         onClick={() => setConfirmDialog({ isOpen: false, groupId: null, groupName: '' })} 
                                         className="flex-1 bg-white text-slate-500 border border-slate-200 py-3 rounded-[1rem] font-black hover:bg-slate-50 transition-colors"
-                                    >
-                                        ยกเลิก
-                                    </button>
+                                    > {tr("ยกเลิก")} </button>
                                     <button 
                                         onClick={handleSaveGroupConfirmed} 
                                         className="flex-1 bg-orange-600 text-white py-3 rounded-[1rem] font-black hover:bg-orange-700 shadow-md shadow-orange-200 transition-all flex items-center justify-center gap-2"
                                     >
-                                        <i className="fa-solid fa-check"></i> ยืนยันบันทึก
-                                    </button>
+                                        <i className="fa-solid fa-check"></i> {tr("ยืนยันบันทึก")} </button>
                                 </div>
                             </div>
                         </div>
@@ -3290,6 +3260,12 @@
         };
 
         const MainApp = () => {
+            const [uiLanguage, setUiLanguage] = useState(window.HaierI18n.getLanguage);
+            useEffect(() => {
+                const sync = () => setUiLanguage(window.HaierI18n.getLanguage());
+                window.addEventListener('haier-language-change', sync);
+                return () => window.removeEventListener('haier-language-change', sync);
+            }, []);
             const [view, setView] = useState('dashboard');
             const [employees, setEmployees] = useState([]);
             const [loading, setLoading] = useState(true);
@@ -3564,7 +3540,7 @@
 
             const checkPass = () => {
                 if (otPass === OT_ACCESS_PASSWORD) { setIsOtAuth(true); } 
-                else { alert('รหัสผ่านไม่ถูกต้อง'); }
+                else { alert(tr("รหัสผ่านไม่ถูกต้อง")); }
             };
 
             return (
@@ -3574,10 +3550,15 @@
                             <div className="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100"><i className="fa-solid fa-industry text-base"></i></div>
                             <div>
                                 <h1 className="text-base font-black italic uppercase text-slate-800 tracking-tighter leading-none">Haier A01 Suite</h1>
-                                <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase mt-0.5">Production Management</p>
+                                <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase mt-0.5">{tr("Production Management")}</p>
                             </div>
                         </div>
 
+                        <div className="suite-language print-hidden" role="group" aria-label="Language / ภาษา / 语言 / ဘာသာစကား">
+                            {[['th','ไทย'],['en','English'],['zh','中文'],['my','မြန်မာ']].map(([code,label]) => (
+                                <button key={code} type="button" lang={code} aria-pressed={uiLanguage === code} onClick={() => window.HaierI18n.setLanguage(code)}>{label}</button>
+                            ))}
+                        </div>
                         <div className="suite-tabs flex items-center justify-start sm:justify-center gap-2 order-last xl:order-none w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0 hide-scrollbar shrink-0">
                             {[
                                 { id: 'dashboard', l: 'หน้าหลัก', zh: '首页', i: 'fa-chart-pie', act: () => setView('dashboard') },
@@ -3590,7 +3571,7 @@
                                 <button key={t.id} aria-current={view === t.id ? "page" : undefined} onClick={t.act} className={`whitespace-nowrap shrink-0 px-3 sm:px-4 py-2 rounded-xl text-[11px] sm:text-[12px] font-bold flex items-center gap-2 transition-all border ${view===t.id ? 'bg-blue-50 text-blue-600 border-blue-100 shadow-sm' : 'text-slate-500 hover:bg-slate-50 border-transparent hover:border-slate-200'}`}>
                                     <i className={`fa-solid ${t.i}`}></i> 
                                     <span className="uppercase flex items-center gap-1.5">
-                                        {t.l} <span className="text-[10px] font-medium opacity-70 hidden sm:inline-block">{t.zh}</span>
+                                        {tr(t.l)} <span className="text-[10px] font-medium opacity-70 hidden sm:inline-block">{''}</span>
                                     </span>
                                 </button>
                             ))}
@@ -3600,13 +3581,13 @@
                             <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200 shrink-0">
                                 {['Shift A', 'Shift B'].map(s => (
                                     <button key={s} aria-pressed={activeShift === s} onClick={()=>setActiveShift(s)} className={`whitespace-nowrap px-3 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black transition-all ${activeShift===s?'bg-white text-blue-600 shadow-sm':'text-slate-400 hover:text-slate-600'}`}>
-                                        {s}
+                                        {tr(s)}
                                     </button>
                                 ))}
                             </div>
                             <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
                                 {['ALL', 'LINE 1', 'LINE 2', 'LINE 3', 'LINE 4', 'LINE 5', 'LINE 6', 'LINE 7', 'LINE 8', 'LINE 11'].map(l => (
-                                    <button key={l} aria-pressed={selectedLine === l} onClick={()=>setSelectedLine(l)} className={`whitespace-nowrap px-2 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedLine===l?'bg-white text-blue-600 shadow-sm':'text-slate-400 hover:text-slate-600'}`}>{l}</button>
+                                    <button key={l} aria-pressed={selectedLine === l} onClick={()=>setSelectedLine(l)} className={`whitespace-nowrap px-2 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedLine===l?'bg-white text-blue-600 shadow-sm':'text-slate-400 hover:text-slate-600'}`}>{tr(l)}</button>
                                 ))}
                             </div>
                             {view !== 'ot' && (
@@ -3628,15 +3609,15 @@
                                     <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6">
                                         <i className="fa-solid fa-lock"></i>
                                     </div>
-                                    <h2 className="text-2xl font-black text-slate-800 mb-2">พื้นที่หวงห้าม</h2>
-                                    <p className="text-slate-400 text-sm mb-8 font-bold">กรุณากรอกรหัสผ่านเพื่อบันทึก OT</p>
+                                    <h2 className="text-2xl font-black text-slate-800 mb-2">{tr("พื้นที่หวงห้าม")}</h2>
+                                    <p className="text-slate-400 text-sm mb-8 font-bold">{tr("กรุณากรอกรหัสผ่านเพื่อบันทึก OT")}</p>
                                     
                                     <input 
                                         type="password" 
                                         value={otPass} 
                                         onChange={(e) => setOtPass(e.target.value)} 
                                         onKeyDown={(e) => e.key === 'Enter' && checkPass()} 
-                                        placeholder="ระบุรหัสผ่าน (Password)" 
+                                        placeholder={tr("ระบุรหัสผ่าน (Password)")} 
                                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 font-black text-slate-700 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all text-center tracking-[0.5em]"
                                         autoFocus
                                     />
@@ -3645,8 +3626,7 @@
                                         onClick={checkPass} 
                                         className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2"
                                     >
-                                        <i className="fa-solid fa-key"></i> ปลดล็อคระบบ
-                                    </button>
+                                        <i className="fa-solid fa-key"></i> {tr("ปลดล็อคระบบ")} </button>
                                 </div>
                             ) : (
                                 <OriginalOTSystem globalEmployees={employees} onRefresh={fetchDashboardData} />
