@@ -1,175 +1,139 @@
 <!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ระบบบันทึกเวลาเข้างาน</title>
-  <!-- ใช้ Relative Path รองรับ GitHub Pages -->
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <!-- ✨ แก้ไขเส้นทางไฟล์ตรงนี้เอา js/ ออก -->
-  <script src="./api-config.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<html lang="th"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระบบบันทึกเวลาเข้างาน</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="./api-config.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;min-height:100vh;background:linear-gradient(135deg,#0f0f23 0%,#1a1a3e 50%,#0d1b2a 100%);color:#e2e8f0;display:flex;flex-direction:column;align-items:center;padding:40px 20px 60px;position:relative;overflow-x:hidden}
+body::before,body::after{content:'';position:fixed;border-radius:50%;filter:blur(80px);opacity:.15;pointer-events:none;z-index:0}
+body::before{top:-50px;left:-50px;width:300px;height:300px;background:#6366f1}
+body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981}
+.header{text-align:center;margin-bottom:40px;position:relative;z-index:1}.logo-icon{font-size:48px;margin-bottom:10px;display:inline-block}h1{font-size:1.8em;font-weight:700;margin-bottom:5px;color:#f1f5f9}.subtitle{color:#94a3b8;font-size:.9em}
+.api-warning{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:10px 20px;border-radius:12px;margin-bottom:24px;font-size:.85em;display:none;z-index:1;position:relative}.api-warning a{color:#fbbf24;text-decoration:underline;margin-left:5px}
+.menu-cards{display:flex;flex-direction:column;gap:16px;max-width:350px;width:100%;position:relative;z-index:1}
+.btn-menu{display:flex;align-items:center;padding:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;text-decoration:none;color:#e2e8f0;transition:all .3s ease;backdrop-filter:blur(10px)}
+.btn-menu:hover{transform:translateY(-3px);background:rgba(255,255,255,.1);box-shadow:0 10px 25px rgba(0,0,0,.2)}
+.card-icon{width:50px;height:50px;border-radius:16px;display:flex;justify-content:center;align-items:center;font-size:24px;margin-right:16px;flex-shrink:0}
+.btn-register .card-icon{background:rgba(99,102,241,.2);color:#818cf8}.btn-scan .card-icon{background:rgba(16,185,129,.2);color:#34d399}.btn-config .card-icon{background:rgba(148,163,184,.2);color:#cbd5e1}.btn-dashboard .card-icon{background:rgba(245,158,11,.2);color:#fbbf24}.btn-faresult .card-icon{background:rgba(236,72,153,.2);color:#f472b6}.btn-fastock .card-icon{background:rgba(20,184,166,.2);color:#2dd4bf}
+.card-text{flex-grow:1}.card-title{font-size:1.1em;font-weight:600;margin-bottom:4px}.card-desc{font-size:.8em;color:#94a3b8}.card-arrow{font-size:1.5em;color:#475569}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style></head><body>
+<div class="header"><span class="logo-icon">🏢</span><h1>ระบบบันทึกเวลาเข้างาน</h1><p class="subtitle">Face Recognition &amp; GPS Attendance</p></div>
+<div id="apiWarning" class="api-warning">⚠️ ยังไม่ได้ตั้งค่า API — <a href="./config.html">ไปตั้งค่าก่อน</a></div>
+<div class="menu-cards">
+<a href="./register.html" class="btn-menu btn-register"><div class="card-icon">👤</div><div class="card-text"><div class="card-title">ลงทะเบียนพนักงาน</div><div class="card-desc">บันทึกข้อมูลใบหน้าใหม่</div></div><span class="card-arrow">›</span></a>
+<a href="./scan.html" class="btn-menu btn-scan"><div class="card-icon">📷</div><div class="card-text"><div class="card-title">สแกนเข้างาน</div><div class="card-desc">ยืนยันตัวตนด้วยใบหน้า + GPS</div></div><span class="card-arrow">›</span></a>
+<a href="./config.html" class="btn-menu btn-config"><div class="card-icon">⚙️</div><div class="card-text"><div class="card-title">ตั้งค่าระบบ</div><div class="card-desc">จัดการ GPS และ API (Admin)</div></div><span class="card-arrow">›</span></a>
+<a href="./dashboard.html" class="btn-menu btn-dashboard"><div class="card-icon">📊</div><div class="card-text"><div class="card-title">แดชบอร์ด &amp; OT</div><div class="card-desc">ดูข้อมูลภาพรวมสรุปผล</div></div><span class="card-arrow">›</span></a>
+<a href="./faresult.html" class="btn-menu btn-faresult"><div class="card-icon">📈</div><div class="card-text"><div class="card-title">Production Plan VS Result</div><div class="card-desc">แผนการผลิตและผลลัพธ์การทำงาน</div></div><span class="card-arrow">›</span></a>
+<a href="./FA%20Stock%20Management" class="btn-menu btn-fastock"><div class="card-icon">📦</div><div class="card-text"><div class="card-title">FA-Stock Management</div><div class="card-desc">จัดการคลังสินค้าและวัตถุดิบ</div></div><span class="card-arrow">›</span></a>
+</div>
+<script>
 
-    body {
-      font-family: 'Sarabun', sans-serif;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0d1b2a 100%);
-      color: #e2e8f0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px 60px;
-      position: relative;
-      overflow-x: hidden;
+(() => {
+ const fallback = 'https://script.google.com/macros/s/AKfycbwQPcJlhR2plIgfDWnYrknQyPcuo2R4FAZEu4CuGtXdGVwDCWwUxgcXDJIMblFsdUxn/exec';
+ const oldDeployment = 'AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY';
+ const configured = typeof GAS_API_URL !== 'undefined' && GAS_API_URL ? GAS_API_URL : fallback;
+ const selected = configured.includes(oldDeployment) ? fallback : configured;
+ try {
+   const saved = localStorage.getItem('gasApiUrl');
+   if (!saved || !saved.trim() || saved === 'https://script.google.com/macros/s/' + oldDeployment + '/exec') {
+     localStorage.setItem('gasApiUrl', selected);
+   }
+ } catch (_) {}
+})();
+
+</script>
+<script>
+(() => {
+  'use strict';
+  const DEFAULT_API = 'https://script.google.com/macros/s/AKfycbwQPcJlhR2plIgfDWnYrknQyPcuo2R4FAZEu4CuGtXdGVwDCWwUxgcXDJIMblFsdUxn/exec';
+  const safeRead = key => {try {return localStorage.getItem(key);} catch (_) {return null;}};
+  function apiURL() {
+    const field = document.getElementById('apiUrl');
+    return (field ? field.value.trim() : '') || safeRead('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : DEFAULT_API);
+  }
+  async function request(action, body) {
+    const url = new URL(apiURL());
+    if (url.protocol !== 'https:') throw new Error('กรุณาใช้ API URL แบบ HTTPS');
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(),30000);
+    try {
+      let response;
+      if(body) response = await fetch(url.href,{method:'POST',body:JSON.stringify({action,...body}),signal:controller.signal,redirect:'follow'});
+      else {url.searchParams.set('action',action);url.searchParams.set('_',String(Date.now()));response = await fetch(url.href,{signal:controller.signal,cache:'no-store'});}
+      if(!response.ok) throw new Error('API ตอบกลับไม่สำเร็จ ('+response.status+')');
+      const data = await response.json();
+      if(data.success !== true) throw new Error(data.message || data.error || 'กรุณาอัปเดต Apps Script และ Deploy เวอร์ชันใหม่');
+      return data;
+    } catch(error) {
+      if(error.name==='AbortError') throw new Error('การเชื่อมต่อใช้เวลานาน หากกดบันทึกไปแล้ว ให้โหลดข้อมูลล่าสุดเพื่อตรวจสอบก่อนบันทึกซ้ำ');
+      throw error;
+    } finally {clearTimeout(timer);}
+  }
+  const labels = {
+    th:['ข่าวประชาสัมพันธ์','ปิด','อ่านข่าวสาร','ไม่สามารถแสดงรูปได้','ตัวอย่างประกาศ'],
+    en:['Announcements','Close','Read announcements','Image could not be loaded','Announcement preview'],
+    zh:['公告','关闭','查看公告','图片无法加载','公告预览'],
+    my:['အသိပေးကြေညာချက်','ပိတ်မည်','ကြေညာချက်ဖတ်ရန်','ပုံကို ဖော်ပြ၍ မရပါ','ကြေညာချက် အကြိုကြည့်ရှုရန်']
+  };
+  function words(){return labels[document.documentElement.lang] || labels.th;}
+  const style = document.createElement('style');
+  style.textContent = `
+  .ha-news-dialog{border:0;border-radius:22px;padding:0;width:min(620px,calc(100vw - 28px));max-height:88dvh;margin:auto;color:#18324a;background:#fff;box-shadow:0 24px 90px #05182b55;font-family:Sarabun,sans-serif;overflow:auto}
+  .ha-news-dialog::backdrop{background:#071b30aa;backdrop-filter:blur(4px)}
+  .ha-news-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid #e2e8f0;color:#0b659c;font-weight:700}
+  .ha-news-close{background:#eaf2f8;border:0;border-radius:10px;padding:9px 14px;color:#18324a;cursor:pointer;font:inherit}
+  .ha-news-content{padding:22px}.ha-news-title{font-size:24px;font-weight:700;line-height:1.5;margin:0 0 14px;color:#18324a;-webkit-text-fill-color:initial;background:none;overflow-wrap:anywhere}
+  .ha-news-image{display:block;width:100%;max-height:60dvh;object-fit:contain;border-radius:12px;margin:0 0 16px;background:#f6f9fc}
+  .ha-news-message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px;line-height:1.8;color:#334155}
+  .ha-news-error{font-size:14px;color:#a33b25}.ha-news-open{position:fixed;bottom:18px;left:18px;z-index:90;border:1px solid #d3e2f0;border-radius:30px;background:#fff;color:#164d77;padding:11px 18px;box-shadow:0 4px 18px #10283f22;cursor:pointer;font:600 14px Sarabun,sans-serif}
+  @media print{.ha-news-dialog,.ha-news-open{display:none!important}}
+  `;
+  document.head.append(style);
+  let modal;
+  function show(a, preview=false) {
+    if(modal){modal.close();modal.remove();}
+    const previous=document.activeElement;
+    modal=document.createElement('dialog'); modal.className='ha-news-dialog';
+    modal.setAttribute('aria-labelledby','ha-news-caption');
+    const header=document.createElement('div');header.className='ha-news-head';
+    const caption=document.createElement('span');caption.id='ha-news-caption';caption.textContent=words()[preview?4:0];
+    const close=document.createElement('button');close.type='button';close.className='ha-news-close';close.textContent=words()[1];close.onclick=()=>modal.close();
+    header.append(caption,close);
+    const content=document.createElement('div');content.className='ha-news-content';
+    if(a.title){const h=document.createElement('h2');h.className='ha-news-title';h.textContent=a.title;content.append(h);}
+    if(a.image && (/^https:\/\//i.test(a.image)||/^data:image\/(png|jpeg|webp);base64,/.test(a.image))){
+      const img=document.createElement('img');img.className='ha-news-image';img.alt=a.title||words()[0];img.referrerPolicy='no-referrer';
+      img.onerror=()=>{img.remove();const p=document.createElement('p');p.className='ha-news-error';p.textContent=words()[3];content.prepend(p);};
+      img.src=a.image;content.append(img);
     }
+    if(a.message){const p=document.createElement('p');p.className='ha-news-message';p.textContent=a.message;content.append(p);}
+    modal.append(header,content);document.body.append(modal);
+    modal.addEventListener('close',()=>{if(previous && previous.isConnected) previous.focus();},{once:true});
+    modal.showModal();close.focus();
+  }
+  window.HaierAnnouncement={request,show};
+  if(document.getElementById('announcement-admin')) return;
+  request('getAnnouncement').then(({announcement:a})=>{
+    if(!a || !a.enabled) return;
+    const isActive=()=> (!a.startAt || Date.now()>=Date.parse(a.startAt)) && (!a.endAt || Date.now()<Date.parse(a.endAt));
+    if(!isActive()) return;
+    const button=document.createElement('button');button.type='button';button.className='ha-news-open';button.textContent='📢 '+words()[2];
+    button.onclick=()=>{if(isActive()) show(a);else button.remove();};document.body.append(button);
+    window.addEventListener('haier-language-change',()=>{button.textContent='📢 '+words()[2];if(modal?.open){modal.querySelector('#ha-news-caption').textContent=words()[0];modal.querySelector('.ha-news-close').textContent=words()[1];}});
+    const day = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    const stamp=a.revision+'|'+day;
+    if(a.frequency==='daily' && safeRead('haier-announcement-seen-home')===stamp) return;
+    show(a);
+    try{localStorage.setItem('haier-announcement-seen-home',stamp);}catch(_){}
+   }).catch(error=>{
+    console.warn('Announcement unavailable:',error.message);
+    const retry=document.createElement('button');retry.type='button';retry.className='ha-news-open';retry.textContent='โหลดข่าวสารไม่สำเร็จ · ลองใหม่';retry.title=error.message;retry.onclick=()=>location.reload();document.body.append(retry);
+  });
+})();
 
-    /* Ambient orbs */
-    body::before, body::after {
-      content: '';
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.15;
-      pointer-events: none;
-      z-index: 0;
-    }
-    body::before { top: -50px; left: -50px; width: 300px; height: 300px; background: #6366f1; }
-    body::after { bottom: -50px; right: -50px; width: 300px; height: 300px; background: #10b981; }
-
-    .header { text-align: center; margin-bottom: 40px; position: relative; z-index: 1; }
-    .logo-icon { font-size: 48px; margin-bottom: 10px; display: inline-block; }
-    h1 { font-size: 1.8em; font-weight: 700; margin-bottom: 5px; color: #f1f5f9; }
-    .subtitle { color: #94a3b8; font-size: 0.9em; }
-
-    .api-warning {
-      background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #fca5a5; padding: 10px 20px; border-radius: 12px;
-      margin-bottom: 24px; font-size: 0.85em; display: none; z-index: 1; position: relative;
-    }
-    .api-warning a { color: #fbbf24; text-decoration: underline; margin-left: 5px; }
-
-    .menu-cards {
-      display: flex; flex-direction: column; gap: 16px; max-width: 350px; width: 100%; position: relative; z-index: 1;
-    }
-
-    .btn-menu {
-      display: flex; align-items: center; padding: 20px;
-      background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 20px; text-decoration: none; color: #e2e8f0;
-      transition: all 0.3s ease; backdrop-filter: blur(10px);
-    }
-    .btn-menu:hover { transform: translateY(-3px); background: rgba(255, 255, 255, 0.1); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-
-    .card-icon {
-      width: 50px; height: 50px; border-radius: 16px;
-      display: flex; justify-content: center; align-items: center;
-      font-size: 24px; margin-right: 16px; flex-shrink: 0;
-    }
-    
-    /* สีกำหนดแยกตามปุ่ม */
-    .btn-register .card-icon { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
-    .btn-scan .card-icon { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-    .btn-config .card-icon { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
-    .btn-dashboard .card-icon { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-    .btn-faresult .card-icon { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
-    .btn-fastock .card-icon { background: rgba(20, 184, 166, 0.2); color: #2dd4bf; } /* สี Teal สำหรับเมนู Stock */
-
-    .card-text { flex-grow: 1; }
-    .card-title { font-size: 1.1em; font-weight: 600; margin-bottom: 4px; }
-    .card-desc { font-size: 0.8em; color: #94a3b8; }
-    .card-arrow { font-size: 1.5em; color: #475569; }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  </style>
-</head>
-<body>
-
-  <div class="header">
-    <span class="logo-icon">🏢</span>
-    <h1>ระบบบันทึกเวลาเข้างาน</h1>
-    <p class="subtitle">Face Recognition &amp; GPS Attendance</p>
-  </div>
-
-  <div id="apiWarning" class="api-warning">
-    ⚠️ ยังไม่ได้ตั้งค่า API —
-    <a href="./config.html">ไปตั้งค่าก่อน</a>
-  </div>
-
-  <div class="menu-cards">
-    <a href="./register.html" class="btn-menu btn-register">
-      <div class="card-icon">👤</div>
-      <div class="card-text">
-        <div class="card-title">ลงทะเบียนพนักงาน</div>
-        <div class="card-desc">บันทึกข้อมูลใบหน้าใหม่</div>
-      </div>
-      <span class="card-arrow">›</span>
-    </a>
-
-    <a href="./scan.html" class="btn-menu btn-scan">
-      <div class="card-icon">📷</div>
-      <div class="card-text">
-        <div class="card-title">สแกนเข้างาน</div>
-        <div class="card-desc">ยืนยันตัวตนด้วยใบหน้า + GPS</div>
-      </div>
-      <span class="card-arrow">›</span>
-    </a>
-
-    <a href="./config.html" class="btn-menu btn-config">
-      <div class="card-icon">⚙️</div>
-      <div class="card-text">
-        <div class="card-title">ตั้งค่าระบบ</div>
-        <div class="card-desc">จัดการ GPS และ API (Admin)</div>
-      </div>
-      <span class="card-arrow">›</span>
-    </a>
-
-    <!-- ปุ่มลัดเข้า Dashboard -->
-    <a href="./dashboard.html" class="btn-menu btn-dashboard">
-      <div class="card-icon">📊</div>
-      <div class="card-text">
-        <div class="card-title">แดชบอร์ด & OT</div>
-        <div class="card-desc">ดูข้อมูลภาพรวมสรุปผล</div>
-      </div>
-      <span class="card-arrow">›</span>
-    </a>
-
-    <!-- ปุ่ม Production Plan VS Result -->
-    <a href="./faresult.html" class="btn-menu btn-faresult">
-      <div class="card-icon">📈</div>
-      <div class="card-text">
-        <div class="card-title">Production Plan VS Result</div>
-        <div class="card-desc">แผนการผลิตและผลลัพธ์การทำงาน</div>
-      </div>
-      <span class="card-arrow">›</span>
-    </a>
-
-    <!-- ปุ่มใหม่ FA-Stock Management (เชื่อมโยงไปยังไฟล์ "FA Stock Management" บน GitHub) -->
-    <a href="./FA%20Stock%20Management" class="btn-menu btn-fastock">
-      <div class="card-icon">📦</div>
-      <div class="card-text">
-        <div class="card-title">FA-Stock Management</div>
-        <div class="card-desc">จัดการคลังสินค้าและวัตถุดิบ</div>
-      </div>
-      <span class="card-arrow">›</span>
-    </a>
-  </div>
-
-  <script>
-    // ✨ แก้ไขเป็น URL ใหม่ที่เพิ่ง Deploy มา
-    const HARDCODED_API_URL = 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec';
-    
-    // ตั้งค่าลงใน LocalStorage ทันที เพื่อให้หน้าสแกน (scan.html) และลงทะเบียน (register.html) ใช้งานได้อัตโนมัติ
-    if (!localStorage.getItem('gasApiUrl') || localStorage.getItem('gasApiUrl') !== HARDCODED_API_URL) {
-        localStorage.setItem('gasApiUrl', HARDCODED_API_URL);
-    }
-
-    const savedUrl = localStorage.getItem('gasApiUrl');
-    
-    // หากไม่มี URL (ซึ่งเป็นไปไม่ได้แล้วเพราะเราฝังไว้) ค่อยแสดงป้ายเตือน
-    if (!savedUrl || savedUrl.trim() === '') {
-      document.getElementById('apiWarning').style.display = 'block';
-    }
-  </script>
-</body>
-</html>
+</script>
+</body></html>
