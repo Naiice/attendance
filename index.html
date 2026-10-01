@@ -24,7 +24,7 @@ body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981
 .home-news-gate{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(7,20,39,.88);backdrop-filter:blur(6px)}
 .home-news-gate[hidden]{display:none}.home-news-box{width:min(420px,100%);padding:30px;border:1px solid #ffffff25;border-radius:22px;background:#15253e;text-align:center;box-shadow:0 20px 70px #0005}
 .home-news-box h2{font-size:22px;margin:12px 0;color:#f1f5f9}.home-news-box p{font-size:15px;line-height:1.7;color:#cbd5e1}.home-news-spinner{display:inline-block;width:34px;height:34px;border:3px solid #ffffff30;border-top-color:#38bdf8;border-radius:50%;animation:news-spin 1s linear infinite}
-.home-news-spinner[hidden]{display:none}.home-news-retry{margin-top:18px;padding:11px 22px;border:0;border-radius:12px;background:#38bdf8;color:#082f49;font:600 16px Sarabun,sans-serif;cursor:pointer}.home-news-retry[hidden]{display:none}
+.home-news-spinner[hidden]{display:none}.home-news-retry{margin-top:18px;padding:11px 22px;border:0;border-radius:12px;background:#38bdf8;color:#082f49;font:600 16px Sarabun,sans-serif;cursor:pointer}.home-news-retry[hidden]{display:none}.home-news-dismiss{background:transparent;color:#e2e8f0;border:1px solid #94a3b8;margin-left:6px}
 @keyframes news-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.home-news-spinner{animation:none}}
 </style></head><body>
 <div id="home-news-gate" class="home-news-gate" role="region" aria-labelledby="home-news-heading">
@@ -32,6 +32,7 @@ body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981
  <h2 id="home-news-heading">กำลังตรวจสอบข่าวสาร</h2>
  <p id="home-news-status" role="status" aria-live="polite">กรุณารอสักครู่ ก่อนเข้าสู่เมนูใช้งาน</p>
  <button id="home-news-retry" type="button" class="home-news-retry" hidden>ลองโหลดอีกครั้ง</button>
+ <button id="home-news-dismiss" type="button" class="home-news-retry home-news-dismiss" hidden>ปิดและเข้าใช้งานเว็บ</button>
  <noscript><p>กรุณาเปิดใช้งาน JavaScript เพื่อโหลดข่าวสารและเข้าใช้งานระบบ</p></noscript>
  </div>
 </div>
@@ -139,6 +140,7 @@ body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981
   const gateHeading=document.getElementById('home-news-heading');
   const spinner=document.getElementById('home-news-spinner');
   const retry=document.getElementById('home-news-retry');
+  const dismiss=document.getElementById('home-news-dismiss');
   let loading=false;
   function unlockHome() {
     homeMenu.inert=false;homeMenu.removeAttribute('inert');homeMenu.setAttribute('aria-busy','false');gate.hidden=true;
@@ -146,7 +148,7 @@ body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981
   async function loadHomeAnnouncement() {
     if(loading)return;
     loading=true;homeMenu.inert=true;homeMenu.setAttribute('inert','');homeMenu.setAttribute('aria-busy','true');gate.hidden=false;
-    retry.hidden=true;spinner.hidden=false;gateHeading.textContent='กำลังตรวจสอบข่าวสาร';gateStatus.textContent='กรุณารอสักครู่ ก่อนเข้าสู่เมนูใช้งาน';
+    retry.hidden=true;dismiss.hidden=true;spinner.hidden=false;gateHeading.textContent='กำลังตรวจสอบข่าวสาร';gateStatus.textContent='กรุณารอสักครู่ ก่อนเข้าสู่เมนูใช้งาน';
     try {
       const {announcement:a}=await request('getAnnouncement');
       if(!a || !a.enabled){unlockHome();return;}
@@ -167,12 +169,17 @@ body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981
       },{once:true});
     } catch(error) {
       console.warn('Announcement unavailable:',error.message);
-      gate.hidden=false;spinner.hidden=true;retry.hidden=false;
+      gate.hidden=false;spinner.hidden=true;retry.hidden=false;dismiss.hidden=false;
       gateHeading.textContent='ยังโหลดข่าวสารไม่ได้';
-      gateStatus.textContent='กรุณาตรวจสอบอินเทอร์เน็ต แล้วกดลองโหลดอีกครั้ง เมนูจะเปิดให้ใช้งานหลังตรวจสอบข่าวสารสำเร็จ';
+      gateStatus.textContent='คุณสามารถลองโหลดอีกครั้ง หรือกดปิดและเข้าใช้งานเว็บได้ตามปกติ';
       retry.focus();
     } finally {loading=false;}
   }
+  dismiss.onclick=()=>{
+    if(loading || dismiss.hidden)return;
+    unlockHome();
+    homeMenu.querySelector('a')?.focus();
+  };
   retry.onclick=loadHomeAnnouncement;
   loadHomeAnnouncement();
 })();
