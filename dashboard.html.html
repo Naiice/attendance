@@ -217,6 +217,16 @@
 </style>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap">
     <script src="api-config.js"></script>
+    <script>
+    // Migrate only the previously supplied endpoint; preserve other custom URLs.
+    try {
+      const previousDeployment = 'AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY';
+      if (localStorage.getItem('gasApiUrl') === 'https://script.google.com/macros/s/' + previousDeployment + '/exec') {
+        localStorage.setItem('gasApiUrl', 'https://script.google.com/macros/s/AKfycbwQPcJlhR2plIgfDWnYrknQyPcuo2R4FAZEu4CuGtXdGVwDCWwUxgcXDJIMblFsdUxn/exec');
+      }
+    } catch (_) { /* Storage may be unavailable in restricted browsing contexts. */ }
+    </script>
+
 </head>
 <body>
     <div id="digital-background" aria-hidden="true"><canvas id="digital-globe"></canvas></div>
@@ -1414,7 +1424,7 @@
                 });
 
                 try {
-                    const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec');
+                    const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbwQPcJlhR2plIgfDWnYrknQyPcuo2R4FAZEu4CuGtXdGVwDCWwUxgcXDJIMblFsdUxn/exec');
                     await fetch(SCRIPT_URL, { 
                         method: 'POST', 
                         mode: 'no-cors', 
@@ -1490,7 +1500,7 @@
                 });
 
                 try {
-                    const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec');
+                    const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbwQPcJlhR2plIgfDWnYrknQyPcuo2R4FAZEu4CuGtXdGVwDCWwUxgcXDJIMblFsdUxn/exec');
                     await fetch(SCRIPT_URL, { 
                         method: 'POST', 
                         mode: 'no-cors', 
@@ -2937,7 +2947,7 @@
           const [searchTerm, setSearchTerm] = useState('');
           const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, groupId: null, groupName: '' });
           
-          const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec'); 
+          const SCRIPT_URL = localStorage.getItem('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : 'https://script.google.com/macros/s/AKfycbwQPcJlhR2plIgfDWnYrknQyPcuo2R4FAZEu4CuGtXdGVwDCWwUxgcXDJIMblFsdUxn/exec'); 
 
           const ORIGINAL_UI_GROUPS = [
             { id: 'front', name: 'หัวไลน์', sub: '前装-Input', keywords: ['input', '前装', 'หัวไลน์'], isGlobal: false },
@@ -3782,7 +3792,7 @@
 <script>
 (() => {
   'use strict';
-  const DEFAULT_API = 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec';
+  const DEFAULT_API = 'https://script.google.com/macros/s/AKfycbwQPcJlhR2plIgfDWnYrknQyPcuo2R4FAZEu4CuGtXdGVwDCWwUxgcXDJIMblFsdUxn/exec';
   const safeRead = key => {try {return localStorage.getItem(key);} catch (_) {return null;}};
   function apiURL() {
     const field = document.getElementById('apiUrl');
