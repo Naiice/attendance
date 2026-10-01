@@ -188,6 +188,12 @@
 
     /* Animation */
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  
+    #announcement-admin textarea,#announcement-admin select{width:100%;padding:12px;border:1px solid #ffffff30;border-radius:10px;background:#14283d;color:#e2e8f0;font:inherit;margin-bottom:10px}
+    #announcement-admin .news-switch{display:flex;align-items:center;gap:12px;font-size:1em;color:#a7f3d0;margin-bottom:18px}
+    #announcement-admin input[type=checkbox]{width:22px;height:22px;margin:0;accent-color:#06b6d4}
+    #announcement-admin fieldset:disabled{opacity:.5}button:disabled{opacity:.5;cursor:wait}
+    @media(max-width:500px){#announcement-admin .input-row{display:block}}
   </style>
 </head>
 <body>
@@ -216,7 +222,7 @@
   <div class="page-header">
     <a href="index.html" class="back-btn">← กลับ</a>
     <h2>⚙️ ตั้งค่าระบบ</h2>
-    <p class="page-subtitle">จัดการ API และจุดเช็คอิน GPS</p>
+    <p class="page-subtitle">จัดการ API จุดเช็คอิน GPS และข่าวสาร</p>
   </div>
 
   <!-- API URL Card -->
@@ -258,9 +264,36 @@
     <p class="note">* ใส่ 0 หากไม่ต้องการจำกัดพื้นที่</p>
   </div>
 
+  <section class="card" id="announcement-admin">
+    <div class="section-header"><div class="section-icon cyan">📢</div><span class="section-title-text">จัดการข่าวสาร / Pop-up</span></div>
+    <p class="note">แก้ไขประกาศส่วนกลางสำหรับผู้เข้าเว็บทุกเครื่อง รองรับรูป ข้อความ หรือทั้งสองอย่าง</p>
+    <label for="news-password">รหัสจัดการข่าวสาร</label>
+    <input id="news-password" type="password" autocomplete="off" placeholder="รหัสที่ตั้งไว้ใน Script Properties">
+    <button type="button" class="btn btn-get-loc" id="news-load">🔄 โหลดประกาศล่าสุด</button>
+    <p class="note">ใช้รหัส ANNOUNCEMENT_ADMIN_PASSWORD ที่ตั้งใน Apps Script รหัสนี้ไม่ถูกบันทึกลงเครื่อง</p>
+    <fieldset id="news-fields" disabled style="border:0;padding:0;margin-top:20px;min-width:0">
+      <label class="news-switch"><input id="news-enabled" type="checkbox"> เปิด Pop-up ข่าวสาร</label>
+      <label for="news-title">หัวข้อ (ไม่บังคับ)</label><input id="news-title" maxlength="160" placeholder="เช่น แจ้งแผนการทำงานประจำสัปดาห์">
+      <label for="news-message">ข้อความ</label><textarea id="news-message" rows="5" maxlength="6000" placeholder="ใส่ข้อความประกาศ หรือเว้นว่างหากใช้รูปอย่างเดียว"></textarea>
+      <label for="news-file">อัปโหลดรูปประชาสัมพันธ์</label><input id="news-file" type="file" accept="image/png,image/jpeg,image/webp">
+      <p class="note">PNG / JPG / WebP ไม่เกิน 10 MB ระบบย่อรูปให้ก่อนบันทึก (ไม่เก็บไฟล์รูปต้นฉบับ)</p>
+      <label for="news-image-url">หรือใช้ลิงก์รูป HTTPS ที่เปิดดูได้โดยไม่ต้องลงชื่อเข้าใช้</label><input id="news-image-url" type="url" placeholder="https://.../poster.jpg">
+      <img id="news-thumb" alt="ตัวอย่างรูปประกาศ" hidden style="width:100%;max-height:260px;object-fit:contain;margin:12px 0;border-radius:12px;background:#fff">
+      <p id="news-image-info" class="note"></p>
+      <button type="button" class="btn-back" id="news-remove-image">ลบรูปออกจากประกาศ</button>
+      <label for="news-frequency">ความถี่ในการแสดง</label><select id="news-frequency"><option value="always">ทุกครั้งที่เปิดหรือรีเฟรชหน้าเว็บ</option><option value="daily">วันละครั้งต่อเบราว์เซอร์ (เวลาไทย)</option></select>
+      <p class="note">เมื่อบันทึกประกาศฉบับใหม่ ผู้ใช้จะเห็นอีกครั้ง แม้เคยอ่านวันนี้แล้ว</p>
+      <div class="input-row"><div><label for="news-start">เริ่มแสดง (เวลาไทย)</label><input id="news-start" type="datetime-local"></div><div><label for="news-end">สิ้นสุด (เวลาไทย)</label><input id="news-end" type="datetime-local"></div></div>
+      <p class="note">เว้นว่าง = ไม่จำกัดเวลา • ปิดสวิตช์แล้วกดบันทึกเพื่อหยุดแสดงเมื่อผู้ใช้เปิดหน้าเว็บครั้งถัดไป</p>
+      <button type="button" class="btn btn-get-loc" id="news-preview">👁 ดูตัวอย่าง</button>
+      <button type="button" class="btn btn-save" id="news-save">📢 บันทึกข่าวสาร</button>
+    </fieldset>
+    <p id="news-status" role="status" aria-live="polite" class="note">โหลดประกาศล่าสุดก่อนแก้ไข</p>
+  </section>
+
   <!-- Actions -->
   <button class="btn btn-save" onclick="saveAll()">
-    💾 บันทึกการตั้งค่าทั้งหมด
+    💾 บันทึก API และ GPS
   </button>
   <div id="msg"></div>
 
@@ -333,9 +366,9 @@
     fetch(apiUrl + '?action=getConfig')
       .then(r => r.json())
       .then(config => {
-        document.getElementById('lat').value    = config.lat    || '';
-        document.getElementById('lng').value    = config.lng    || '';
-        document.getElementById('radius').value = config.radius || '0.5';
+        document.getElementById('lat').value    = config.lat    ?? '';
+        document.getElementById('lng').value    = config.lng    ?? '';
+        document.getElementById('radius').value = config.radius ?? '0.5';
       })
       .catch(() => {});
   }
@@ -370,6 +403,7 @@
         body: JSON.stringify({ action: 'saveConfig', lat, lng, radius })
       });
       const data = await res.json();
+      if (data.success === false || data.status === 'error' || data.error) throw new Error(data.message || data.error || 'บันทึกไม่สำเร็จ');
       showMsg('✅ ' + (data.message || 'บันทึกสำเร็จ'), 'success');
     } catch (e) {
       showMsg('❌ เชื่อมต่อ API ไม่ได้: ' + e.message, 'error');
@@ -380,6 +414,153 @@
     msgDiv.innerText = text;
     msgDiv.className = type === 'success' ? 'msg-success' : type === 'error' ? 'msg-error' : '';
   }
+</script>
+<script>
+(() => {
+  'use strict';
+  const DEFAULT_API = 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec';
+  const safeRead = key => {try {return localStorage.getItem(key);} catch (_) {return null;}};
+  function apiURL() {
+    const field = document.getElementById('apiUrl');
+    return (field ? field.value.trim() : '') || safeRead('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : DEFAULT_API);
+  }
+  async function request(action, body) {
+    const url = new URL(apiURL());
+    if (url.protocol !== 'https:') throw new Error('กรุณาใช้ API URL แบบ HTTPS');
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(),30000);
+    try {
+      let response;
+      if(body) response = await fetch(url.href,{method:'POST',body:JSON.stringify({action,...body}),signal:controller.signal,redirect:'follow'});
+      else {url.searchParams.set('action',action);url.searchParams.set('_',String(Date.now()));response = await fetch(url.href,{signal:controller.signal,cache:'no-store'});}
+      if(!response.ok) throw new Error('API ตอบกลับไม่สำเร็จ ('+response.status+')');
+      const data = await response.json();
+      if(data.success !== true) throw new Error(data.message || data.error || 'กรุณาอัปเดต Apps Script และ Deploy เวอร์ชันใหม่');
+      return data;
+    } catch(error) {
+      if(error.name==='AbortError') throw new Error('การเชื่อมต่อใช้เวลานาน หากกดบันทึกไปแล้ว ให้โหลดข้อมูลล่าสุดเพื่อตรวจสอบก่อนบันทึกซ้ำ');
+      throw error;
+    } finally {clearTimeout(timer);}
+  }
+  const labels = {
+    th:['ข่าวประชาสัมพันธ์','ปิด','อ่านข่าวสาร','ไม่สามารถแสดงรูปได้','ตัวอย่างประกาศ'],
+    en:['Announcements','Close','Read announcements','Image could not be loaded','Announcement preview'],
+    zh:['公告','关闭','查看公告','图片无法加载','公告预览'],
+    my:['အသိပေးကြေညာချက်','ပိတ်မည်','ကြေညာချက်ဖတ်ရန်','ပုံကို ဖော်ပြ၍ မရပါ','ကြေညာချက် အကြိုကြည့်ရှုရန်']
+  };
+  function words(){return labels[document.documentElement.lang] || labels.th;}
+  const style = document.createElement('style');
+  style.textContent = `
+  .ha-news-dialog{border:0;border-radius:22px;padding:0;width:min(620px,calc(100vw - 28px));max-height:88dvh;margin:auto;color:#18324a;background:#fff;box-shadow:0 24px 90px #05182b55;font-family:Sarabun,sans-serif;overflow:auto}
+  .ha-news-dialog::backdrop{background:#071b30aa;backdrop-filter:blur(4px)}
+  .ha-news-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid #e2e8f0;color:#0b659c;font-weight:700}
+  .ha-news-close{background:#eaf2f8;border:0;border-radius:10px;padding:9px 14px;color:#18324a;cursor:pointer;font:inherit}
+  .ha-news-content{padding:22px}.ha-news-title{font-size:24px;font-weight:700;line-height:1.5;margin:0 0 14px;color:#18324a;-webkit-text-fill-color:initial;background:none;overflow-wrap:anywhere}
+  .ha-news-image{display:block;width:100%;max-height:60dvh;object-fit:contain;border-radius:12px;margin:0 0 16px;background:#f6f9fc}
+  .ha-news-message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px;line-height:1.8;color:#334155}
+  .ha-news-error{font-size:14px;color:#a33b25}.ha-news-open{position:fixed;bottom:18px;left:18px;z-index:90;border:1px solid #d3e2f0;border-radius:30px;background:#fff;color:#164d77;padding:11px 18px;box-shadow:0 4px 18px #10283f22;cursor:pointer;font:600 14px Sarabun,sans-serif}
+  @media print{.ha-news-dialog,.ha-news-open{display:none!important}}
+  `;
+  document.head.append(style);
+  let modal;
+  function show(a, preview=false) {
+    if(modal){modal.close();modal.remove();}
+    const previous=document.activeElement;
+    modal=document.createElement('dialog'); modal.className='ha-news-dialog';
+    modal.setAttribute('aria-labelledby','ha-news-caption');
+    const header=document.createElement('div');header.className='ha-news-head';
+    const caption=document.createElement('span');caption.id='ha-news-caption';caption.textContent=words()[preview?4:0];
+    const close=document.createElement('button');close.type='button';close.className='ha-news-close';close.textContent=words()[1];close.onclick=()=>modal.close();
+    header.append(caption,close);
+    const content=document.createElement('div');content.className='ha-news-content';
+    if(a.title){const h=document.createElement('h2');h.className='ha-news-title';h.textContent=a.title;content.append(h);}
+    if(a.image && (/^https:\/\//i.test(a.image)||/^data:image\/(png|jpeg|webp);base64,/.test(a.image))){
+      const img=document.createElement('img');img.className='ha-news-image';img.alt=a.title||words()[0];img.referrerPolicy='no-referrer';
+      img.onerror=()=>{img.remove();const p=document.createElement('p');p.className='ha-news-error';p.textContent=words()[3];content.prepend(p);};
+      img.src=a.image;content.append(img);
+    }
+    if(a.message){const p=document.createElement('p');p.className='ha-news-message';p.textContent=a.message;content.append(p);}
+    modal.append(header,content);document.body.append(modal);
+    modal.addEventListener('close',()=>{if(previous && previous.isConnected) previous.focus();},{once:true});
+    modal.showModal();close.focus();
+  }
+  window.HaierAnnouncement={request,show};
+  if(document.getElementById('announcement-admin')) return;
+  request('getAnnouncement').then(({announcement:a})=>{
+    if(!a || !a.enabled) return;
+    const isActive=()=> (!a.startAt || Date.now()>=Date.parse(a.startAt)) && (!a.endAt || Date.now()<Date.parse(a.endAt));
+    if(!isActive()) return;
+    const button=document.createElement('button');button.type='button';button.className='ha-news-open';button.textContent='📢 '+words()[2];
+    button.onclick=()=>{if(isActive()) show(a);else button.remove();};document.body.append(button);
+    window.addEventListener('haier-language-change',()=>{button.textContent='📢 '+words()[2];if(modal?.open){modal.querySelector('#ha-news-caption').textContent=words()[0];modal.querySelector('.ha-news-close').textContent=words()[1];}});
+    const day = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    const stamp=a.revision+'|'+day;
+    if(a.frequency==='daily' && safeRead('haier-announcement-seen')===stamp) return;
+    show(a);
+    try{localStorage.setItem('haier-announcement-seen',stamp);}catch(_){}
+  }).catch(error=>{console.warn('Announcement unavailable:',error.message);});
+})();
+
+</script>
+<script>
+(() => {
+  const el=id=>document.getElementById('news-'+id);
+  let current=null, image='', busy=false, imageSequence=0;
+  const status=(message,error=false)=>{el('status').textContent=message;el('status').style.color=error?'#fca5a5':'#a7f3d0';};
+  function setBusy(value){busy=value;el('fields').disabled=value||!current;el('load').disabled=value;el('password').disabled=value;}
+  function thumb(){el('thumb').hidden=!image;el('thumb').src=image||'';el('image-info').textContent=image.startsWith('data:')?'ใช้รูปที่อัปโหลดและย่อแล้ว':image?'ใช้ลิงก์รูปภายนอก':'';}
+  el('thumb').onerror=()=>{if(image){el('thumb').hidden=true;el('image-info').textContent='แสดงตัวอย่างรูปไม่ได้ กรุณาตรวจสอบลิงก์';}};
+  function localThai(iso){return iso?new Date(Date.parse(iso)+7*3600000).toISOString().slice(0,16):'';}
+  function collect(){
+    const a={enabled:el('enabled').checked,title:el('title').value.trim(),message:el('message').value.trim(),image,frequency:el('frequency').value,startAt:'',endAt:''};
+    for(const k of ['start','end']) {const v=el(k).value;if(v){const date=new Date(v+':00+07:00');if(!Number.isFinite(date.getTime()))throw Error('วันเวลาไม่ถูกต้อง');a[k+'At']=date.toISOString();}}
+    if(a.startAt&&a.endAt&&a.endAt<=a.startAt)throw Error('เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่ม');
+    if(a.enabled&&!a.title&&!a.message&&!a.image)throw Error('กรุณาใส่ข้อความหรือรูปก่อนเปิดประกาศ');
+    if(image&&!/^https:\/\/[^\s]+$/i.test(image)&&!/^data:image\/(png|jpeg|webp);base64,/.test(image))throw Error('ลิงก์รูปต้องขึ้นต้นด้วย https://');
+    return a;
+  }
+  el('load').onclick=async()=>{
+    if(busy)return;if(!el('password').value)return status('กรุณาใส่รหัสจัดการข่าวสาร',true);
+    if(current&&!confirm('โหลดข้อมูลล่าสุดจะทับการแก้ไขที่ยังไม่ได้บันทึก ต้องการโหลดหรือไม่?'))return;
+    setBusy(true);status('กำลังโหลดประกาศ...');
+    try{
+      const data=await HaierAnnouncement.request('getAnnouncementAdmin',{password:el('password').value});
+      current=data.announcement;image=current.image||'';
+      el('enabled').checked=current.enabled===true;el('title').value=current.title||'';el('message').value=current.message||'';
+      el('frequency').value=current.frequency||'always';el('start').value=localThai(current.startAt);el('end').value=localThai(current.endAt);
+      el('image-url').value=image.startsWith('https://')?image:'';el('file').value='';thumb();status('โหลดข้อมูลแล้ว แก้ไขและกดบันทึกข่าวสารได้');
+    }catch(error){status(error.message,true);}finally{setBusy(false);}
+  };
+  el('image-url').oninput=()=>{imageSequence++;image=el('image-url').value.trim();el('file').value='';thumb();};
+  el('remove-image').onclick=()=>{imageSequence++;image='';el('image-url').value='';el('file').value='';thumb();};
+  el('file').onchange=async()=>{
+    const file=el('file').files[0];if(!file)return;
+    const seq=++imageSequence;
+    if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>10*1024*1024){el('file').value='';return status('ใช้รูป PNG/JPG/WebP ขนาดไม่เกิน 10 MB',true);}
+    setBusy(true);status('กำลังย่อรูป...');
+    let objectURL;
+    try{
+      objectURL=URL.createObjectURL(file);const img=new Image();img.src=objectURL;await img.decode();
+      const canvas=document.createElement('canvas');const ratio=Math.min(1,1400/Math.max(img.naturalWidth,img.naturalHeight));canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio));canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio));
+      const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      let encoded;
+      for(const q of [.88,.78,.68,.55,.4]){encoded=canvas.toDataURL('image/jpeg',q);if(encoded.length<=360000)break;}
+      if(encoded.length>360000)throw Error('รูปมีรายละเอียดมากเกินไป กรุณาลดขนาดรูปแล้วลองอีกครั้ง');
+      if(seq!==imageSequence)return;image=encoded;el('image-url').value='';thumb();status('รูปพร้อมแล้ว กรุณากดบันทึกข่าวสารเพื่อเผยแพร่');
+    }catch(error){status(error.message||'อ่านรูปไม่ได้',true);}finally{if(objectURL)URL.revokeObjectURL(objectURL);setBusy(false);}
+  };
+  el('preview').onclick=()=>{try{HaierAnnouncement.show(collect(),true);}catch(error){status(error.message,true);}};
+  el('save').onclick=async()=>{
+    if(busy||!current)return;
+    let a;try{a=collect();}catch(error){return status(error.message,true);}
+    setBusy(true);status('กำลังบันทึกข่าวสาร...');
+    try{
+      const data=await HaierAnnouncement.request('saveAnnouncement',{password:el('password').value,expectedRevision:current.revision,announcement:a});
+      current=data.announcement;status(current.enabled?'บันทึกแล้ว ผู้เข้าเว็บจะเห็นประกาศตามช่วงเวลาที่กำหนด':'บันทึกแล้ว ปิด Pop-up สำหรับการเข้าเว็บครั้งถัดไป');
+    }catch(error){status(error.message+' หากไม่แน่ใจว่าบันทึกสำเร็จหรือไม่ ให้โหลดประกาศล่าสุดเพื่อตรวจสอบ',true);}finally{setBusy(false);}
+  };
+})();
+
 </script>
 </body>
 </html>
