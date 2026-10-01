@@ -220,7 +220,7 @@
     <script>
     // Migrate only the previously supplied endpoint; preserve other custom URLs.
     try {
-      const previousDeployment = 'AKfycbwQPcJlhR2plIgfDWnYrknQyPcuo2R4FAZEu4CuGtXdGVwDCWwUxgcXDJIMblFsdUxn';
+      const previousDeployment = 'AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY';
       if (localStorage.getItem('gasApiUrl') === 'https://script.google.com/macros/s/' + previousDeployment + '/exec') {
         localStorage.setItem('gasApiUrl', 'https://script.google.com/macros/s/AKfycbwQPcJlhR2plIgfDWnYrknQyPcuo2R4FAZEu4CuGtXdGVwDCWwUxgcXDJIMblFsdUxn/exec');
       }
@@ -3789,92 +3789,6 @@
         update();
     })();
     </script>
-<script>
-(() => {
-  'use strict';
-  const DEFAULT_API = 'https://script.google.com/macros/s/AKfycbwQPcJlhR2plIgfDWnYrknQyPcuo2R4FAZEu4CuGtXdGVwDCWwUxgcXDJIMblFsdUxn/exec';
-  const safeRead = key => {try {return localStorage.getItem(key);} catch (_) {return null;}};
-  function apiURL() {
-    const field = document.getElementById('apiUrl');
-    return (field ? field.value.trim() : '') || safeRead('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : DEFAULT_API);
-  }
-  async function request(action, body) {
-    const url = new URL(apiURL());
-    if (url.protocol !== 'https:') throw new Error('กรุณาใช้ API URL แบบ HTTPS');
-    const controller = new AbortController();
-    const timer = setTimeout(()=>controller.abort(),30000);
-    try {
-      let response;
-      if(body) response = await fetch(url.href,{method:'POST',body:JSON.stringify({action,...body}),signal:controller.signal,redirect:'follow'});
-      else {url.searchParams.set('action',action);url.searchParams.set('_',String(Date.now()));response = await fetch(url.href,{signal:controller.signal,cache:'no-store'});}
-      if(!response.ok) throw new Error('API ตอบกลับไม่สำเร็จ ('+response.status+')');
-      const data = await response.json();
-      if(data.success !== true) throw new Error(data.message || data.error || 'กรุณาอัปเดต Apps Script และ Deploy เวอร์ชันใหม่');
-      return data;
-    } catch(error) {
-      if(error.name==='AbortError') throw new Error('การเชื่อมต่อใช้เวลานาน หากกดบันทึกไปแล้ว ให้โหลดข้อมูลล่าสุดเพื่อตรวจสอบก่อนบันทึกซ้ำ');
-      throw error;
-    } finally {clearTimeout(timer);}
-  }
-  const labels = {
-    th:['ข่าวประชาสัมพันธ์','ปิด','อ่านข่าวสาร','ไม่สามารถแสดงรูปได้','ตัวอย่างประกาศ'],
-    en:['Announcements','Close','Read announcements','Image could not be loaded','Announcement preview'],
-    zh:['公告','关闭','查看公告','图片无法加载','公告预览'],
-    my:['အသိပေးကြေညာချက်','ပိတ်မည်','ကြေညာချက်ဖတ်ရန်','ပုံကို ဖော်ပြ၍ မရပါ','ကြေညာချက် အကြိုကြည့်ရှုရန်']
-  };
-  function words(){return labels[document.documentElement.lang] || labels.th;}
-  const style = document.createElement('style');
-  style.textContent = `
-  .ha-news-dialog{border:0;border-radius:22px;padding:0;width:min(620px,calc(100vw - 28px));max-height:88dvh;margin:auto;color:#18324a;background:#fff;box-shadow:0 24px 90px #05182b55;font-family:Sarabun,sans-serif;overflow:auto}
-  .ha-news-dialog::backdrop{background:#071b30aa;backdrop-filter:blur(4px)}
-  .ha-news-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid #e2e8f0;color:#0b659c;font-weight:700}
-  .ha-news-close{background:#eaf2f8;border:0;border-radius:10px;padding:9px 14px;color:#18324a;cursor:pointer;font:inherit}
-  .ha-news-content{padding:22px}.ha-news-title{font-size:24px;font-weight:700;line-height:1.5;margin:0 0 14px;color:#18324a;-webkit-text-fill-color:initial;background:none;overflow-wrap:anywhere}
-  .ha-news-image{display:block;width:100%;max-height:60dvh;object-fit:contain;border-radius:12px;margin:0 0 16px;background:#f6f9fc}
-  .ha-news-message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px;line-height:1.8;color:#334155}
-  .ha-news-error{font-size:14px;color:#a33b25}.ha-news-open{position:fixed;bottom:18px;left:18px;z-index:90;border:1px solid #d3e2f0;border-radius:30px;background:#fff;color:#164d77;padding:11px 18px;box-shadow:0 4px 18px #10283f22;cursor:pointer;font:600 14px Sarabun,sans-serif}
-  @media print{.ha-news-dialog,.ha-news-open{display:none!important}}
-  `;
-  document.head.append(style);
-  let modal;
-  function show(a, preview=false) {
-    if(modal){modal.close();modal.remove();}
-    const previous=document.activeElement;
-    modal=document.createElement('dialog'); modal.className='ha-news-dialog';
-    modal.setAttribute('aria-labelledby','ha-news-caption');
-    const header=document.createElement('div');header.className='ha-news-head';
-    const caption=document.createElement('span');caption.id='ha-news-caption';caption.textContent=words()[preview?4:0];
-    const close=document.createElement('button');close.type='button';close.className='ha-news-close';close.textContent=words()[1];close.onclick=()=>modal.close();
-    header.append(caption,close);
-    const content=document.createElement('div');content.className='ha-news-content';
-    if(a.title){const h=document.createElement('h2');h.className='ha-news-title';h.textContent=a.title;content.append(h);}
-    if(a.image && (/^https:\/\//i.test(a.image)||/^data:image\/(png|jpeg|webp);base64,/.test(a.image))){
-      const img=document.createElement('img');img.className='ha-news-image';img.alt=a.title||words()[0];img.referrerPolicy='no-referrer';
-      img.onerror=()=>{img.remove();const p=document.createElement('p');p.className='ha-news-error';p.textContent=words()[3];content.prepend(p);};
-      img.src=a.image;content.append(img);
-    }
-    if(a.message){const p=document.createElement('p');p.className='ha-news-message';p.textContent=a.message;content.append(p);}
-    modal.append(header,content);document.body.append(modal);
-    modal.addEventListener('close',()=>{if(previous && previous.isConnected) previous.focus();},{once:true});
-    modal.showModal();close.focus();
-  }
-  window.HaierAnnouncement={request,show};
-  if(document.getElementById('announcement-admin')) return;
-  request('getAnnouncement').then(({announcement:a})=>{
-    if(!a || !a.enabled) return;
-    const isActive=()=> (!a.startAt || Date.now()>=Date.parse(a.startAt)) && (!a.endAt || Date.now()<Date.parse(a.endAt));
-    if(!isActive()) return;
-    const button=document.createElement('button');button.type='button';button.className='ha-news-open';button.textContent='📢 '+words()[2];
-    button.onclick=()=>{if(isActive()) show(a);else button.remove();};document.body.append(button);
-    window.addEventListener('haier-language-change',()=>{button.textContent='📢 '+words()[2];if(modal?.open){modal.querySelector('#ha-news-caption').textContent=words()[0];modal.querySelector('.ha-news-close').textContent=words()[1];}});
-    const day = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-    const stamp=a.revision+'|'+day;
-    if(a.frequency==='daily' && safeRead('haier-announcement-seen')===stamp) return;
-    show(a);
-    try{localStorage.setItem('haier-announcement-seen',stamp);}catch(_){}
-  }).catch(error=>{console.warn('Announcement unavailable:',error.message);});
-})();
 
-</script>
 </body>
 </html>
