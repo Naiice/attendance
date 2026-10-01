@@ -19,10 +19,26 @@ body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981
 .btn-register .card-icon{background:rgba(99,102,241,.2);color:#818cf8}.btn-scan .card-icon{background:rgba(16,185,129,.2);color:#34d399}.btn-config .card-icon{background:rgba(148,163,184,.2);color:#cbd5e1}.btn-dashboard .card-icon{background:rgba(245,158,11,.2);color:#fbbf24}.btn-faresult .card-icon{background:rgba(236,72,153,.2);color:#f472b6}.btn-fastock .card-icon{background:rgba(20,184,166,.2);color:#2dd4bf}
 .card-text{flex-grow:1}.card-title{font-size:1.1em;font-weight:600;margin-bottom:4px}.card-desc{font-size:.8em;color:#94a3b8}.card-arrow{font-size:1.5em;color:#475569}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+#home-menu[inert]{pointer-events:none;user-select:none;opacity:.45}
+.home-news-gate{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(7,20,39,.88);backdrop-filter:blur(6px)}
+.home-news-gate[hidden]{display:none}.home-news-box{width:min(420px,100%);padding:30px;border:1px solid #ffffff25;border-radius:22px;background:#15253e;text-align:center;box-shadow:0 20px 70px #0005}
+.home-news-box h2{font-size:22px;margin:12px 0;color:#f1f5f9}.home-news-box p{font-size:15px;line-height:1.7;color:#cbd5e1}.home-news-spinner{display:inline-block;width:34px;height:34px;border:3px solid #ffffff30;border-top-color:#38bdf8;border-radius:50%;animation:news-spin 1s linear infinite}
+.home-news-spinner[hidden]{display:none}.home-news-retry{margin-top:18px;padding:11px 22px;border:0;border-radius:12px;background:#38bdf8;color:#082f49;font:600 16px Sarabun,sans-serif;cursor:pointer}.home-news-retry[hidden]{display:none}
+@keyframes news-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.home-news-spinner{animation:none}}
 </style></head><body>
+<div id="home-news-gate" class="home-news-gate" role="region" aria-labelledby="home-news-heading">
+ <div class="home-news-box"><span id="home-news-spinner" class="home-news-spinner" aria-hidden="true"></span>
+ <h2 id="home-news-heading">กำลังตรวจสอบข่าวสาร</h2>
+ <p id="home-news-status" role="status" aria-live="polite">กรุณารอสักครู่ ก่อนเข้าสู่เมนูใช้งาน</p>
+ <button id="home-news-retry" type="button" class="home-news-retry" hidden>ลองโหลดอีกครั้ง</button>
+ <noscript><p>กรุณาเปิดใช้งาน JavaScript เพื่อโหลดข่าวสารและเข้าใช้งานระบบ</p></noscript>
+ </div>
+</div>
+
 <div class="header"><span class="logo-icon">🏢</span><h1>ระบบบันทึกเวลาเข้างาน</h1><p class="subtitle">Face Recognition &amp; GPS Attendance</p></div>
 <div id="apiWarning" class="api-warning">⚠️ ยังไม่ได้ตั้งค่า API — <a href="./config.html">ไปตั้งค่าก่อน</a></div>
-<div class="menu-cards">
+<div class="menu-cards" id="home-menu" inert aria-busy="true">
 <a href="./register.html" class="btn-menu btn-register"><div class="card-icon">👤</div><div class="card-text"><div class="card-title">ลงทะเบียนพนักงาน</div><div class="card-desc">บันทึกข้อมูลใบหน้าใหม่</div></div><span class="card-arrow">›</span></a>
 <a href="./scan.html" class="btn-menu btn-scan"><div class="card-icon">📷</div><div class="card-text"><div class="card-title">สแกนเข้างาน</div><div class="card-desc">ยืนยันตัวตนด้วยใบหน้า + GPS</div></div><span class="card-arrow">›</span></a>
 <a href="./config.html" class="btn-menu btn-config"><div class="card-icon">⚙️</div><div class="card-text"><div class="card-title">ตั้งค่าระบบ</div><div class="card-desc">จัดการ GPS และ API (Admin)</div></div><span class="card-arrow">›</span></a>
@@ -117,22 +133,48 @@ body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981
   }
   window.HaierAnnouncement={request,show};
   if(document.getElementById('announcement-admin')) return;
-  request('getAnnouncement').then(({announcement:a})=>{
-    if(!a || !a.enabled) return;
-    const isActive=()=> (!a.startAt || Date.now()>=Date.parse(a.startAt)) && (!a.endAt || Date.now()<Date.parse(a.endAt));
-    if(!isActive()) return;
-    const button=document.createElement('button');button.type='button';button.className='ha-news-open';button.textContent='📢 '+words()[2];
-    button.onclick=()=>{if(isActive()) show(a);else button.remove();};document.body.append(button);
-    window.addEventListener('haier-language-change',()=>{button.textContent='📢 '+words()[2];if(modal?.open){modal.querySelector('#ha-news-caption').textContent=words()[0];modal.querySelector('.ha-news-close').textContent=words()[1];}});
-    const day = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-    const stamp=a.revision+'|'+day;
-    if(a.frequency==='daily' && safeRead('haier-announcement-seen-home')===stamp) return;
-    show(a);
-    try{localStorage.setItem('haier-announcement-seen-home',stamp);}catch(_){}
-   }).catch(error=>{
-    console.warn('Announcement unavailable:',error.message);
-    const retry=document.createElement('button');retry.type='button';retry.className='ha-news-open';retry.textContent='โหลดข่าวสารไม่สำเร็จ · ลองใหม่';retry.title=error.message;retry.onclick=()=>location.reload();document.body.append(retry);
-  });
+  const homeMenu=document.getElementById('home-menu');
+  const gate=document.getElementById('home-news-gate');
+  const gateStatus=document.getElementById('home-news-status');
+  const gateHeading=document.getElementById('home-news-heading');
+  const spinner=document.getElementById('home-news-spinner');
+  const retry=document.getElementById('home-news-retry');
+  let loading=false;
+  function unlockHome() {
+    homeMenu.inert=false;homeMenu.removeAttribute('inert');homeMenu.setAttribute('aria-busy','false');gate.hidden=true;
+  }
+  async function loadHomeAnnouncement() {
+    if(loading)return;
+    loading=true;homeMenu.inert=true;homeMenu.setAttribute('inert','');homeMenu.setAttribute('aria-busy','true');gate.hidden=false;
+    retry.hidden=true;spinner.hidden=false;gateHeading.textContent='กำลังตรวจสอบข่าวสาร';gateStatus.textContent='กรุณารอสักครู่ ก่อนเข้าสู่เมนูใช้งาน';
+    try {
+      const {announcement:a}=await request('getAnnouncement');
+      if(!a || !a.enabled){unlockHome();return;}
+      const isActive=()=> (!a.startAt || Date.now()>=Date.parse(a.startAt)) && (!a.endAt || Date.now()<Date.parse(a.endAt));
+      if(!isActive()){unlockHome();return;}
+      const button=document.createElement('button');button.type='button';button.className='ha-news-open';button.textContent='📢 '+words()[2];
+      button.onclick=()=>{if(isActive()) show(a);else button.remove();};document.body.append(button);
+      window.addEventListener('haier-language-change',()=>{button.textContent='📢 '+words()[2];if(modal?.open){modal.querySelector('#ha-news-caption').textContent=words()[0];modal.querySelector('.ha-news-close').textContent=words()[1];}});
+      const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      const stamp=a.revision+'|'+day;
+      if(a.frequency==='daily' && safeRead('haier-announcement-seen-home')===stamp){unlockHome();return;}
+      // Keep the menu inert until the actual dialog is dismissed (close button or Escape).
+      show(a);gate.hidden=true;
+      modal.addEventListener('close',()=>{
+        try{localStorage.setItem('haier-announcement-seen-home',stamp);}catch(_){}
+        unlockHome();
+        homeMenu.querySelector('a')?.focus();
+      },{once:true});
+    } catch(error) {
+      console.warn('Announcement unavailable:',error.message);
+      gate.hidden=false;spinner.hidden=true;retry.hidden=false;
+      gateHeading.textContent='ยังโหลดข่าวสารไม่ได้';
+      gateStatus.textContent='กรุณาตรวจสอบอินเทอร์เน็ต แล้วกดลองโหลดอีกครั้ง เมนูจะเปิดให้ใช้งานหลังตรวจสอบข่าวสารสำเร็จ';
+      retry.focus();
+    } finally {loading=false;}
+  }
+  retry.onclick=loadHomeAnnouncement;
+  loadHomeAnnouncement();
 })();
 
 </script>
