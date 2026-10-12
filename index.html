@@ -2,6 +2,10 @@
 <html lang="th"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ระบบบันทึกเวลาเข้างาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
 <script src="./api-config.js"></script>
 <style>
@@ -19,27 +23,11 @@ body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981
 .btn-register .card-icon{background:rgba(99,102,241,.2);color:#818cf8}.btn-scan .card-icon{background:rgba(16,185,129,.2);color:#34d399}.btn-config .card-icon{background:rgba(148,163,184,.2);color:#cbd5e1}.btn-dashboard .card-icon{background:rgba(245,158,11,.2);color:#fbbf24}.btn-faresult .card-icon{background:rgba(236,72,153,.2);color:#f472b6}.btn-fastock .card-icon{background:rgba(20,184,166,.2);color:#2dd4bf}.btn-6s .card-icon{background:rgba(34,197,94,.2);color:#4ade80}
 .card-text{flex-grow:1}.card-title{font-size:1.1em;font-weight:600;margin-bottom:4px}.card-desc{font-size:.8em;color:#94a3b8}.card-arrow{font-size:1.5em;color:#475569}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
-#home-menu[inert]{pointer-events:none;user-select:none;opacity:.45}
-.home-news-gate{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(7,20,39,.88);backdrop-filter:blur(6px)}
-.home-news-gate[hidden]{display:none}.home-news-box{width:min(420px,100%);padding:30px;border:1px solid #ffffff25;border-radius:22px;background:#15253e;text-align:center;box-shadow:0 20px 70px #0005}
-.home-news-box h2{font-size:22px;margin:12px 0;color:#f1f5f9}.home-news-box p{font-size:15px;line-height:1.7;color:#cbd5e1}.home-news-spinner{display:inline-block;width:34px;height:34px;border:3px solid #ffffff30;border-top-color:#38bdf8;border-radius:50%;animation:news-spin 1s linear infinite}
-.home-news-spinner[hidden]{display:none}.home-news-retry{margin-top:18px;padding:11px 22px;border:0;border-radius:12px;background:#38bdf8;color:#082f49;font:600 16px Sarabun,sans-serif;cursor:pointer}.home-news-retry[hidden]{display:none}.home-news-dismiss{background:transparent;color:#e2e8f0;border:1px solid #94a3b8;margin-left:6px}
-@keyframes news-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.home-news-spinner{animation:none}}
 </style></head><body>
-<div id="home-news-gate" class="home-news-gate" role="region" aria-labelledby="home-news-heading">
- <div class="home-news-box"><span id="home-news-spinner" class="home-news-spinner" aria-hidden="true"></span>
- <h2 id="home-news-heading">กำลังตรวจสอบข่าวสาร</h2>
- <p id="home-news-status" role="status" aria-live="polite">กรุณารอสักครู่ ก่อนเข้าสู่เมนูใช้งาน</p>
- <button id="home-news-retry" type="button" class="home-news-retry" hidden>ลองโหลดอีกครั้ง</button>
- <button id="home-news-dismiss" type="button" class="home-news-retry home-news-dismiss" hidden>ปิดและเข้าใช้งานเว็บ</button>
- <noscript><p>กรุณาเปิดใช้งาน JavaScript เพื่อโหลดข่าวสารและเข้าใช้งานระบบ</p></noscript>
- </div>
-</div>
 
 <div class="header"><span class="logo-icon">🏢</span><h1>ระบบบันทึกเวลาเข้างาน</h1><p class="subtitle">Face Recognition &amp; GPS Attendance</p></div>
 <div id="apiWarning" class="api-warning">⚠️ ยังไม่ได้ตั้งค่า API — <a href="./config.html">ไปตั้งค่าก่อน</a></div>
-<div class="menu-cards" id="home-menu" inert aria-busy="true">
+<div class="menu-cards" id="home-menu">
 <a href="./scan.html" class="btn-menu btn-scan"><div class="card-icon">📷</div><div class="card-text"><div class="card-title">สแกนเข้างาน</div><div class="card-desc">ยืนยันตัวตนด้วยใบหน้า + GPS</div></div><span class="card-arrow">›</span></a>
 <a href="./dashboard.html" class="btn-menu btn-dashboard"><div class="card-icon">📊</div><div class="card-text"><div class="card-title">แดชบอร์ด &amp; OT</div><div class="card-desc">ดูข้อมูลภาพรวมสรุปผล</div></div><span class="card-arrow">›</span></a>
 <a href="./faresult.html" class="btn-menu btn-faresult"><div class="card-icon">📈</div><div class="card-text"><div class="card-title">Production Plan VS Result</div><div class="card-desc">แผนการผลิตและผลลัพธ์การทำงาน</div></div><span class="card-arrow">›</span></a>
@@ -73,21 +61,24 @@ body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981
     const field = document.getElementById('apiUrl');
     return (field ? field.value.trim() : '') || safeRead('gasApiUrl') || (typeof GAS_API_URL !== 'undefined' ? GAS_API_URL : DEFAULT_API);
   }
-  async function request(action, body) {
+  // timeoutMs: GET (โหลดข่าว) ใช้สั้นแล้วลองใหม่ได้ / POST (บันทึก) คงค่าเดิม 30 วินาที
+  async function request(action, body, timeoutMs = 30000) {
     const url = new URL(apiURL());
     if (url.protocol !== 'https:') throw new Error('กรุณาใช้ API URL แบบ HTTPS');
     const controller = new AbortController();
-    const timer = setTimeout(()=>controller.abort(),30000);
+    const timer = setTimeout(()=>controller.abort(),timeoutMs);
     try {
       let response;
       if(body) response = await fetch(url.href,{method:'POST',body:JSON.stringify({action,...body}),signal:controller.signal,redirect:'follow'});
       else {url.searchParams.set('action',action);url.searchParams.set('_',String(Date.now()));response = await fetch(url.href,{signal:controller.signal,cache:'no-store'});}
       if(!response.ok) throw new Error('API ตอบกลับไม่สำเร็จ ('+response.status+')');
-      const data = await response.json();
+      let data;
+      try { data = await response.json(); }
+      catch (_) { throw new Error('API ไม่ได้ตอบกลับเป็น JSON (ตรวจสอบว่า Deploy Apps Script ให้ Anyone เข้าถึงได้)'); }
       if(data.success !== true) throw new Error(data.message || data.error || 'กรุณาอัปเดต Apps Script และ Deploy เวอร์ชันใหม่');
       return data;
     } catch(error) {
-      if(error.name==='AbortError') throw new Error('การเชื่อมต่อใช้เวลานาน หากกดบันทึกไปแล้ว ให้โหลดข้อมูลล่าสุดเพื่อตรวจสอบก่อนบันทึกซ้ำ');
+      if(error.name==='AbortError') throw new Error(body ? 'การเชื่อมต่อใช้เวลานาน หากกดบันทึกไปแล้ว ให้โหลดข้อมูลล่าสุดเพื่อตรวจสอบก่อนบันทึกซ้ำ' : 'หมดเวลาการเชื่อมต่อ');
       throw error;
     } finally {clearTimeout(timer);}
   }
@@ -135,54 +126,98 @@ body::after{bottom:-50px;right:-50px;width:300px;height:300px;background:#10b981
   }
   window.HaierAnnouncement={request,show};
   if(document.getElementById('announcement-admin')) return;
-  const homeMenu=document.getElementById('home-menu');
-  const gate=document.getElementById('home-news-gate');
-  const gateStatus=document.getElementById('home-news-status');
-  const gateHeading=document.getElementById('home-news-heading');
-  const spinner=document.getElementById('home-news-spinner');
-  const retry=document.getElementById('home-news-retry');
-  const dismiss=document.getElementById('home-news-dismiss');
-  let loading=false;
-  function unlockHome() {
-    homeMenu.inert=false;homeMenu.removeAttribute('inert');homeMenu.setAttribute('aria-busy','false');gate.hidden=true;
+
+  // ===== โหลดข่าวหน้าแรก: ไม่บล็อกเมนู / แสดงแคชทันที / ลองใหม่อัตโนมัติ =====
+  const CACHE_KEY='haier-announcement-cache';
+  const SEEN_KEY='haier-announcement-seen-home';
+  const CACHE_TTL=12*60*60*1000; // ใช้แคชแสดงทันทีได้ไม่เกิน 12 ชั่วโมง
+  const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+  // ลอง GET สูงสุด 3 ครั้ง ครั้งละไม่เกิน 10 วินาที (Apps Script ครั้งแรกมักช้าจาก cold start)
+  async function requestWithRetry(action,tries=3){
+    let last;
+    for(let i=0;i<tries;i++){
+      try{return await request(action,null,10000);}
+      catch(e){last=e;if(i<tries-1)await wait(1000*(i+1));}
+    }
+    throw last;
   }
-  async function loadHomeAnnouncement() {
-    if(loading)return;
-    loading=true;homeMenu.inert=true;homeMenu.setAttribute('inert','');homeMenu.setAttribute('aria-busy','true');gate.hidden=false;
-    retry.hidden=true;dismiss.hidden=true;spinner.hidden=false;gateHeading.textContent='กำลังตรวจสอบข่าวสาร';gateStatus.textContent='กรุณารอสักครู่ ก่อนเข้าสู่เมนูใช้งาน';
-    try {
-      const {announcement:a}=await request('getAnnouncement');
-      if(!a || !a.enabled){unlockHome();return;}
-      const isActive=()=> (!a.startAt || Date.now()>=Date.parse(a.startAt)) && (!a.endAt || Date.now()<Date.parse(a.endAt));
-      if(!isActive()){unlockHome();return;}
-      const button=document.createElement('button');button.type='button';button.className='ha-news-open';button.textContent='📢 '+words()[2];
-      button.onclick=()=>{if(isActive()) show(a);else button.remove();};document.body.append(button);
-      window.addEventListener('haier-language-change',()=>{button.textContent='📢 '+words()[2];if(modal?.open){modal.querySelector('#ha-news-caption').textContent=words()[0];modal.querySelector('.ha-news-close').textContent=words()[1];}});
-      const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-      const stamp=a.revision+'|'+day;
-      if(a.frequency==='daily' && safeRead('haier-announcement-seen-home')===stamp){unlockHome();return;}
-      // Keep the menu inert until the actual dialog is dismissed (close button or Escape).
-      show(a);gate.hidden=true;
-      modal.addEventListener('close',()=>{
-        try{localStorage.setItem('haier-announcement-seen-home',stamp);}catch(_){}
-        unlockHome();
-        homeMenu.querySelector('a')?.focus();
-      },{once:true});
-    } catch(error) {
-      console.warn('Announcement unavailable:',error.message);
-      gate.hidden=false;spinner.hidden=true;retry.hidden=false;dismiss.hidden=false;
-      gateHeading.textContent='ยังโหลดข่าวสารไม่ได้';
-      gateStatus.textContent='คุณสามารถลองโหลดอีกครั้ง หรือกดปิดและเข้าใช้งานเว็บได้ตามปกติ';
-      retry.focus();
-    } finally {loading=false;}
-  }
-  dismiss.onclick=()=>{
-    if(loading || dismiss.hidden)return;
-    unlockHome();
-    homeMenu.querySelector('a')?.focus();
+  const isActive=a=>!!(a&&a.enabled&&(!a.startAt||Date.now()>=Date.parse(a.startAt))&&(!a.endAt||Date.now()<Date.parse(a.endAt)));
+  const stampOf=a=>{
+    const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    return a.revision+'|'+day;
   };
-  retry.onclick=loadHomeAnnouncement;
-  loadHomeAnnouncement();
+  const alreadySeen=a=>a.frequency==='daily'&&safeRead(SEEN_KEY)===stampOf(a);
+  function readCache(){
+    try{const c=JSON.parse(safeRead(CACHE_KEY)||'null');return c&&c.a&&Date.now()-c.t<CACHE_TTL?c.a:null;}catch(_){return null;}
+  }
+
+  let openBtn=null,current=null,shownRevision=null;
+  function ensureButton(){
+    if(openBtn&&openBtn.isConnected)return;
+    openBtn=document.createElement('button');openBtn.type='button';openBtn.className='ha-news-open';
+    openBtn.textContent='📢 '+words()[2];
+    openBtn.onclick=()=>{if(current&&isActive(current))show(current);else removeButton();};
+    document.body.append(openBtn);
+  }
+  function removeButton(){if(openBtn){openBtn.remove();openBtn=null;}}
+  window.addEventListener('haier-language-change',()=>{
+    if(openBtn)openBtn.textContent='📢 '+words()[2];
+    if(modal?.open){modal.querySelector('#ha-news-caption').textContent=words()[0];modal.querySelector('.ha-news-close').textContent=words()[1];}
+  });
+
+  function apply(a){
+    if(!isActive(a)){
+      current=null;removeButton();
+      if(modal?.open&&shownRevision!==null)modal.close();
+      return;
+    }
+    current=a;ensureButton();
+    if(alreadySeen(a))return;
+    if(shownRevision===a.revision)return; // แสดงเวอร์ชันนี้ไปแล้วในรอบนี้ ไม่เด้งซ้ำ
+    shownRevision=a.revision;
+    show(a);
+    modal.addEventListener('close',()=>{
+      try{localStorage.setItem(SEEN_KEY,stampOf(a));}catch(_){}
+    },{once:true});
+  }
+
+  // ไฟล์ข่าวแบบ static บน GitHub Pages (เร็ว ไม่มี cold start) ใช้แสดงผลครั้งแรกก่อน
+  // ถ้าไม่มีไฟล์ / โหลดไม่ได้ จะข้ามไปใช้ Apps Script ตามเดิม
+  async function loadStatic(){
+    const ctrl=new AbortController();
+    const t=setTimeout(()=>ctrl.abort(),4000);
+    try{
+      const res=await fetch('./announcement.json?_='+Math.floor(Date.now()/60000),{signal:ctrl.signal,cache:'no-cache'});
+      if(!res.ok)return null;
+      const j=await res.json();
+      const a=j&&(j.announcement||j);
+      return a&&typeof a==='object'&&'enabled' in a?a:null;
+    }catch(_){return null;}
+    finally{clearTimeout(t);}
+  }
+
+  let gotFresh=false;
+  let refreshing=false;
+  async function refresh(){
+    if(refreshing)return;
+    refreshing=true;
+    try{
+      const {announcement}=await requestWithRetry('getAnnouncement');
+      const a=announcement||{enabled:false};
+      gotFresh=true;
+      try{localStorage.setItem(CACHE_KEY,JSON.stringify({t:Date.now(),a}));}catch(_){}
+      apply(a);
+    }catch(error){
+      console.warn('Announcement unavailable:',error.message);
+      window.addEventListener('online',refresh,{once:true}); // กลับมาออนไลน์แล้วลองใหม่เอง
+    }finally{refreshing=false;}
+  }
+
+  const cached=readCache();
+  if(cached)apply(cached);
+  else loadStatic().then(a=>{ if(a&&!gotFresh&&shownRevision===null)apply(a); }); // ไม่มีแคช → ใช้ไฟล์ static แสดงก่อน
+  refresh(); // ตรวจกับ Apps Script เสมอ ถ้าข่าวต่างจากที่แสดงอยู่จะอัปเดตให้เอง
 })();
 
 </script>
