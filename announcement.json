@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "announcement": {
+    "enabled": false,
+    "title": "ตัวอย่างหัวข้อข่าว",
+    "message": "ตัวอย่างข้อความข่าวประชาสัมพันธ์",
+    "image": "",
+    "startAt": "",
+    "endAt": "",
+    "frequency": "daily",
+    "revision": "1"
+  }
+}
