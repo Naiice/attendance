@@ -4,77 +4,148 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FA Stock Management</title>
-  
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
-  
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          screens: {
-            'tv': '1920px', 
+          colors: {
+            ink: '#1B2733',
+            concrete: '#EDF0F3',
+            steel:  { DEFAULT: '#2B5C8F', dark: '#1F4670', soft: '#DCE7F3' },
+            signal: { DEFAULT: '#E3A008', dark: '#C58A00', text: '#7A5200', soft: '#FCEFCB' },
+            ret:    { DEFAULT: '#6A4CB8', dark: '#4F3597', soft: '#E9E3F7' },
+            ok:     { DEFAULT: '#23803F', dark: '#1A6030', soft: '#DAF0E0' },
+            bad:    { DEFAULT: '#C23B2E', dark: '#9E2E23', soft: '#FADFDB' }
           }
         }
       }
     }
   </script>
-  
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.22.20/babel.min.js"></script>
-  
-  <!-- เพิ่ม Library Recharts และ Dependencies สำหรับสร้างกราฟ -->
+
+  <!-- Recharts และ dependencies สำหรับกราฟในแท็บแดชบอร์ด -->
   <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
   <script src="https://unpkg.com/react-is@18.2.0/umd/react-is.production.min.js"></script>
   <script src="https://unpkg.com/recharts@2.1.9/umd/Recharts.js"></script>
 
   <style>
-    /* ปรับแต่ง Scrollbar */
+    /* ทุกขนาดใน Tailwind เป็น rem — ขยาย root บนจอ TV แทนการใส่ tv: ทุกคลาส */
+    html { font-size: 16px; }
+    @media (min-width: 1920px) { html { font-size: 22px; } }
+    body { font-family: 'IBM Plex Sans Thai', 'Noto Sans SC', 'Noto Sans Thai', system-ui, sans-serif; font-variant-numeric: tabular-nums; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+    .pop { animation: pop .16s ease-out; }
+    @media (prefers-reduced-motion: reduce) { .pop { animation: none; } * { transition: none !important; } }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-concrete text-ink">
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
-
-    // 🔴 URL Apps Script
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec'; 
-
-    // ดึง Components ของ Recharts มาใช้งาน (เพิ่ม PieChart)
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
     const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } = window.Recharts;
 
-    // 🟢 ลิงก์ Publish to web (CSV) ของชีต Stock
+    // 🔴 URL Apps Script (ต้อง Deploy โค้ด Code.gs เวอร์ชันใหม่ — ดูคู่มือ)
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeuvLdQinVWwPwUSDZkX7_aHIU9_nbsKWREJ3yw32vyUpyaZ_PZSYlVl-s4tAN0SY/exec';
+
+    // 🟢 สำรอง: ชีต Stock แบบ Publish to web (ใช้เมื่อเชื่อม Apps Script ไม่ได้ — ดูได้อย่างเดียว)
     const CSV_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQguGoF3kiHKMbAW_IHJaxIO0cAr4-6CktfRLZRYhf4z2WvVC_zmiZp6AH8hLpX_aNZNWpJuWfiBcYc/pub?gid=2049777622&single=true&output=csv`;
-    
-    // 🟡 ลิงก์ Export CSV ของชีต "FA Stock History" ที่คุณให้มา
+
+    // 🟡 ชีต "FA Stock History" (ใช้กับแท็บแดชบอร์ด)
     const HISTORY_CSV_URL = `https://docs.google.com/spreadsheets/d/1R3-R-HsrfGBt1L2wMFrsIBZnCz20YNRhVTWnb4Ygxto/export?format=csv&gid=500249857`;
 
-    const fetchWithFallback = async (url) => {
-        const proxyList = [
-            url, 
-            `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, 
-            `https://corsproxy.io/?${encodeURIComponent(url)}` 
-        ];
+    const POLL_MS = 30000;          // ดึงสต็อก + คำขอทุก 30 วินาที
+    const HISTORY_POLL_MS = 120000; // ดึงประวัติทุก 2 นาที
+    const RETURN_KEYS = ['return required', 'require return', 'ต้องคืนของเสีย', 'ต้องคืน'];
+    const TRUE_VALUES = ['y', 'yes', 'true', '1', 'ใช่', 'ต้องคืน', 'required', 'x', '✓', '✔'];
 
-        let lastError;
-        for (let i = 0; i < proxyList.length; i++) {
-            try {
-                const response = await fetch(proxyList[i]);
-                const text = await response.text();
-                if (text.includes("<!DOCTYPE html>")) throw new Error("Google Sheet requires login");
-                return text;
-            } catch (error) {
-                lastError = error;
-            }
-        }
-        throw lastError || new Error("Failed to fetch data from all sources");
+    /* ---------------- helpers ---------------- */
+
+    const BTN = 'inline-flex items-center justify-center gap-1.5 rounded-md px-3 min-h-[2.5rem] text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-steel disabled:cursor-not-allowed disabled:opacity-40';
+    const BTN_STEEL = `${BTN} bg-steel text-white hover:bg-steel-dark`;
+    const BTN_RET = `${BTN} bg-ret text-white hover:bg-ret-dark`;
+    const BTN_SIGNAL = `${BTN} bg-signal text-ink hover:bg-signal-dark`;
+    const BTN_OK = `${BTN} bg-ok text-white hover:bg-ok-dark`;
+    const BTN_GHOST = `${BTN} border border-slate-300 bg-white text-ink hover:bg-slate-100`;
+    const BTN_BAD_GHOST = `${BTN} border border-bad bg-white text-bad hover:bg-bad-soft`;
+    const INPUT = 'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-ink outline-none focus:border-steel focus:ring-2 focus:ring-steel/20';
+    const LABEL = 'mb-1 block text-sm font-medium text-slate-700';
+
+    const store = {
+      get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+      set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    };
+
+    const s = (v) => (v === undefined || v === null) ? '' : String(v).trim();
+    const isTrue = (v) => TRUE_VALUES.includes(s(v).toLowerCase());
+    const genId = () => 'R' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+    const fmtDT = (iso) => {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return String(iso);
+      return d.toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    };
+
+    // อ่าน CSV ถูกต้องแม้มีเครื่องหมายคำพูด / ลูกน้ำ / ขึ้นบรรทัดใหม่ในเซลล์
+    const parseCSV = (text) => {
+      const rows = []; let row = [], cell = '', inQ = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQ) {
+          if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else inQ = false; }
+          else cell += c;
+        } else if (c === '"') inQ = true;
+        else if (c === ',') { row.push(cell); cell = ''; }
+        else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+        else if (c !== '\r') cell += c;
+      }
+      if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+      return rows.filter(r => r.some(c => c.trim() !== ''));
+    };
+
+    const csvToObjects = (text) => {
+      const rows = parseCSV(text);
+      if (rows.length < 2) return [];
+      const headers = rows[0].map(h => h.trim().toLowerCase());
+      return rows.slice(1).map(r => {
+        const o = {};
+        headers.forEach((h, i) => { if (h) o[h] = (r[i] || '').trim(); });
+        return o;
+      });
+    };
+
+    const fetchWithFallback = async (url) => {
+      const proxyList = [
+        url,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+        `https://corsproxy.io/?${encodeURIComponent(url)}`
+      ];
+      let lastError;
+      for (let i = 0; i < proxyList.length; i++) {
+        try {
+          const response = await fetch(proxyList[i]);
+          const text = await response.text();
+          if (/<!doctype html/i.test(text)) throw new Error('Google Sheet requires login');
+          return text;
+        } catch (error) { lastError = error; }
+      }
+      throw lastError || new Error('Failed to fetch data from all sources');
     };
 
     const getDirectImageUrl = (url) => {
@@ -82,875 +153,1166 @@
       let id = '';
       const matchFileD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
       const matchId = url.match(/id=([a-zA-Z0-9_-]+)/);
-      const matchUc = url.match(/uc\?.*id=([a-zA-Z0-9_-]+)/);
-      
-      if (matchFileD && matchFileD[1]) {
-        id = matchFileD[1];
-      } else if (matchId && matchId[1]) {
-        id = matchId[1];
-      } else if (matchUc && matchUc[1]) {
-        id = matchUc[1];
-      }
-
-      // ใส่ $ เพื่อแทรกตัวแปร id ได้ถูกต้อง
-      if (id) {
-        return `https://lh3.googleusercontent.com/d/${id}`; 
-      }
+      if (matchFileD && matchFileD[1]) id = matchFileD[1];
+      else if (matchId && matchId[1]) id = matchId[1];
+      if (id) return `https://lh3.googleusercontent.com/d/${id}`;
       return url;
     };
 
+    const mapStockRow = (o, retKey) => ({
+      id: s(o['product code']),
+      name: s(o['name - thai']),
+      nameChina: s(o['name - china']),
+      barcode: s(o['barcode']),
+      qty: parseInt(o['in-stock'], 10) || 0,
+      safetyStock: parseInt(o['safety stock'], 10) || 0,
+      unit: s(o['unit']),
+      picUrl: s(o['picture url']),
+      status: s(o['status']),
+      requireReturn: retKey ? isTrue(o[retKey]) : true
+    });
+
+    const callScript = async (payload) => {
+      let res;
+      try {
+        res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+      } catch (e) {
+        throw new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง');
+      }
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); }
+      catch (e) { throw new Error('เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ — ตรวจสอบว่า Deploy Code.gs เวอร์ชันล่าสุดแล้ว'); }
+      if (!json.ok) { const err = new Error(json.error || 'ทำรายการไม่สำเร็จ'); err.code = json.code; throw err; }
+      return json;
+    };
+
+    const downloadCSV = (filename, header, rows) => {
+      const esc = (v) => `"${String(v === undefined || v === null ? '' : v).replace(/"/g, '""')}"`;
+      const csv = '\uFEFF' + [header, ...rows].map(r => r.map(esc).join(',')).join('\n');
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+
+    const REQ_STATUS = {
+      PENDING:  { label: 'รออนุมัติ',        cls: 'bg-signal-soft text-signal-text', icon: 'fa-hourglass-half' },
+      APPROVED: { label: 'อนุมัติแล้ว รอเบิก', cls: 'bg-ok-soft text-ok-dark',        icon: 'fa-circle-check' },
+      USED:     { label: 'เบิกแล้ว',          cls: 'bg-steel-soft text-steel-dark',   icon: 'fa-dolly' },
+      REJECTED: { label: 'ไม่อนุมัติ',        cls: 'bg-bad-soft text-bad-dark',       icon: 'fa-ban' }
+    };
+
+    /* ---------------- shared components ---------------- */
+
+    function ProductImg({ url, name, size = 'h-16 w-16', onZoom }) {
+      const [failed, setFailed] = useState(false);
+      const src = getDirectImageUrl(url);
+      useEffect(() => { setFailed(false); }, [src]);
+      const box = `${size} shrink-0 rounded border border-slate-200 bg-white`;
+      if (!src || failed) {
+        return <div className={`${box} flex items-center justify-center text-slate-300`}><i className="fas fa-image"></i></div>;
+      }
+      return (
+        <button type="button" onClick={() => onZoom && onZoom({ src, name })}
+          className={`${box} cursor-zoom-in p-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-steel`}
+          aria-label={`ขยายรูป ${name}`}>
+          <img src={src} alt={name} className="h-full w-full object-contain" onError={() => setFailed(true)} />
+        </button>
+      );
+    }
+
+    function Modal({ title, tone = 'steel', icon, onClose, children }) {
+      useEffect(() => {
+        const h = (e) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', h);
+        return () => window.removeEventListener('keydown', h);
+      }, [onClose]);
+      const toneCls = { steel: 'bg-steel text-white', ret: 'bg-ret text-white', signal: 'bg-signal text-ink', ink: 'bg-ink text-white' }[tone];
+      return (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/60 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={title}>
+          <div className="pop max-h-[92vh] w-full overflow-y-auto rounded-t-xl bg-white shadow-2xl sm:max-w-md sm:rounded-lg">
+            <div className={`flex items-center justify-between gap-3 px-4 py-3 ${toneCls}`}>
+              <h3 className="flex items-center gap-2 text-base font-bold"><i className={`fas ${icon}`}></i>{title}</h3>
+              <button type="button" onClick={onClose} className="rounded p-1 opacity-80 hover:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" aria-label="ปิด">
+                <i className="fas fa-xmark text-lg"></i>
+              </button>
+            </div>
+            <div className="p-4">{children}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function ItemHeader({ item, onZoom }) {
+      return (
+        <div className="mb-4 flex gap-3 rounded-md bg-slate-50 p-2">
+          <ProductImg url={item.picUrl} name={item.name} onZoom={onZoom} />
+          <div className="min-w-0">
+            <div className="font-bold">{item.id}</div>
+            <div className="text-sm">{item.name}</div>
+            <div className="text-sm text-slate-500">คงเหลือ {item.qty} {item.unit}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function AdminLoginForm({ onLogin, busy }) {
+      const [name, setName] = useState(store.get('fa_admin_name') || '');
+      const [pw, setPw] = useState('');
+      const submit = (e) => { e.preventDefault(); if (!name.trim() || !pw) return; onLogin(name.trim(), pw); };
+      return (
+        <form onSubmit={submit} className="space-y-3">
+          <div>
+            <label className={LABEL}>ชื่อแอดมิน</label>
+            <input className={INPUT} value={name} onChange={(e) => setName(e.target.value)} placeholder="ใช้บันทึกว่าใครเป็นผู้อนุมัติ" autoFocus={!name} />
+          </div>
+          <div>
+            <label className={LABEL}>รหัสผ่านแอดมิน</label>
+            <input type="password" className={INPUT} value={pw} onChange={(e) => setPw(e.target.value)} autoFocus={!!name} />
+          </div>
+          <button type="submit" disabled={busy} className={`${BTN_STEEL} w-full`}>
+            <i className="fas fa-user-shield"></i> เข้าสู่ระบบแอดมิน
+          </button>
+        </form>
+      );
+    }
+
+    function ErrorLine({ text }) {
+      if (!text) return null;
+      return <div className="rounded-md bg-bad-soft px-3 py-2 text-sm font-medium text-bad-dark" role="alert">{text}</div>;
+    }
+
+    /* ---------------- modals ---------------- */
+
+    function RequestModal({ item, defaults, busy, onSubmit, onClose, onZoom }) {
+      const [qty, setQty] = useState(1);
+      const [ret, setRet] = useState(1);
+      const [retTouched, setRetTouched] = useState(false);
+      const [person, setPerson] = useState(defaults.person || '');
+      const [line, setLine] = useState(defaults.line || '');
+      const [note, setNote] = useState('');
+      const [err, setErr] = useState('');
+
+      const changeQty = (v) => { setQty(v); if (!retTouched) setRet(v); };
+
+      const submit = (e) => {
+        e.preventDefault();
+        const q = parseInt(qty, 10);
+        const r = parseInt(ret, 10) || 0;
+        if (!(q > 0)) return setErr('ใส่จำนวนที่ขอเบิกอย่างน้อย 1');
+        if (q > item.qty) return setErr(`สต็อกคงเหลือ ${item.qty} ${item.unit} — ขอเบิกเกินไม่ได้`);
+        if (item.requireReturn && r < 1) return setErr('สินค้านี้ต้องคืนของเสียอย่างน้อย 1 ชิ้น');
+        if (!person.trim()) return setErr('ใส่ชื่อผู้ขอเบิก');
+        if (!line.trim()) return setErr('ใส่ Line / ไลน์การผลิต');
+        setErr('');
+        onSubmit({ itemCode: item.id, qty: q, returnQty: item.requireReturn ? r : 0, person: person.trim(), line: line.trim(), note: note.trim() });
+      };
+
+      return (
+        <Modal title={item.requireReturn ? 'คืนของเสีย / 退回不良品' : 'ขออนุมัติเบิก / 申请领料'} tone="ret" icon="fa-rotate-left" onClose={onClose}>
+          <form onSubmit={submit} className="space-y-3">
+            <ItemHeader item={item} onZoom={onZoom} />
+            {item.requireReturn ? (
+              <div className="rounded-md bg-ret-soft px-3 py-2 text-sm text-ret-dark">
+                สินค้านี้ต้องคืนของเสียก่อนเบิก แอดมินจะตรวจและอนุมัติ จากนั้นปุ่มเบิกสต็อกจะกดได้
+              </div>
+            ) : (
+              <div className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
+                สินค้านี้ไม่ต้องคืนของเสีย แต่ต้องให้แอดมินอนุมัติทุกครั้งก่อนเบิก
+              </div>
+            )}
+            <div className={item.requireReturn ? 'grid grid-cols-2 gap-3' : ''}>
+              <div>
+                <label className={LABEL}>จำนวนที่ขอเบิก ({item.unit || 'ชิ้น'})</label>
+                <input type="number" min="1" className={`${INPUT} font-bold`} value={qty} onChange={(e) => changeQty(e.target.value)} />
+              </div>
+              {item.requireReturn && (
+                <div>
+                  <label className={LABEL}>จำนวนของเสียที่คืน</label>
+                  <input type="number" min="1" className={`${INPUT} font-bold`} value={ret} onChange={(e) => { setRet(e.target.value); setRetTouched(true); }} />
+                </div>
+              )}
+            </div>
+            <div>
+              <label className={LABEL}>ชื่อผู้ขอเบิก (บังคับ)</label>
+              <input className={INPUT} value={person} onChange={(e) => setPerson(e.target.value)} placeholder="ระบุชื่อพนักงาน" autoFocus />
+            </div>
+            <div>
+              <label className={LABEL}>Line / ไลน์การผลิต (บังคับ)</label>
+              <input className={INPUT} value={line} onChange={(e) => setLine(e.target.value)} placeholder="เช่น Line 1, Line A" />
+            </div>
+            <div>
+              <label className={LABEL}>{item.requireReturn ? 'อาการ / สาเหตุที่เสีย (ไม่บังคับ)' : 'หมายเหตุ (ไม่บังคับ)'}</label>
+              <input className={INPUT} value={note} onChange={(e) => setNote(e.target.value)} />
+            </div>
+            <ErrorLine text={err} />
+            <div className="flex gap-2 pt-1">
+              <button type="button" onClick={onClose} className={`${BTN_GHOST} flex-1`}>ยกเลิก / 取消</button>
+              <button type="submit" disabled={busy} className={`${BTN_RET} flex-1`}>ส่งขออนุมัติ / 提交</button>
+            </div>
+          </form>
+        </Modal>
+      );
+    }
+
+    function IssueModal({ item, requests, busy, onConfirm, onClose, onZoom }) {
+      const [sel, setSel] = useState(requests[0] ? requests[0].id : null);
+      const current = requests.find(r => r.id === sel) || requests[0];
+      return (
+        <Modal title="เบิกสต็อก / 领料" tone="signal" icon="fa-dolly" onClose={onClose}>
+          <ItemHeader item={item} onZoom={onZoom} />
+          {!current ? (
+            <div className="space-y-3">
+              <ErrorLine text="ไม่มีคำขอที่อนุมัติแล้วสำหรับสินค้านี้ (อาจถูกเบิกไปแล้ว)" />
+              <button type="button" onClick={onClose} className={`${BTN_GHOST} w-full`}>ปิด</button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <fieldset className="space-y-2">
+                <legend className="mb-1 text-sm font-medium text-slate-700">
+                  {requests.length > 1 ? 'เลือกคำขอที่อนุมัติแล้ว' : 'คำขอที่อนุมัติแล้ว'}
+                </legend>
+                {requests.map(r => (
+                  <label key={r.id} className={`flex cursor-pointer items-start gap-3 rounded-md border-2 p-3 ${current.id === r.id ? 'border-ok bg-ok-soft/40' : 'border-slate-200'}`}>
+                    <input type="radio" name="req" className="mt-1" checked={current.id === r.id} onChange={() => setSel(r.id)} />
+                    <div className="text-sm">
+                      <div className="font-bold">เบิก {r.qty} {item.unit}</div>
+                      <div className="text-slate-600">{r.person} ({r.line})</div>
+                      <div className="text-slate-500">อนุมัติโดย {r.reviewedBy || '-'} เมื่อ {fmtDT(r.reviewedAt)}</div>
+                    </div>
+                  </label>
+                ))}
+              </fieldset>
+              {current.qty > item.qty && <ErrorLine text={`สต็อกคงเหลือ ${item.qty} ${item.unit} ไม่พอสำหรับคำขอนี้`} />}
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={onClose} className={`${BTN_GHOST} flex-1`}>ยกเลิก / 取消</button>
+                <button type="button" disabled={busy || current.qty > item.qty} onClick={() => onConfirm(current)} className={`${BTN_SIGNAL} flex-1`}>
+                  ยืนยันเบิก {current.qty} {item.unit} / 确认
+                </button>
+              </div>
+            </div>
+          )}
+        </Modal>
+      );
+    }
+
+    function RefillModal({ item, adminName, busy, onSubmit, onClose, onZoom }) {
+      const [qty, setQty] = useState(1);
+      const [person, setPerson] = useState(adminName || '');
+      const [line, setLine] = useState((store.get('fa_who') || {}).line || '');
+      const [err, setErr] = useState('');
+      const submit = (e) => {
+        e.preventDefault();
+        const q = parseInt(qty, 10);
+        if (!(q > 0)) return setErr('ใส่จำนวนที่เติมอย่างน้อย 1');
+        if (!person.trim()) return setErr('ใส่ชื่อผู้รับผิดชอบ');
+        if (!line.trim()) return setErr('ใส่ Line / ไลน์การผลิต');
+        setErr('');
+        onSubmit({ itemCode: item.id, qty: q, person: person.trim(), line: line.trim() });
+      };
+      return (
+        <Modal title="เติมสต็อก (IN) / 入库" tone="steel" icon="fa-cart-plus" onClose={onClose}>
+          <form onSubmit={submit} className="space-y-3">
+            <ItemHeader item={item} onZoom={onZoom} />
+            <div>
+              <label className={LABEL}>จำนวนที่เติม ({item.unit || 'ชิ้น'})</label>
+              <input type="number" min="1" className={`${INPUT} font-bold`} value={qty} onChange={(e) => setQty(e.target.value)} autoFocus />
+            </div>
+            <div>
+              <label className={LABEL}>ชื่อผู้รับผิดชอบ (บังคับ)</label>
+              <input className={INPUT} value={person} onChange={(e) => setPerson(e.target.value)} />
+            </div>
+            <div>
+              <label className={LABEL}>Line / ไลน์การผลิต (บังคับ)</label>
+              <input className={INPUT} value={line} onChange={(e) => setLine(e.target.value)} placeholder="เช่น Line 1, Line A" />
+            </div>
+            <ErrorLine text={err} />
+            <div className="flex gap-2 pt-1">
+              <button type="button" onClick={onClose} className={`${BTN_GHOST} flex-1`}>ยกเลิก / 取消</button>
+              <button type="submit" disabled={busy} className={`${BTN_STEEL} flex-1`}>ยืนยันเติมสต็อก / 确认</button>
+            </div>
+          </form>
+        </Modal>
+      );
+    }
+
+    /* ---------------- inventory tab ---------------- */
+
+    const EMPTY_INFO = { pending: [], approved: [], rejected: null };
+
+    function StateChips({ info }) {
+      const chips = [];
+      if (info.pending.length) chips.push(
+        <span key="p" className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold ${REQ_STATUS.PENDING.cls}`}>
+          <i className="fas fa-hourglass-half"></i> รออนุมัติ ×{info.pending.length}
+        </span>);
+      if (info.approved.length) chips.push(
+        <span key="a" className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold ${REQ_STATUS.APPROVED.cls}`}>
+          <i className="fas fa-circle-check"></i> อนุมัติแล้ว ×{info.approved.length}
+        </span>);
+      const recentReject = info.rejected && (Date.now() - new Date(info.rejected.reviewedAt).getTime() < 864e5);
+      if (!chips.length && recentReject) chips.push(
+        <span key="r" title={info.rejected.rejectReason || 'ไม่อนุมัติ'} className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold ${REQ_STATUS.REJECTED.cls}`}>
+          <i className="fas fa-ban"></i> ไม่อนุมัติล่าสุด
+        </span>);
+      if (!chips.length) return <span className="px-1 text-xs text-slate-400">ยังไม่มีคำขอ</span>;
+      return <div className="flex flex-col gap-1">{chips}</div>;
+    }
+
+    const COL_QTY = 'md:w-24';
+    const COL_REFILL = 'md:w-28';
+    const COL_RAIL = 'md:w-[25rem]';
+
+    function StockRow({ item, info, flowReady, onRefill, onRequest, onIssue, onZoom }) {
+      const low = item.qty < item.safetyStock;
+      const canRequest = flowReady && item.qty > 0;
+      const canIssue = flowReady && info.approved.length > 0;
+      return (
+        <div className={`flex flex-col gap-3 border-b border-l-4 border-slate-200 px-3 py-3 md:flex-row md:items-center ${low ? 'border-l-bad' : 'border-l-transparent'}`}>
+          <div className="flex min-w-0 flex-1 gap-3">
+            <ProductImg url={item.picUrl} name={item.name} onZoom={onZoom} />
+            <div className="min-w-0">
+              <div className="font-bold">{item.id}</div>
+              <div className="text-sm font-medium">{item.name}</div>
+              {item.nameChina && <div className="text-xs text-slate-500">{item.nameChina}</div>}
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className={`rounded px-1.5 py-0.5 text-xs ${item.requireReturn ? 'bg-ret-soft text-ret-dark' : 'bg-slate-100 text-slate-600'}`}>
+                  {item.requireReturn ? 'ต้องคืนของเสีย' : 'ไม่ต้องคืนของเสีย'}
+                </span>
+                {item.barcode && <span className="text-xs text-slate-400">บาร์โค้ด {item.barcode}</span>}
+              </div>
+            </div>
+          </div>
+
+          <div className={`${COL_QTY} flex items-baseline gap-2 md:block md:text-center`}>
+            <span className={`inline-flex items-baseline gap-1 rounded-full px-3 py-1 text-sm font-bold ${low ? 'bg-bad-soft text-bad-dark' : 'bg-ok-soft text-ok-dark'}`}>
+              {item.qty}<span className="text-xs font-normal opacity-80">{item.unit}</span>
+            </span>
+            <div className="text-xs text-slate-400 md:mt-1">ขั้นต่ำ {item.safetyStock}</div>
+          </div>
+
+          <div className={`${COL_REFILL} md:text-center`}>
+            <button type="button" onClick={() => onRefill(item)} disabled={!flowReady} className={`${BTN_STEEL} w-full md:w-auto`} title="เติมสต็อก (ต้องใช้รหัสแอดมิน)">
+              <i className="fas fa-cart-plus"></i> เติม
+            </button>
+          </div>
+
+          <div className={`${COL_RAIL} flex flex-wrap items-center gap-2`}>
+            <button type="button" onClick={() => onRequest(item)} disabled={!canRequest} className={BTN_RET}
+              title={item.qty <= 0 ? 'สินค้าหมด' : 'ส่งคำขอ แล้วรอแอดมินอนุมัติ'}>
+              <i className="fas fa-rotate-left"></i> {item.requireReturn ? 'คืนของเสีย' : 'ขออนุมัติ'}
+            </button>
+            <i className="fas fa-chevron-right hidden text-xs text-slate-300 sm:inline"></i>
+            <div className="min-w-[7.5rem]"><StateChips info={info} /></div>
+            <i className="fas fa-chevron-right hidden text-xs text-slate-300 sm:inline"></i>
+            <button type="button" onClick={() => onIssue(item)} disabled={!canIssue} className={BTN_SIGNAL}
+              title={canIssue ? 'เบิกตามคำขอที่อนุมัติแล้ว' : 'ต้องมีคำขอที่แอดมินอนุมัติแล้วก่อน'}>
+              <i className="fas fa-dolly"></i> เบิกสต็อก
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function InventoryTab({ inventory, filtered, reqInfo, flowReady, loading, lowStockItems, scannerCode, setScannerCode, scannerInputRef,
+                            onScan, searchTerm, setSearchTerm, onRefill, onRequest, onIssue, onZoom }) {
+      const exportLow = () => {
+        if (!lowStockItems.length) return alert('ไม่มีสินค้าใกล้หมดให้ Export');
+        downloadCSV(`low_stock_items_${new Date().toISOString().split('T')[0]}.csv`,
+          ['รหัสสินค้า', 'ชื่อสินค้า', 'บาร์โค้ด', 'คงเหลือ', 'ขั้นต่ำ'],
+          lowStockItems.map(i => [i.id, i.name, i.barcode, i.qty, i.safetyStock]));
+      };
+      return (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div className="space-y-4 lg:col-span-3">
+            <section className="rounded-lg border border-slate-200 bg-white p-4">
+              <h2 className="mb-2 flex items-center gap-2 font-bold"><i className="fas fa-barcode text-steel"></i> สแกนบาร์โค้ด</h2>
+              <form onSubmit={onScan}>
+                <input ref={scannerInputRef} type="text" placeholder="สแกนรหัสสินค้า..." className={`${INPUT} border-2 border-steel-soft`}
+                  value={scannerCode} onChange={(e) => setScannerCode(e.target.value)} autoFocus />
+              </form>
+              <p className="mt-2 text-xs text-slate-500">
+                สแกนแล้วระบบเปิดขั้นตอนถัดไปให้: ถ้ามีคำขอที่อนุมัติแล้วจะเปิดหน้าเบิก ถ้ายังไม่มีจะเปิดหน้าคืนของเสีย / ขออนุมัติ
+              </p>
+            </section>
+
+            <section className="rounded-lg border border-bad/30 bg-white p-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 font-bold text-bad"><i className="fas fa-triangle-exclamation"></i> สินค้าใกล้หมด ({lowStockItems.length})</h2>
+                <button type="button" onClick={exportLow} className={`${BTN_BAD_GHOST} !min-h-[2rem] !px-2 text-xs`}><i className="fas fa-file-csv"></i> Export</button>
+              </div>
+              {lowStockItems.length > 0 ? (
+                <ul className="max-h-[40vh] space-y-1 overflow-y-auto pr-1 lg:max-h-[55vh]">
+                  {lowStockItems.map(item => (
+                    <li key={item.id} className="flex items-center justify-between gap-2 rounded bg-bad-soft/60 px-2 py-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold">{item.name}</div>
+                        <div className="truncate text-xs text-slate-500">รหัส {item.id}</div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="font-bold text-bad">{item.qty}</div>
+                        <div className="text-xs text-slate-500">ขั้นต่ำ {item.safetyStock}</div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="py-6 text-center text-sm text-slate-500">
+                  <i className="fas fa-circle-check mb-2 block text-3xl text-ok"></i>สต็อกอยู่ในเกณฑ์ปกติ
+                </div>
+              )}
+            </section>
+          </div>
+
+          <section className="overflow-hidden rounded-lg border border-slate-200 bg-white lg:col-span-9">
+            <div className="flex flex-col gap-2 border-b border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-lg font-bold">รายการสินค้าทั้งหมด <span className="text-sm font-normal text-slate-500">({filtered.length})</span></h2>
+              <div className="relative w-full sm:w-72">
+                <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" placeholder="ค้นหารหัส / ชื่อ / บาร์โค้ด..." className={`${INPUT} pl-9`}
+                  value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="hidden items-center gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 pl-4 text-sm font-medium text-slate-500 md:flex">
+              <div className="flex-1">สินค้า</div>
+              <div className={`${COL_QTY} text-center`}>คงเหลือ</div>
+              <div className={`${COL_REFILL} text-center`}>เติมสต็อก</div>
+              <div className={COL_RAIL}>ขั้นตอนเบิก: คืนของเสีย, แอดมินอนุมัติ, เบิกสต็อก</div>
+            </div>
+
+            <div className="max-h-[75vh] overflow-y-auto">
+              {loading && inventory.length === 0 ? (
+                <div className="py-12 text-center text-slate-400">กำลังโหลดข้อมูล...</div>
+              ) : filtered.length === 0 ? (
+                <div className="py-12 text-center text-slate-400">ไม่พบสินค้าที่ค้นหา ลองพิมพ์รหัสหรือชื่อให้สั้นลง</div>
+              ) : filtered.map(item => (
+                <StockRow key={item.id} item={item} info={reqInfo[item.id] || EMPTY_INFO} flowReady={flowReady}
+                  onRefill={onRefill} onRequest={onRequest} onIssue={onIssue} onZoom={onZoom} />
+              ))}
+            </div>
+          </section>
+        </div>
+      );
+    }
+
+    /* ---------------- approvals tab ---------------- */
+
+    function ApprovalsTab({ admin, onLogin, busy, requests, inventory, onReview, onZoom }) {
+      const byId = useMemo(() => { const m = {}; inventory.forEach(i => { m[i.id] = i; }); return m; }, [inventory]);
+      const pending = requests.filter(r => r.status === 'PENDING');
+      const recent = requests.filter(r => r.status !== 'PENDING').slice(0, 30);
+
+      if (!admin) {
+        return (
+          <div className="mx-auto max-w-md rounded-lg border border-slate-200 bg-white p-6">
+            <div className="mb-4 flex items-start gap-3">
+              <i className="fas fa-lock mt-1 text-2xl text-steel"></i>
+              <div>
+                <h2 className="text-lg font-bold">เฉพาะแอดมิน</h2>
+                <p className="text-sm text-slate-600">
+                  {pending.length ? `มี ${pending.length} คำขอรออนุมัติ เข้าสู่ระบบเพื่อดำเนินการ` : 'เข้าสู่ระบบเพื่ออนุมัติคำขอเบิก'}
+                </p>
+              </div>
+            </div>
+            <AdminLoginForm onLogin={onLogin} busy={busy} />
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-6">
+          <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <div className="flex items-center justify-between border-b border-slate-200 p-3">
+              <h2 className="text-lg font-bold">คำขอรออนุมัติ / 待批准</h2>
+              <span className="rounded-full bg-signal px-3 py-0.5 text-sm font-bold text-ink">{pending.length}</span>
+            </div>
+            {pending.length === 0 ? (
+              <div className="py-12 text-center text-slate-400">ไม่มีคำขอค้างอยู่ คำขอใหม่จะแสดงที่นี่ภายใน 30 วินาที</div>
+            ) : pending.map(r => {
+              const item = byId[r.itemCode];
+              const short = r.requireReturn && r.returnQty < r.qty;
+              return (
+                <div key={r.id} className="flex flex-col gap-3 border-b border-slate-200 p-3 md:flex-row md:items-center">
+                  <div className="flex min-w-0 flex-1 gap-3">
+                    <ProductImg url={item && item.picUrl} name={r.itemName} onZoom={onZoom} />
+                    <div className="min-w-0">
+                      <div className="font-bold">{r.itemCode}</div>
+                      <div className="text-sm">{(item && item.name) || r.itemName}</div>
+                      <div className="text-xs text-slate-500">{r.person} ({r.line}) เมื่อ {fmtDT(r.createdAt)}</div>
+                      {r.note && <div className="mt-1 text-xs text-slate-600">หมายเหตุ: {r.note}</div>}
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-sm md:w-60">
+                    <div>ขอเบิก <b className="text-base">{r.qty}</b> {item ? item.unit : ''}</div>
+                    {r.requireReturn
+                      ? <div className="text-ret-dark"><i className="fas fa-rotate-left"></i> คืนของเสีย <b>{r.returnQty}</b></div>
+                      : <div className="text-slate-500">ไม่ต้องคืนของเสีย</div>}
+                    {short && <div className="text-xs font-medium text-signal-text">คืนของเสียน้อยกว่าจำนวนที่ขอเบิก</div>}
+                    {item && r.qty > item.qty && <div className="text-xs font-medium text-bad">สต็อกคงเหลือ {item.qty} ไม่พอ</div>}
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" disabled={busy} onClick={() => onReview(r, 'APPROVE')} className={BTN_OK}><i className="fas fa-check"></i> อนุมัติ / 批准</button>
+                    <button type="button" disabled={busy} onClick={() => onReview(r, 'REJECT')} className={BTN_BAD_GHOST}>ไม่อนุมัติ</button>
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+
+          <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <div className="border-b border-slate-200 p-3"><h2 className="text-lg font-bold">คำขอล่าสุดที่ดำเนินการแล้ว</h2></div>
+            {recent.length === 0 ? (
+              <div className="py-8 text-center text-slate-400">ยังไม่มีประวัติ</div>
+            ) : recent.map(r => {
+              const st = REQ_STATUS[r.status] || REQ_STATUS.USED;
+              return (
+                <div key={r.id} className="flex flex-col gap-1 border-b border-slate-100 px-3 py-2 text-sm sm:flex-row sm:items-center sm:gap-3">
+                  <span className={`inline-flex w-fit items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold ${st.cls}`}><i className={`fas ${st.icon}`}></i> {st.label}</span>
+                  <span className="font-semibold">{r.itemCode}</span>
+                  <span className="min-w-0 flex-1 truncate text-slate-600">{(byId[r.itemCode] && byId[r.itemCode].name) || r.itemName} ×{r.qty}</span>
+                  <span className="text-xs text-slate-500">{r.person} ({r.line})</span>
+                  <span className="text-xs text-slate-500">
+                    {r.status === 'REJECTED' ? `${r.reviewedBy}: ${r.rejectReason || 'ไม่ระบุเหตุผล'}` : `อนุมัติโดย ${r.reviewedBy || '-'}`} {fmtDT(r.reviewedAt)}
+                  </span>
+                </div>
+              );
+            })}
+          </section>
+        </div>
+      );
+    }
+
+    /* ---------------- summary tab (เบิก - จ่าย - คืน) ---------------- */
+
+    const PERIODS = [['all', 'ทั้งหมด'], ['today', 'วันนี้'], ['7d', '7 วัน'], ['30d', '30 วัน']];
+
+    function SummaryTab({ inventory, requests, onZoom }) {
+      const [period, setPeriod] = useState('all');
+      const [q, setQ] = useState('');
+      const [onlyActive, setOnlyActive] = useState(false);
+      const [sort, setSort] = useState('code');
+
+      const rows = useMemo(() => {
+        const inPeriod = (iso) => {
+          if (period === 'all') return true;
+          if (!iso) return false;
+          const t = new Date(iso).getTime();
+          if (period === 'today') { const d = new Date(); d.setHours(0, 0, 0, 0); return t >= d.getTime(); }
+          return t >= Date.now() - (period === '7d' ? 7 : 30) * 864e5;
+        };
+        const m = {};
+        inventory.forEach(i => { m[i.id] = { item: i, wQty: 0, wCnt: 0, iQty: 0, iCnt: 0, rQty: 0, rCnt: 0, pending: 0 }; });
+        requests.forEach(r => {
+          const e = m[r.itemCode];
+          if (!e) return;
+          if (r.status !== 'REJECTED' && inPeriod(r.createdAt)) {
+            e.wQty += r.qty; e.wCnt += 1;
+            if (r.returnQty > 0) { e.rQty += r.returnQty; e.rCnt += 1; }
+          }
+          if (r.status === 'PENDING') e.pending += 1;
+          if (r.status === 'USED' && inPeriod(r.issuedAt || r.createdAt)) { e.iQty += r.qty; e.iCnt += 1; }
+        });
+        return Object.values(m);
+      }, [inventory, requests, period]);
+
+      const shown = useMemo(() => {
+        const term = q.trim().toLowerCase();
+        let list = rows.filter(e => !term || e.item.id.toLowerCase().includes(term) || e.item.name.toLowerCase().includes(term) || e.item.nameChina.toLowerCase().includes(term));
+        if (onlyActive) list = list.filter(e => e.wQty || e.iQty || e.rQty);
+        const key = { withdraw: 'wQty', issue: 'iQty', ret: 'rQty' }[sort];
+        list = [...list].sort((a, b) => key ? (b[key] - a[key]) || a.item.id.localeCompare(b.item.id) : a.item.id.localeCompare(b.item.id));
+        return list;
+      }, [rows, q, onlyActive, sort]);
+
+      const totals = shown.reduce((t, e) => ({ w: t.w + e.wQty, i: t.i + e.iQty, r: t.r + e.rQty }), { w: 0, i: 0, r: 0 });
+
+      const exportCSV = () => downloadCSV(`summary_withdraw_issue_return_${new Date().toISOString().split('T')[0]}.csv`,
+        ['รหัสสินค้า', 'ชื่อสินค้า', 'เบิก (จำนวน)', 'เบิก (ครั้ง)', 'จ่าย (จำนวน)', 'จ่าย (ครั้ง)', 'คืนของเสีย (จำนวน)', 'คืนของเสีย (ครั้ง)'],
+        shown.map(e => [e.item.id, e.item.name, e.wQty, e.wCnt, e.iQty, e.iCnt, e.rQty, e.rCnt]));
+
+      const NumCell = ({ label, qty, cnt, tone }) => (
+        <div className="md:w-28 md:text-right">
+          <div className="text-xs text-slate-500 md:hidden">{label}</div>
+          <div className={`text-xl font-bold ${qty ? tone : 'text-slate-300'}`}>{qty}</div>
+          <div className="text-xs text-slate-400">{cnt} ครั้ง</div>
+        </div>
+      );
+
+      return (
+        <div className="space-y-4">
+          <section className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap gap-1" role="group" aria-label="ช่วงเวลา">
+                {PERIODS.map(([k, label]) => (
+                  <button key={k} type="button" aria-pressed={period === k} onClick={() => setPeriod(k)}
+                    className={`${BTN} ${period === k ? 'bg-ink text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{label}</button>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative w-full sm:w-60">
+                  <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                  <input className={`${INPUT} pl-9`} placeholder="ค้นหารหัส / ชื่อสินค้า..." value={q} onChange={(e) => setQ(e.target.value)} />
+                </div>
+                <select className={`${INPUT} !w-auto`} value={sort} onChange={(e) => setSort(e.target.value)} aria-label="เรียงลำดับ">
+                  <option value="code">เรียงตามรหัสสินค้า</option>
+                  <option value="withdraw">เบิกมากสุดก่อน</option>
+                  <option value="issue">จ่ายมากสุดก่อน</option>
+                  <option value="ret">คืนมากสุดก่อน</option>
+                </select>
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input type="checkbox" checked={onlyActive} onChange={(e) => setOnlyActive(e.target.checked)} /> เฉพาะที่มีรายการ
+                </label>
+                <button type="button" onClick={exportCSV} className={BTN_GHOST}><i className="fas fa-file-csv"></i> Export</button>
+              </div>
+            </div>
+            <dl className="mt-3 grid gap-x-6 gap-y-1 text-xs text-slate-600 sm:grid-cols-3">
+              <div><dt className="inline font-semibold text-steel-dark">เบิก</dt> <dd className="inline">ยอดที่ขอเบิก ไม่รวมคำขอที่ไม่อนุมัติ</dd></div>
+              <div><dt className="inline font-semibold text-signal-text">จ่าย</dt> <dd className="inline">ยอดที่เบิกออกจากสต็อกจริงแล้ว</dd></div>
+              <div><dt className="inline font-semibold text-ret-dark">คืน</dt> <dd className="inline">ยอดของเสียที่คืนเข้ามา</dd></div>
+            </dl>
+          </section>
+
+          <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <div className="flex items-center gap-3 border-b-2 border-ink bg-slate-50 px-3 py-2 text-sm font-semibold">
+              <div className="flex-1">รวม {shown.length} รายการสินค้า</div>
+              <div className="hidden gap-3 md:flex">
+                <div className="w-28 text-right text-steel-dark">เบิก {totals.w}</div>
+                <div className="w-28 text-right text-signal-text">จ่าย {totals.i}</div>
+                <div className="w-28 text-right text-ret-dark">คืน {totals.r}</div>
+              </div>
+              <div className="text-xs text-slate-500 md:hidden">เบิก {totals.w} / จ่าย {totals.i} / คืน {totals.r}</div>
+            </div>
+            {shown.length === 0 ? (
+              <div className="py-12 text-center text-slate-400">ไม่มีสินค้าที่ตรงกับตัวกรอง ลองเปลี่ยนช่วงเวลาหรือปิด "เฉพาะที่มีรายการ"</div>
+            ) : shown.map(e => (
+              <div key={e.item.id} className="flex flex-col gap-2 border-b border-slate-100 px-3 py-3 md:flex-row md:items-center md:gap-3">
+                <div className="flex min-w-0 flex-1 gap-3">
+                  <ProductImg url={e.item.picUrl} name={e.item.name} onZoom={onZoom} size="h-14 w-14" />
+                  <div className="min-w-0">
+                    <div className="font-bold">{e.item.id}</div>
+                    <div className="truncate text-sm">{e.item.name}</div>
+                    {e.pending > 0 && <div className="text-xs font-medium text-signal-text">รออนุมัติ {e.pending} คำขอ</div>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3 md:flex">
+                  <NumCell label="เบิก" qty={e.wQty} cnt={e.wCnt} tone="text-steel-dark" />
+                  <NumCell label="จ่าย" qty={e.iQty} cnt={e.iCnt} tone="text-signal-text" />
+                  <NumCell label="คืน" qty={e.rQty} cnt={e.rCnt} tone="text-ret-dark" />
+                </div>
+              </div>
+            ))}
+          </section>
+        </div>
+      );
+    }
+
+    /* ---------------- dashboard tab (เดิม) ---------------- */
+
+    function DashboardTab({ inventory, dashStats, lineStats, personInStats, personOutStats, recentHistory, lowStockItems }) {
+      const tip = { borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' };
+      const noData = <div className="absolute inset-0 flex items-center justify-center text-slate-400">ไม่มีข้อมูล</div>;
+      return (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-slate-200 bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="bg-white p-4">
+              <div className="mb-1 text-sm font-semibold text-slate-500">จำนวนรายการสินค้า</div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-3xl font-extrabold">{inventory.length}</div>
+                <div className="flex flex-col gap-1 text-xs text-slate-500">
+                  {dashStats.statusCount.slice(0, 3).map((st, i) => (
+                    <div key={i} className="flex items-center gap-1.5 whitespace-nowrap">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: ['#2B5C8F', '#E3A008', '#23803F', '#C23B2E'][i % 4] }}></span>
+                      {st.name} <b className="ml-1 text-slate-700">{st.value}</b>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-4">
+              <div className="mb-1 text-sm font-semibold text-slate-500"><i className="fas fa-cart-plus text-steel"></i> รับเข้าทั้งหมด (IN)</div>
+              <div className="text-3xl font-extrabold text-steel">+{dashStats.totalIn.toLocaleString()}</div>
+            </div>
+            <div className="bg-white p-4">
+              <div className="mb-1 text-sm font-semibold text-slate-500"><i className="fas fa-dolly text-signal-dark"></i> เบิกออกทั้งหมด (OUT)</div>
+              <div className="text-3xl font-extrabold text-signal-text">-{dashStats.totalOut.toLocaleString()}</div>
+            </div>
+            <div className="bg-white p-4">
+              <div className="mb-1 text-sm font-semibold text-slate-500"><i className="fas fa-boxes-stacked text-ok"></i> คงเหลือในคลังปัจจุบัน</div>
+              <div className="text-3xl font-extrabold">{dashStats.totalInv.toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <section className="rounded-lg border border-slate-200 bg-white p-4 xl:col-span-2">
+              <h3 className="mb-4 font-bold">รับเข้า (IN) เทียบกับเบิกออก (OUT) แยกตาม Line</h3>
+              {lineStats.length === 0 ? (
+                <div className="flex h-[300px] items-center justify-center text-slate-400">ไม่มีข้อมูลแสดงผล</div>
+              ) : (
+                <div className="h-[300px] w-full lg:h-[350px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={lineStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                      <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={tip} />
+                      <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
+                      <Bar dataKey="in" name="รับเข้า (IN)" fill="#2B5C8F" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                      <Bar dataKey="out" name="เบิกออก (OUT)" fill="#E3A008" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </section>
+
+            <section className="flex h-[360px] flex-col rounded-lg border border-slate-200 bg-white p-4 xl:h-auto xl:max-h-[430px]">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="font-bold">สินค้าใกล้หมด</h3>
+                <span className="rounded bg-bad-soft px-2 py-1 text-xs font-bold text-bad-dark">{lowStockItems.length} รายการ</span>
+              </div>
+              <div className="flex-1 overflow-y-auto pr-1">
+                <table className="w-full border-collapse text-left">
+                  <thead className="sticky top-0 bg-slate-50">
+                    <tr className="border-b border-slate-200 text-xs text-slate-500">
+                      <th className="px-1 py-2 font-semibold">สินค้า</th>
+                      <th className="px-1 py-2 text-right font-semibold">คงเหลือ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {lowStockItems.slice(0, 12).map((item, idx) => (
+                      <tr key={idx}>
+                        <td className="max-w-[10rem] truncate px-1 py-2 font-medium" title={item.name}>{item.name}</td>
+                        <td className="px-1 py-2 text-right font-bold text-bad">{item.qty}</td>
+                      </tr>
+                    ))}
+                    {lowStockItems.length === 0 && <tr><td colSpan="2" className="py-8 text-center text-slate-400">สต็อกปกติ ไม่มีสินค้าใกล้หมด</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {[
+              { title: 'เบิกออกแยกตามผู้เบิก', sub: 'Top 5 การเบิกออก', data: personOutStats, colors: ['#E3A008', '#C58A00', '#F0BE45', '#F6D98A', '#9A6C00'] },
+              { title: 'เติมสต็อกแยกตามผู้เติม', sub: 'Top 5 การเติมสต็อก', data: personInStats, colors: ['#2B5C8F', '#4F7FB0', '#7FA3CA', '#B3CBE3', '#1F4670'] }
+            ].map(p => (
+              <section key={p.title} className="flex h-[300px] flex-col rounded-lg border border-slate-200 bg-white p-4">
+                <h3 className="font-bold">{p.title}</h3>
+                <p className="mb-2 text-xs text-slate-500">{p.sub}</p>
+                <div className="relative w-full flex-1">
+                  {p.data.length === 0 ? noData : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={p.data} innerRadius="55%" outerRadius="80%" paddingAngle={2} dataKey="value" stroke="none"
+                          label={({ percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false} cx="40%">
+                          {p.data.map((entry, index) => <Cell key={`cell-${index}`} fill={p.colors[index % 5]} />)}
+                        </Pie>
+                        <Tooltip contentStyle={tip} />
+                        <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '11px' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </section>
+            ))}
+
+            <section className="flex h-[300px] flex-col rounded-lg border border-slate-200 bg-white p-4">
+              <h3 className="mb-3 font-bold">ประวัติ FA Stock ล่าสุด</h3>
+              <div className="flex-1 overflow-y-auto pr-1">
+                <table className="w-full border-collapse text-left">
+                  <thead className="sticky top-0 z-10 bg-slate-50">
+                    <tr className="whitespace-nowrap border-b border-slate-200 text-xs text-slate-500">
+                      <th className="px-1 py-2 font-semibold">เวลา</th>
+                      <th className="px-1 py-2 font-semibold">ชื่อ</th>
+                      <th className="px-1 py-2 font-semibold">Line</th>
+                      <th className="px-1 py-2 text-center font-semibold">สถานะ</th>
+                      <th className="px-1 py-2 font-semibold">สินค้า</th>
+                      <th className="px-1 py-2 text-right font-semibold">จำนวน</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs text-slate-600">
+                    {recentHistory.map((row, idx) => (
+                      <tr key={idx}>
+                        <td className="max-w-[4.5rem] truncate px-1 py-2" title={row.date}>{row.date}</td>
+                        <td className="max-w-[4rem] truncate px-1 py-2 font-medium" title={row.person}>{row.person}</td>
+                        <td className="max-w-[3.5rem] truncate px-1 py-2">{row.line}</td>
+                        <td className="px-1 py-2 text-center">
+                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${row.status.includes('IN') ? 'bg-steel text-white' : 'bg-signal text-ink'}`}>
+                            {row.status.includes('IN') ? 'IN' : 'OUT'}
+                          </span>
+                        </td>
+                        <td className="max-w-[6rem] truncate px-1 py-2" title={row.item}>{row.item}</td>
+                        <td className="px-1 py-2 text-right font-bold text-ink">{row.qty}</td>
+                      </tr>
+                    ))}
+                    {recentHistory.length === 0 && <tr><td colSpan="6" className="py-8 text-center text-slate-400">ยังไม่มีประวัติการทำรายการ</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+      );
+    }
+
+    /* ---------------- main app ---------------- */
+
     function StockManagementApp() {
       const [inventory, setInventory] = useState([]);
-      const [filteredInventory, setFilteredInventory] = useState([]);
-      
-      // เพิ่ม State สำหรับ Dashboard ใหม่แบบ Professional
+      const [requests, setRequests] = useState([]);
+      const [scriptOk, setScriptOk] = useState(null); // null = ยังไม่ทราบ, true/false
+      const [returnColMissing, setReturnColMissing] = useState(false);
+      const [lastSync, setLastSync] = useState(null);
+
       const [dashStats, setDashStats] = useState({ totalIn: 0, totalOut: 0, totalInv: 0, statusCount: [] });
       const [lineStats, setLineStats] = useState([]);
       const [personInStats, setPersonInStats] = useState([]);
       const [personOutStats, setPersonOutStats] = useState([]);
       const [recentHistory, setRecentHistory] = useState([]);
-      
+
       const [searchTerm, setSearchTerm] = useState('');
-      const [isLoading, setIsLoading] = useState(true);
-      const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
+      const [loading, setLoading] = useState(true);
+      const [busy, setBusy] = useState(false);
+      const [toast, setToast] = useState({ type: '', text: '' });
       const [activeTab, setActiveTab] = useState('inventory');
       const [scannerCode, setScannerCode] = useState('');
+      const [admin, setAdmin] = useState(null); // { name, password }
+      const [modal, setModal] = useState(null); // { type: 'request'|'issue'|'refill'|'login', itemCode?, after? }
+      const [zoom, setZoom] = useState(null);
 
       const scannerInputRef = useRef(null);
-      const [modalState, setModalState] = useState({
-        isOpen: false,
-        type: 'IN',
-        itemCode: '',
-        qty: 1,
-        person: '',
-        line: '',
-        isAuthorized: false,
-        passwordInput: ''
-      });
+      const toastTimer = useRef(null);
 
-      const fetchStockData = async () => {
-        setIsLoading(true);
+      const notify = useCallback((type, text, ms = 3500) => {
+        setToast({ type, text });
+        clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => setToast({ type: '', text: '' }), ms);
+      }, []);
+
+      /* ----- data loading ----- */
+
+      const applyStock = useCallback((objs) => {
+        const retKey = objs.length ? RETURN_KEYS.find(k => k in objs[0]) : null;
+        const parsed = objs.map(o => mapStockRow(o, retKey)).filter(i => i.id !== '');
+        setReturnColMissing(!retKey);
+        setInventory(parsed);
+
+        const totalInv = parsed.reduce((sum, i) => sum + i.qty, 0);
+        const sCount = {};
+        parsed.forEach(i => { const k = i.status || 'Normal'; sCount[k] = (sCount[k] || 0) + 1; });
+        const statusCount = Object.entries(sCount).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+        setDashStats(prev => ({ ...prev, totalInv, statusCount }));
+      }, []);
+
+      const loadAll = useCallback(async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
-          const csvText = await fetchWithFallback(CSV_URL);
-          const rows = csvText.replace(/\r/g, '').split('\n').filter(r => r.trim());
-          
-          if(rows.length < 2) throw new Error("ไม่พบข้อมูลในชีต");
-
-          const headers = rows[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, '').toLowerCase());
-          
-          const idIdx = headers.findIndex(h => h === 'product code');
-          const nameIdx = headers.findIndex(h => h === 'name - thai');
-          const nameChinaIdx = headers.findIndex(h => h === 'name - china');
-          const barcodeIdx = headers.findIndex(h => h === 'barcode');
-          const qtyIdx = headers.findIndex(h => h === 'in-stock');
-          const safetyIdx = headers.findIndex(h => h === 'safety stock');
-          const unitIdx = headers.findIndex(h => h === 'unit');
-          const picIdx = headers.findIndex(h => h === 'picture url');
-          const statusIdx = headers.findIndex(h => h === 'status');
-
-          const parsedData = rows.slice(1).map(row => {
-              const cells = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, ''));
-              return {
-                  id: idIdx !== -1 ? cells[idIdx] : '',
-                  name: nameIdx !== -1 ? cells[nameIdx] : '',
-                  nameChina: nameChinaIdx !== -1 ? cells[nameChinaIdx] : '',
-                  barcode: barcodeIdx !== -1 ? cells[barcodeIdx] : '',
-                  qty: qtyIdx !== -1 ? (parseInt(cells[qtyIdx], 10) || 0) : 0,
-                  safetyStock: safetyIdx !== -1 ? (parseInt(cells[safetyIdx], 10) || 0) : 0,
-                  unit: unitIdx !== -1 ? cells[unitIdx] : '',
-                  picUrl: picIdx !== -1 ? cells[picIdx] : '',
-                  status: statusIdx !== -1 ? cells[statusIdx] : '' 
-              };
-          }).filter(item => item.id !== '');
-          
-          // คำนวณ KPI ภาพรวมสินค้าคงคลัง
-          const totalInv = parsedData.reduce((sum, item) => sum + item.qty, 0);
-          const sCount = {};
-          parsedData.forEach(item => {
-             const s = item.status && item.status.trim() !== '' ? item.status : 'Normal';
-             sCount[s] = (sCount[s] || 0) + 1;
-          });
-          const statusArray = Object.entries(sCount).map(([name, value]) => ({name, value})).sort((a,b)=>b.value-a.value);
-          setDashStats(prev => ({ ...prev, totalInv, statusCount: statusArray }));
-
-          setInventory(parsedData);
-          setFilteredInventory(parsedData);
-          setStatusMessage({ type: 'success', text: 'อัปเดตข้อมูลล่าสุดสำเร็จ' });
-          setTimeout(() => setStatusMessage({ type: '', text: '' }), 3000);
-        } catch (error) {
-          console.error('Error fetching stock:', error);
-          setStatusMessage({ type: 'error', text: 'การเชื่อมต่อล้มเหลว: ' + error.message });
+          const res = await fetch(`${SCRIPT_URL}?action=getAll`);
+          const json = JSON.parse(await res.text());
+          if (!json.ok) throw new Error(json.error || 'getAll failed');
+          applyStock(json.stock || []);
+          setRequests(json.requests || []);
+          setScriptOk(true);
+          setLastSync(new Date());
+        } catch (err) {
+          console.error('Apps Script load failed:', err);
+          setScriptOk(false);
+          try {
+            applyStock(csvToObjects(await fetchWithFallback(CSV_URL)));
+            setLastSync(new Date());
+          } catch (err2) {
+            notify('error', 'โหลดข้อมูลสต็อกไม่สำเร็จ: ' + err2.message, 6000);
+          }
         } finally {
-          setIsLoading(false);
+          setLoading(false);
         }
-      };
+      }, [applyStock, notify]);
 
-      const fetchHistoryData = async () => {
-        if (HISTORY_CSV_URL === 'ใส่ลิงก์_CSV_ของชีท_History_ที่นี่') return;
-        
+      const fetchHistoryData = useCallback(async () => {
         try {
-          const csvText = await fetchWithFallback(HISTORY_CSV_URL);
-          const rows = csvText.replace(/\r/g, '').split('\n').filter(r => r.trim());
-          if(rows.length < 2) return;
+          const rows = parseCSV(await fetchWithFallback(HISTORY_CSV_URL));
+          if (rows.length < 2) return;
+          const headers = rows[0].map(c => c.trim().toLowerCase());
 
-          const headers = rows[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, '').toLowerCase());
-          
           const lineIdx = headers.findIndex(h => h === 'line' || h.includes('line'));
-          const statusIdx = headers.findIndex(h => h === 'status' || h.includes('status')); 
+          const statusIdx = headers.findIndex(h => h === 'status' || h.includes('status'));
           const qtyIdx = headers.findIndex(h => h === "q'ty" || h === 'qty' || h === 'quantity');
-          const itemNameIdx = headers.findIndex(h => h === 'name - thai' || h === 'item name' || h === 'รายการ'); 
+          const itemNameIdx = headers.findIndex(h => h === 'name - thai' || h === 'item name' || h === 'รายการ');
           const personIdx = headers.findIndex(h => h === 'name' || h === 'ผู้เบิก' || h === 'ชื่อ');
           const dateIdx = headers.findIndex(h => h === 'timestamp' || h === 'date' || h === 'วันที่');
 
-          const lineMap = {};
-          const pInMap = {};
-          const pOutMap = {};
-          let tIn = 0;
-          let tOut = 0;
+          const lineMap = {}, pInMap = {}, pOutMap = {};
+          let tIn = 0, tOut = 0;
           const recents = [];
 
-          // อ่านข้อมูลจากล่างขึ้นบน (แถวล่างสุดคือข้อมูลล่าสุด)
-          for(let i = rows.length - 1; i >= 1; i--) {
-            const cells = rows[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/"/g, ''));
+          for (let i = rows.length - 1; i >= 1; i--) { // แถวล่างสุด = ล่าสุด
+            const cells = rows[i].map(c => c.trim());
             const lineName = lineIdx !== -1 ? cells[lineIdx] : 'ไม่ระบุ';
-            const action = statusIdx !== -1 ? cells[statusIdx].toUpperCase() : '';
+            const action = (statusIdx !== -1 ? (cells[statusIdx] || '') : '').toUpperCase();
             const qty = qtyIdx !== -1 ? (parseInt(cells[qtyIdx], 10) || 0) : 0;
             const itemName = itemNameIdx !== -1 ? cells[itemNameIdx] : 'ไม่ระบุสินค้า';
             const person = personIdx !== -1 ? cells[personIdx] : 'ไม่ระบุชื่อ';
             const dateStr = dateIdx !== -1 && cells[dateIdx] ? cells[dateIdx] : '-';
+            if (!lineName) continue;
 
-            if (!lineName || lineName === '') continue;
-
-            // เก็บ Recent History สูงสุด 15 รายการ
-            if (recents.length < 15) {
-                recents.push({ date: dateStr, person, line: lineName, status: action, item: itemName, qty });
-            }
-
+            if (recents.length < 15) recents.push({ date: dateStr, person, line: lineName, status: action, item: itemName, qty });
             if (!lineMap[lineName]) lineMap[lineName] = { name: lineName, in: 0, out: 0 };
 
-            if (action.includes('OUT')) {
-              tOut += qty;
-              lineMap[lineName].out += qty;
-              pOutMap[person] = (pOutMap[person] || 0) + qty;
-            } else if (action.includes('IN')) {
-              tIn += qty;
-              lineMap[lineName].in += qty;
-              pInMap[person] = (pInMap[person] || 0) + qty;
-            }
+            if (action.includes('OUT')) { tOut += qty; lineMap[lineName].out += qty; pOutMap[person] = (pOutMap[person] || 0) + qty; }
+            else if (action.includes('IN')) { tIn += qty; lineMap[lineName].in += qty; pInMap[person] = (pInMap[person] || 0) + qty; }
           }
 
-          // อัปเดตข้อมูลชุดใหม่เข้าสู่ State
+          const top5 = (map) => Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 5);
           setDashStats(prev => ({ ...prev, totalIn: tIn, totalOut: tOut }));
           setLineStats(Object.values(lineMap));
-          setPersonInStats(Object.entries(pInMap).map(([name, value]) => ({name, value})).sort((a,b)=>b.value-a.value).slice(0,5));
-          setPersonOutStats(Object.entries(pOutMap).map(([name, value]) => ({name, value})).sort((a,b)=>b.value-a.value).slice(0,5));
+          setPersonInStats(top5(pInMap));
+          setPersonOutStats(top5(pOutMap));
           setRecentHistory(recents);
-
         } catch (error) {
           console.error('Error fetching history:', error);
         }
-      };
-
-      useEffect(() => {
-        fetchStockData();
-        fetchHistoryData();
-        const intervalId = setInterval(() => { 
-            fetchStockData(); 
-            fetchHistoryData();
-        }, 120000);
-        return () => clearInterval(intervalId);
       }, []);
 
       useEffect(() => {
-        const results = inventory.filter(item => 
-          (item.id && item.id.toLowerCase().includes(searchTerm.toLowerCase())) || 
-          (item.name && item.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (item.barcode && item.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-        setFilteredInventory(results);
-      }, [searchTerm, inventory]);
+        loadAll();
+        fetchHistoryData();
+        const a = setInterval(() => { if (!document.hidden) loadAll(true); }, POLL_MS);
+        const b = setInterval(() => { if (!document.hidden) fetchHistoryData(); }, HISTORY_POLL_MS);
+        const onVis = () => { if (!document.hidden) loadAll(true); };
+        document.addEventListener('visibilitychange', onVis);
+        return () => { clearInterval(a); clearInterval(b); document.removeEventListener('visibilitychange', onVis); };
+      }, [loadAll, fetchHistoryData]);
+
+      useEffect(() => {
+        if (!modal && activeTab === 'inventory' && scannerInputRef.current) scannerInputRef.current.focus();
+      }, [modal, activeTab]);
+
+      /* ----- derived ----- */
+
+      const filteredInventory = useMemo(() => {
+        const t = searchTerm.trim().toLowerCase();
+        if (!t) return inventory;
+        return inventory.filter(i => i.id.toLowerCase().includes(t) || i.name.toLowerCase().includes(t) ||
+          i.nameChina.toLowerCase().includes(t) || i.barcode.toLowerCase().includes(t));
+      }, [inventory, searchTerm]);
+
+      const reqInfo = useMemo(() => {
+        const m = {};
+        requests.forEach(r => { // requests เรียงใหม่สุดก่อน
+          const e = m[r.itemCode] || (m[r.itemCode] = { pending: [], approved: [], rejected: null });
+          if (r.status === 'PENDING') e.pending.push(r);
+          else if (r.status === 'APPROVED') e.approved.push(r);
+          else if (r.status === 'REJECTED' && !e.rejected) e.rejected = r;
+        });
+        return m;
+      }, [requests]);
+
+      const lowStockItems = useMemo(() => inventory.filter(i => i.qty < i.safetyStock), [inventory]);
+      const pendingCount = useMemo(() => requests.filter(r => r.status === 'PENDING').length, [requests]);
+      const flowReady = scriptOk === true;
+      const modalItem = modal && modal.itemCode ? inventory.find(i => i.id === modal.itemCode) : null;
+
+      /* ----- actions ----- */
+
+      const withBusy = async (fn) => {
+        setBusy(true);
+        try { await fn(); }
+        catch (e) {
+          notify('error', e.message, 6000);
+          if (e.code === 'BAD_ADMIN') setAdmin(null);
+        } finally { setBusy(false); }
+      };
+
+      const closeModal = useCallback(() => setModal(null), []);
+
+      const openFlow = (item) => {
+        const info = reqInfo[item.id];
+        setModal({ type: info && info.approved.length ? 'issue' : 'request', itemCode: item.id });
+      };
 
       const handleScanSubmit = (e) => {
         e.preventDefault();
-        if (!scannerCode) return;
-
-        const foundItem = inventory.find(item => 
-          (item.barcode && item.barcode === scannerCode) || 
-          (item.id && item.id === scannerCode)
-        );
-        
-        if (foundItem) {
-          setModalState({
-            isOpen: true,
-            type: 'OUT',
-            itemCode: foundItem.id, 
-            qty: 1,
-            person: '',
-            line: '',
-            isAuthorized: true, // แสกนออก ไม่ต้องใส่รหัส
-            passwordInput: ''
-          });
-        } else {
-          setStatusMessage({ type: 'error', text: `ไม่พบรหัสสินค้าหรือบาร์โค้ด: ${scannerCode}` });
-          setTimeout(() => setStatusMessage({ type: '', text: '' }), 3000);
-        }
+        const code = scannerCode.trim();
         setScannerCode('');
+        if (!code) return;
+        const found = inventory.find(i => (i.barcode && i.barcode === code) || i.id === code);
+        if (!found) return notify('error', `ไม่พบรหัสสินค้าหรือบาร์โค้ด: ${code}`);
+        if (!flowReady) return notify('error', 'ยังเชื่อมต่อระบบอนุมัติไม่ได้ จึงเบิกไม่ได้ในขณะนี้', 5000);
+        if (found.qty <= 0 && !(reqInfo[found.id] && reqInfo[found.id].approved.length)) return notify('error', `${found.name} หมดสต็อก`);
+        openFlow(found);
       };
 
-      const handleTransactionSubmit = async (e) => {
-        e.preventDefault();
-        if (!modalState.person.trim()) {
-          alert("กรุณากรอกชื่อผู้รับผิดชอบ");
-          return;
-        }
-        if (!modalState.line.trim()) {
-          alert("กรุณากรอก Line / ไลน์การผลิต");
-          return;
-        }
+      const handleAdminLogin = (name, password) => withBusy(async () => {
+        await callScript({ action: 'verifyAdmin', password });
+        store.set('fa_admin_name', name);
+        setAdmin({ name, password });
+        notify('success', `เข้าสู่ระบบแอดมิน: ${name}`);
+        setModal(prev => (prev && prev.type === 'login' && prev.after) ? prev.after : null);
+      });
 
-        setIsLoading(true);
-        setModalState({ ...modalState, isOpen: false }); 
-
-        const payload = {
-          action: 'updateStock',
-          itemCode: modalState.itemCode,
-          type: modalState.type,
-          qty: modalState.qty,
-          person: modalState.person,
-          line: modalState.line 
-        };
-
-        try {
-          const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload),
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            mode: 'no-cors' 
-          });
-          
-          setStatusMessage({ type: 'success', text: `ส่งคำสั่งบันทึกรายการ ${modalState.type === 'IN' ? 'เข้า' : 'ออก'} สู่ระบบแล้ว` });
-          setTimeout(() => { 
-              fetchStockData(); 
-              fetchHistoryData(); // โหลดกราฟใหม่
-          }, 2500);
-          
-        } catch (error) {
-          console.error('Transaction Error:', error);
-          setStatusMessage({ type: 'error', text: 'เกิดข้อผิดพลาดในการส่งข้อมูล' });
-        } finally {
-          setIsLoading(false);
-          setTimeout(() => setStatusMessage({ type: '', text: '' }), 4000);
-          if(scannerInputRef.current) scannerInputRef.current.focus();
-        }
+      const handleRefillClick = (item) => {
+        if (admin) setModal({ type: 'refill', itemCode: item.id });
+        else setModal({ type: 'login', after: { type: 'refill', itemCode: item.id } });
       };
 
-      const lowStockItems = inventory.filter(item => item.qty < item.safetyStock);
+      const handleRequestSubmit = (form) => withBusy(async () => {
+        await callScript({ action: 'createRequest', requestId: genId(), ...form });
+        store.set('fa_who', { person: form.person, line: form.line });
+        setModal(null);
+        notify('success', 'ส่งคำขอแล้ว รอแอดมินอนุมัติ');
+        await loadAll(true);
+      });
 
-      // Component สำหรับแสดง Tooltip เมื่อชี้ที่กราฟ
-      const CustomTooltip = ({ active, payload, label }) => {
-        if (active && payload && payload.length) {
-          const data = payload[0].payload;
-          return (
-            <div className="bg-white p-3 border border-slate-200 shadow-lg rounded-lg max-w-[200px] sm:max-w-xs z-50">
-              <p className="font-bold text-slate-800 border-b border-slate-100 pb-1 mb-2 text-xs sm:text-sm">{label}</p>
-              <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-2">รวมทั้งหมด: <span className="text-slate-800">{data.total}</span></p>
-              <div className="text-[10px] sm:text-xs space-y-1">
-                {data.itemsList.slice(0, 5).map((item, idx) => (
-                  <div key={idx} className="flex justify-between gap-3">
-                    <span className="truncate text-slate-500">{item.name}</span>
-                    <span className="font-medium text-slate-700">{item.qty}</span>
-                  </div>
-                ))}
-                {data.itemsList.length > 5 && (
-                  <div className="text-slate-400 italic mt-1">...และอื่นๆ อีก {data.itemsList.length - 5} รายการ</div>
-                )}
-              </div>
-            </div>
-          );
+      const handleReview = (req, decision) => {
+        let reason = '';
+        if (decision === 'REJECT') {
+          const r = window.prompt('เหตุผลที่ไม่อนุมัติ (ไม่ใส่ก็ได้)');
+          if (r === null) return;
+          reason = r;
         }
-        return null;
-      };
-
-      const exportLowStockCSV = () => {
-        if (lowStockItems.length === 0) {
-          alert('ไม่มีสินค้าใกล้หมดให้ Export');
-          return;
-        }
-        const headers = ['รหัสสินค้า', 'ชื่อสินค้า', 'บาร์โค้ด', 'คงเหลือ', 'ขั้นต่ำ'];
-        const csvRows = [headers.join(',')];
-        lowStockItems.forEach(item => {
-          const name = `"${(item.name || '').replace(/"/g, '""')}"`;
-          csvRows.push(`${item.id},${name},${item.barcode || ''},${item.qty},${item.safetyStock}`);
+        return withBusy(async () => {
+          await callScript({ action: 'reviewRequest', requestId: req.id, decision, reason, adminName: admin.name, adminPassword: admin.password });
+          notify('success', decision === 'APPROVE' ? `อนุมัติ ${req.itemCode} ×${req.qty} แล้ว ปุ่มเบิกสต็อกกดได้` : `ไม่อนุมัติ ${req.itemCode}`);
+          await loadAll(true);
         });
-        const csvContent = "\uFEFF" + csvRows.join('\n'); 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        
-        link.href = url;
-        link.setAttribute('download', `low_stock_items_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
       };
+
+      const handleIssue = (req) => withBusy(async () => {
+        await callScript({ action: 'issueRequest', requestId: req.id });
+        setModal(null);
+        notify('success', `เบิก ${req.itemCode} ×${req.qty} เรียบร้อย`);
+        await loadAll(true);
+        setTimeout(fetchHistoryData, 1500);
+      });
+
+      const handleRefillSubmit = (form) => withBusy(async () => {
+        await callScript({ action: 'updateStock', type: 'IN', ...form, adminPassword: admin.password });
+        store.set('fa_who', { person: form.person, line: form.line });
+        setModal(null);
+        notify('success', `เติมสต็อก ${form.itemCode} ×${form.qty} เรียบร้อย`);
+        await loadAll(true);
+        setTimeout(fetchHistoryData, 1500);
+      });
+
+      /* ----- render ----- */
+
+      const tabs = [
+        { id: 'inventory', label: 'รายการสต็อกสินค้า', icon: 'fa-boxes-stacked' },
+        { id: 'approvals', label: 'อนุมัติคำขอเบิก', icon: 'fa-list-check', badge: pendingCount },
+        { id: 'summary', label: 'สรุป เบิก-จ่าย-คืน', icon: 'fa-clipboard-list' },
+        { id: 'dashboard', label: 'แดชบอร์ด', icon: 'fa-chart-pie' }
+      ];
 
       return (
-        <div className="min-h-screen bg-slate-50 p-2 sm:p-4 lg:p-6 tv:p-10 font-sans transition-all duration-300">
-          <div className="w-full xl:max-w-[98%] 2xl:max-w-[95%] mx-auto space-y-3 sm:space-y-4 lg:space-y-6 tv:space-y-8">
-            
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 md:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 gap-3">
+        <div className="min-h-screen">
+          <header className="bg-ink text-white">
+            <div className="mx-auto flex max-w-[100rem] flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
               <div>
-                <h1 className="text-lg sm:text-xl lg:text-2xl tv:text-4xl font-bold text-slate-800 flex items-center gap-2 tv:gap-4">
-                  <i className="fas fa-boxes text-blue-600"></i> FA-Stock Management
-                </h1>
-                <p className="text-xs sm:text-sm lg:text-base tv:text-2xl text-slate-500 mt-1">ระบบจัดการสต็อกคงคลังอัจฉริยะ</p>
+                <h1 className="flex items-center gap-2 text-xl font-bold"><i className="fas fa-boxes-stacked text-signal"></i> FA Stock Management</h1>
+                <p className="text-sm text-slate-300">ระบบจัดการสต็อกคงคลัง เบิกได้เมื่อแอดมินอนุมัติ</p>
               </div>
-              <button 
-                onClick={() => { fetchStockData(); fetchHistoryData(); }}
-                disabled={isLoading}
-                className="w-full md:w-auto px-3 py-2 lg:px-4 lg:py-2.5 tv:px-8 tv:py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm lg:text-base tv:text-2xl rounded-lg flex justify-center items-center gap-2 transition-colors disabled:opacity-50"
-              >
-                <i className={`fas fa-sync-alt ${isLoading ? "fa-spin" : ""}`}></i>
-                รีเฟรชข้อมูล
-              </button>
-            </div>
-
-            {statusMessage.text && (
-              <div className={`p-3 lg:p-4 tv:p-6 rounded-lg flex items-center gap-2 lg:gap-3 tv:gap-5 ${statusMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                {statusMessage.type === 'error' ? <i className="fas fa-exclamation-triangle text-base lg:text-xl tv:text-3xl"></i> : <i className="fas fa-check-circle text-base lg:text-xl tv:text-3xl"></i>}
-                <span className="font-medium text-xs sm:text-sm lg:text-base tv:text-2xl">{statusMessage.text}</span>
-              </div>
-            )}
-
-            {/* ระบบ Tabs */}
-            <div className="flex space-x-2 border-b border-slate-200 mb-2 sm:mb-4">
-              <button
-                onClick={() => setActiveTab('inventory')}
-                className={`px-4 py-3 font-semibold text-sm sm:text-base tv:text-2xl border-b-2 transition-colors flex items-center gap-2 ${
-                  activeTab === 'inventory' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }`}
-              >
-                <i className="fas fa-boxes"></i> รายการสต็อกสินค้า
-              </button>
-              <button
-                onClick={() => setActiveTab('dashboard')}
-                className={`px-4 py-3 font-semibold text-sm sm:text-base tv:text-2xl border-b-2 transition-colors flex items-center gap-2 ${
-                  activeTab === 'dashboard' 
-                    ? 'border-blue-600 text-blue-600' 
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }`}
-              >
-                <i className="fas fa-chart-pie"></i> สรุปข้อมูลการเบิก-เติม
-              </button>
-            </div>
-
-            {/* แสดงผลตาม Tab ที่เลือก */}
-            {activeTab === 'inventory' ? (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-6 tv:gap-8 animate-in fade-in duration-300">
-                
-                <div className="lg:col-span-4 xl:col-span-3 space-y-3 sm:space-y-4 lg:space-y-6 tv:space-y-8">
-                  
-                  <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100">
-                    <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-slate-800 mb-2 lg:mb-4 flex items-center gap-2">
-                      <i className="fas fa-barcode"></i> สแกนบาร์โค้ด
-                    </h2>
-                    <form onSubmit={handleScanSubmit}>
-                      <div className="relative">
-                        <input
-                          ref={scannerInputRef}
-                          type="text"
-                          placeholder="สแกนรหัส..."
-                          className="w-full pl-8 sm:pl-10 tv:pl-16 pr-3 py-2 lg:py-3 tv:py-5 border-2 border-blue-100 rounded-lg focus:border-blue-500 focus:ring-0 outline-none transition-all text-slate-700 font-medium text-xs sm:text-sm lg:text-base tv:text-2xl"
-                          value={scannerCode}
-                          onChange={(e) => setScannerCode(e.target.value)}
-                          autoFocus
-                        />
-                        <i className="fas fa-barcode absolute left-2.5 sm:left-3 tv:left-5 top-2.5 lg:top-3.5 tv:top-5 text-slate-400 text-sm lg:text-base tv:text-3xl"></i>
-                      </div>
-                      <p className="text-[10px] sm:text-xs lg:text-sm tv:text-xl text-slate-400 mt-2 text-center">เสียบเครื่องสแกนบาร์โค้ดและยิงเข้าที่ช่องนี้</p>
-                    </form>
-                  </div>
-
-                  <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-red-100">
-                    <div className="flex justify-between items-center mb-2 lg:mb-4">
-                      <h2 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-red-600 flex items-center gap-2">
-                        <i className="fas fa-exclamation-triangle"></i> สินค้าใกล้หมด ({lowStockItems.length})
-                      </h2>
-                      <button
-                        onClick={exportLowStockCSV}
-                        className="px-2 py-1 lg:px-3 lg:py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-md text-[10px] sm:text-xs lg:text-sm tv:text-xl transition-colors flex items-center gap-1.5 whitespace-nowrap"
-                        title="Export เป็นไฟล์ CSV"
-                      >
-                        <i className="fas fa-file-csv"></i> Export
-                      </button>
-                    </div>
-                    
-                    {lowStockItems.length > 0 ? (
-                      <div className="space-y-2 max-h-[30vh] lg:max-h-[60vh] overflow-y-auto pr-1">
-                        {lowStockItems.map(item => (
-                          <div key={item.id} className="bg-red-50 p-2 sm:p-3 tv:p-5 rounded-lg border border-red-100 flex justify-between items-center">
-                            <div className="min-w-0 pr-2">
-                              <div className="font-bold text-slate-800 text-xs sm:text-sm tv:text-2xl truncate">{item.name}</div>
-                              <div className="text-[10px] sm:text-xs tv:text-xl text-slate-500 truncate">รหัส: {item.id}</div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <div className="text-red-600 font-bold text-sm sm:text-base lg:text-lg tv:text-4xl">{item.qty}</div>
-                              <div className="text-[10px] sm:text-xs tv:text-xl text-slate-500">ขั้นต่ำ: {item.safetyStock}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 lg:py-8 text-slate-400 flex flex-col items-center">
-                        <i className="fas fa-check-circle text-3xl lg:text-4xl tv:text-6xl mb-2 text-green-400"></i>
-                        <p className="text-xs sm:text-sm tv:text-xl">สินค้าคงคลังอยู่ในเกณฑ์ปกติ</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-4">
-                  {/* Section: ตารางสินค้า */}
-                  <div className="bg-white p-3 sm:p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2 lg:gap-4">
-                      <h2 className="text-base sm:text-lg lg:text-xl tv:text-4xl font-bold text-slate-800">รายการสินค้าทั้งหมด</h2>
-                      
-                      <div className="relative w-full sm:w-56 lg:w-72 tv:w-96">
-                        <i className="fas fa-search absolute left-2.5 lg:left-3 tv:left-5 top-2 sm:top-2.5 tv:top-4 text-slate-400 text-xs sm:text-sm tv:text-2xl"></i>
-                        <input
-                          type="text"
-                          placeholder="ค้นหารหัส/ชื่อสินค้า..."
-                          className="w-full pl-7 sm:pl-9 tv:pl-14 pr-3 py-1.5 sm:py-2 tv:py-4 border border-slate-200 rounded-lg focus:border-blue-500 outline-none text-xs sm:text-sm tv:text-2xl"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="overflow-x-auto w-full flex-1 border border-slate-100 rounded-lg">
-                      <table className="w-full text-left border-collapse min-w-[600px] lg:min-w-full">
-                        <thead className="bg-slate-50 sticky top-0 z-10">
-                          <tr className="text-slate-500 text-[10px] sm:text-xs lg:text-sm tv:text-2xl border-b border-slate-200 whitespace-nowrap">
-                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium">รหัส / บาร์โค้ด</th>
-                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium">ชื่อสินค้า</th>
-                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center">รูปภาพ</th>
-                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center">คงเหลือ</th>
-                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center text-blue-600 bg-blue-50/50 border-l border-slate-200">เติมสต็อก</th>
-                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center text-amber-600 bg-amber-50/50">เบิกสต็อก</th>
-                            <th className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-center border-l border-slate-200">สถานะ</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {isLoading && inventory.length === 0 ? (
-                            <tr><td colSpan="7" className="text-center py-6 lg:py-10 text-slate-400 text-xs sm:text-sm tv:text-xl">กำลังโหลดข้อมูล...</td></tr>
-                          ) : filteredInventory.length === 0 ? (
-                            <tr><td colSpan="7" className="text-center py-6 lg:py-10 text-slate-400 text-xs sm:text-sm tv:text-xl">ไม่พบสินค้าที่ค้นหา</td></tr>
-                          ) : (
-                            filteredInventory.map(item => (
-                              <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
-                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 text-slate-600 font-mono align-middle">
-                                  <div className="font-bold text-slate-800 text-[11px] sm:text-xs lg:text-sm tv:text-2xl">{item.id}</div>
-                                  {item.barcode && <div className="text-[9px] sm:text-[10px] lg:text-xs tv:text-xl text-slate-400 mt-0.5">บาร์โค้ด: {item.barcode}</div>}
-                                </td>
-                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 font-medium text-slate-800 align-middle">
-                                  <div className="text-[11px] sm:text-xs lg:text-sm tv:text-3xl">{item.name}</div>
-                                  {item.nameChina && <div className="text-[9px] sm:text-[10px] lg:text-xs tv:text-xl text-slate-500 font-normal mt-0.5">{item.nameChina}</div>}
-                                </td>
-                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 align-middle">
-                                  <div className="flex justify-center">
-                                    {getDirectImageUrl(item.picUrl) ? (
-                                      <img 
-                                        src={getDirectImageUrl(item.picUrl)} 
-                                        alt={item.name} 
-                                        className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 tv:w-32 tv:h-32 object-contain p-1 rounded-md border border-slate-200 bg-white transition-all duration-300 ease-in-out hover:scale-[2.5] lg:hover:scale-[3] hover:-translate-y-2 hover:shadow-2xl relative z-10 hover:z-50 cursor-pointer" 
-                                        onError={(e) => { 
-                                          e.target.onerror = null; 
-                                          e.target.src = 'https://placehold.co/100x100/f8fafc/94a3b8?text=No+Img'; 
-                                        }} 
-                                      />
-                                    ) : (
-                                      <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 tv:w-32 tv:h-32 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 border border-slate-200 transition-all duration-300 ease-in-out hover:scale-[2.5] lg:hover:scale-[3] hover:-translate-y-2 hover:shadow-2xl relative z-10 hover:z-50 cursor-pointer">
-                                         <i className="fas fa-image text-sm lg:text-lg tv:text-3xl"></i>
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 text-center align-middle">
-                                  <span className={`inline-flex items-baseline px-2 py-0.5 sm:py-1 lg:px-3 lg:py-1 tv:px-5 tv:py-2 rounded-full text-[10px] sm:text-xs lg:text-sm tv:text-2xl font-bold ${
-                                    item.qty < item.safetyStock ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                                  }`}>
-                                    {item.qty} <span className="text-[8px] sm:text-[9px] lg:text-xs tv:text-lg font-normal opacity-80 ml-1">{item.unit}</span>
-                                  </span>
-                                </td>
-                                {/* คอลัมน์ เติมสต็อก */}
-                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 align-middle text-center bg-blue-50/30 border-l border-slate-100">
-                                  <button 
-                                    onClick={() => setModalState({ isOpen: true, type: 'IN', itemCode: item.id, qty: 1, person: '', line: '', isAuthorized: false, passwordInput: '' })}
-                                    className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-20 tv:h-20 inline-flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-md transition-colors shadow-sm"
-                                    title="เติมสต็อก"
-                                  >
-                                    <i className="fas fa-cart-plus text-[12px] sm:text-sm lg:text-base tv:text-3xl"></i>
-                                  </button>
-                                </td>
-                                {/* คอลัมน์ เบิกสต็อก */}
-                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 align-middle text-center bg-amber-50/30">
-                                  <button 
-                                    onClick={() => setModalState({ isOpen: true, type: 'OUT', itemCode: item.id, qty: 1, person: '', line: '', isAuthorized: true, passwordInput: '' })}
-                                    className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 tv:w-20 tv:h-20 inline-flex items-center justify-center bg-amber-100 hover:bg-amber-200 text-amber-600 rounded-md transition-colors shadow-sm"
-                                    title="เบิกจ่าย"
-                                  >
-                                    <i className="fas fa-dolly text-[12px] sm:text-sm lg:text-base tv:text-3xl"></i>
-                                  </button>
-                                </td>
-                                {/* คอลัมน์ Status */}
-                                <td className="p-1.5 sm:p-2 lg:p-3 tv:p-6 text-center align-middle border-l border-slate-100">
-                                  {item.status ? (
-                                    <span className="inline-block px-2 py-1 bg-slate-100 border border-slate-200 text-slate-600 rounded text-[10px] sm:text-xs lg:text-sm whitespace-nowrap">
-                                      {item.status}
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-300">-</span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* โหมด Dashboard ระดับมืออาชีพ */
-              <div className="flex flex-col gap-4 lg:gap-6 tv:gap-8 animate-in fade-in duration-300">
-                
-                {/* Row 1: 4 KPI Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 tv:gap-6">
-                  {/* KPI 1: Status */}
-                  <div className="bg-white p-4 tv:p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div className="text-xs tv:text-xl font-bold text-slate-500 mb-2 flex items-center gap-2 uppercase tracking-wide"><i className="fas fa-chart-pie"></i> Status Order</div>
-                    <div className="flex justify-between items-center mt-2">
-                      <div className="text-3xl lg:text-4xl tv:text-6xl font-extrabold text-slate-800">{inventory.length}</div>
-                      <div className="text-[10px] tv:text-lg text-slate-500 flex flex-col gap-1">
-                        {dashStats.statusCount.slice(0, 3).map((s, i) => (
-                           <div key={i} className="flex items-center gap-1.5 whitespace-nowrap">
-                             <span className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444'][i%4]}}></span>
-                             {s.name} <span className="font-bold text-slate-700 ml-1">{s.value}</span>
-                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* KPI 2: Re-stocking */}
-                  <div className="bg-white p-4 tv:p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div className="text-xs tv:text-xl font-bold text-slate-500 mb-2 flex items-center gap-2 uppercase tracking-wide"><i className="fas fa-sync text-blue-500"></i> Re-Stocking (Total IN)</div>
-                    <div className="mt-2">
-                      <div className="text-3xl lg:text-4xl tv:text-6xl font-extrabold text-blue-600">+{dashStats.totalIn.toLocaleString()}</div>
-                      <div className="text-xs tv:text-lg text-emerald-500 font-medium mt-1 flex items-center gap-1"><i className="fas fa-arrow-up"></i> รายการรับเข้าทั้งหมด</div>
-                    </div>
-                  </div>
-
-                  {/* KPI 3: Stock Issued */}
-                  <div className="bg-white p-4 tv:p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div className="text-xs tv:text-xl font-bold text-slate-500 mb-2 flex items-center gap-2 uppercase tracking-wide"><i className="fas fa-dolly text-amber-500"></i> Stock Issued (Total OUT)</div>
-                    <div className="mt-2">
-                      <div className="text-3xl lg:text-4xl tv:text-6xl font-extrabold text-amber-600">-{dashStats.totalOut.toLocaleString()}</div>
-                      <div className="text-xs tv:text-lg text-rose-500 font-medium mt-1 flex items-center gap-1"><i className="fas fa-arrow-down"></i> รายการเบิกออกทั้งหมด</div>
-                    </div>
-                  </div>
-
-                  {/* KPI 4: Total Inventory */}
-                  <div className="bg-white p-4 tv:p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                    <div className="text-xs tv:text-xl font-bold text-slate-500 mb-2 flex items-center gap-2 uppercase tracking-wide"><i className="fas fa-boxes text-emerald-500"></i> Total Inventory</div>
-                    <div className="mt-2">
-                      <div className="text-3xl lg:text-4xl tv:text-6xl font-extrabold text-slate-800">{dashStats.totalInv.toLocaleString()}</div>
-                      <div className="text-xs tv:text-lg text-slate-400 font-medium mt-1">จำนวนชิ้นส่วนคงเหลือในคลังปัจจุบัน</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 2: Main Bar Chart + Alerts */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 tv:gap-8">
-                  {/* Left: Bar Chart */}
-                  <div className="xl:col-span-2 bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100">
-                    <h3 className="text-sm lg:text-base tv:text-2xl font-bold text-slate-800 mb-4 uppercase tracking-wide">Stock Balance Summary (IN vs OUT by Line)</h3>
-                    {lineStats.length === 0 ? (
-                      <div className="h-[250px] lg:h-[350px] flex items-center justify-center text-slate-400">ไม่มีข้อมูลแสดงผล</div>
-                    ) : (
-                      <div className="w-full h-[250px] lg:h-[350px] tv:h-[500px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={lineStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis dataKey="name" tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
-                            <YAxis tick={{fontSize: 11, fill: '#64748b'}} axisLine={false} tickLine={false} />
-                            <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px'}} />
-                            <Legend wrapperStyle={{fontSize: '12px', paddingTop: '20px'}} />
-                            <Bar dataKey="in" name="Re-stocking (IN)" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                            <Bar dataKey="out" name="Stock Issued (OUT)" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right: Low Stock Alert Table */}
-                  <div className="xl:col-span-1 bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[320px] lg:h-[430px] tv:h-[580px]">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-sm lg:text-base tv:text-2xl font-bold text-slate-800 uppercase tracking-wide">Low Stock Alert</h3>
-                      <span className="px-2 py-1 bg-rose-100 text-rose-600 rounded text-[10px] tv:text-base font-bold">{lowStockItems.length} Items</span>
-                    </div>
-                    <div className="flex-1 overflow-y-auto pr-1">
-                       <table className="w-full text-left border-collapse">
-                          <thead className="bg-slate-50 sticky top-0">
-                            <tr className="text-slate-500 text-[10px] tv:text-lg border-b border-slate-200 uppercase">
-                              <th className="py-2 px-1 font-semibold">Item Name</th>
-                              <th className="py-2 px-1 font-semibold text-right">Q'ty</th>
-                              <th className="py-2 px-1 font-semibold text-center">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {lowStockItems.slice(0, 12).map((item, idx) => (
-                              <tr key={idx} className="text-[11px] tv:text-xl text-slate-600 hover:bg-slate-50">
-                                <td className="py-2.5 px-1 font-medium truncate max-w-[120px]" title={item.name}>{item.name}</td>
-                                <td className="py-2.5 px-1 text-right font-bold text-rose-500">{item.qty}</td>
-                                <td className="py-2.5 px-1 text-center"><i className="fas fa-exclamation-circle text-rose-500"></i></td>
-                              </tr>
-                            ))}
-                            {lowStockItems.length === 0 && (
-                              <tr><td colSpan="3" className="py-8 text-center text-slate-400">สถานะสต็อกปกติ ไม่มีสินค้าใกล้หมด</td></tr>
-                            )}
-                          </tbody>
-                       </table>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 3: Person Pies & Recent History */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 tv:gap-8">
-                  
-                  {/* Pie 1: Stock Issued by Person */}
-                  <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[300px] tv:h-[450px]">
-                    <h3 className="text-sm lg:text-base tv:text-2xl font-bold text-slate-800 mb-1 uppercase tracking-wide">Stock Issued By Person</h3>
-                    <p className="text-[10px] tv:text-lg text-slate-500 mb-2">Top 5 issuers (การเบิกออก)</p>
-                    <div className="flex-1 w-full relative">
-                      {personOutStats.length === 0 ? (
-                        <div className="absolute inset-0 flex items-center justify-center text-slate-400">ไม่มีข้อมูล</div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie data={personOutStats} innerRadius="55%" outerRadius="80%" paddingAngle={2} dataKey="value" stroke="none" label={({percent}) => `${(percent * 100).toFixed(0)}%`} labelLine={false} cx="40%">
-                              {personOutStats.map((entry, index) => <Cell key={`cell-${index}`} fill={['#f59e0b', '#fbbf24', '#fcd34d', '#fef3c7', '#d97706'][index % 5]} />)}
-                            </Pie>
-                            <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px'}} />
-                            <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{fontSize: '11px'}} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Pie 2: Re-stocking by Person */}
-                  <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[300px] tv:h-[450px]">
-                    <h3 className="text-sm lg:text-base tv:text-2xl font-bold text-slate-800 mb-1 uppercase tracking-wide">Re-stocking By Person</h3>
-                    <p className="text-[10px] tv:text-lg text-slate-500 mb-2">Top 5 refillers (การเติมสต็อก)</p>
-                    <div className="flex-1 w-full relative">
-                      {personInStats.length === 0 ? (
-                         <div className="absolute inset-0 flex items-center justify-center text-slate-400">ไม่มีข้อมูล</div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie data={personInStats} innerRadius="55%" outerRadius="80%" paddingAngle={2} dataKey="value" stroke="none" label={({percent}) => `${(percent * 100).toFixed(0)}%`} labelLine={false} cx="40%">
-                              {personInStats.map((entry, index) => <Cell key={`cell-${index}`} fill={['#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe', '#2563eb'][index % 5]} />)}
-                            </Pie>
-                            <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px'}} />
-                            <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{fontSize: '11px'}} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Recent History Table */}
-                  <div className="bg-white p-4 lg:p-5 tv:p-8 rounded-xl shadow-sm border border-slate-100 flex flex-col h-[300px] tv:h-[450px]">
-                    <h3 className="text-sm lg:text-base tv:text-2xl font-bold text-slate-800 mb-4 uppercase tracking-wide">Recent FA Stock History</h3>
-                    <div className="flex-1 overflow-y-auto pr-1">
-                       <table className="w-full text-left border-collapse">
-                          <thead className="bg-slate-50 sticky top-0 z-10">
-                            <tr className="text-slate-500 text-[9px] tv:text-lg border-b border-slate-200 uppercase whitespace-nowrap">
-                              <th className="py-2 px-1 font-semibold">Date/Time</th>
-                              <th className="py-2 px-1 font-semibold">Name</th>
-                              <th className="py-2 px-1 font-semibold">Line</th>
-                              <th className="py-2 px-1 font-semibold text-center">Status</th>
-                              <th className="py-2 px-1 font-semibold">Item</th>
-                              <th className="py-2 px-1 font-semibold text-right">Q'ty</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {recentHistory.map((row, idx) => (
-                              <tr key={idx} className="text-[10px] tv:text-xl text-slate-600 hover:bg-slate-50">
-                                <td className="py-2 px-1 truncate max-w-[70px]" title={row.date}>{row.date}</td>
-                                <td className="py-2 px-1 font-medium truncate max-w-[60px]" title={row.person}>{row.person}</td>
-                                <td className="py-2 px-1 truncate max-w-[50px]">{row.line}</td>
-                                <td className="py-2 px-1 text-center">
-                                  <span className={`px-1.5 py-0.5 rounded text-[8px] tv:text-sm font-bold text-white tracking-wider ${row.status.includes('IN') ? 'bg-blue-500' : 'bg-amber-500'}`}>
-                                    {row.status.includes('IN') ? 'IN' : 'OUT'}
-                                  </span>
-                                </td>
-                                <td className="py-2 px-1 truncate max-w-[90px]" title={row.item}>{row.item}</td>
-                                <td className="py-2 px-1 text-right font-bold text-slate-800">{row.qty}</td>
-                              </tr>
-                            ))}
-                            {recentHistory.length === 0 && (
-                              <tr><td colSpan="6" className="py-8 text-center text-slate-400">ยังไม่มีประวัติการทำรายการ</td></tr>
-                            )}
-                          </tbody>
-                       </table>
-                    </div>
-                  </div>
-                  
-                </div>
-              </div>
-            )}
-          </div>
-
-          {modalState.isOpen && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50">
-              <div className="bg-white rounded-xl sm:rounded-2xl w-full max-w-[95%] sm:max-w-sm lg:max-w-md tv:max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-                <div className={`p-3 sm:p-4 lg:p-5 flex justify-between items-center text-white ${modalState.type === 'IN' ? 'bg-blue-600' : 'bg-amber-500'}`}>
-                  <h3 className="font-bold text-base sm:text-lg tv:text-3xl flex items-center gap-2">
-                    {modalState.type === 'IN' ? <i className="fas fa-cart-plus"></i> : <i className="fas fa-dolly"></i>}
-                    {modalState.type === 'IN' ? 'ทำรายการ: เติมสต็อก (IN) / 入库' : 'ทำรายการ: เบิกจ่าย (OUT) / 出库'}
-                  </h3>
-                  <button onClick={() => setModalState({...modalState, isOpen: false})} className="text-white/80 hover:text-white">
-                    <i className="fas fa-times text-lg sm:text-xl tv:text-4xl"></i>
-                  </button>
-                </div>
-                
-                {!modalState.isAuthorized ? (
-                  <div className="p-4 sm:p-5 lg:p-6 tv:p-10 space-y-4 sm:space-y-6 tv:space-y-8">
-                    <div className="text-center space-y-2">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 tv:w-24 tv:h-24 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4">
-                        <i className="fas fa-lock text-2xl sm:text-3xl tv:text-5xl"></i>
-                      </div>
-                      <h3 className="text-sm sm:text-base lg:text-lg tv:text-3xl font-bold text-slate-800">ยืนยันตัวตน</h3>
-                      <p className="text-xs sm:text-sm tv:text-xl text-slate-500">กรุณาใส่รหัสผ่านเพื่อดำเนินการ <strong>"เติมสต็อก"</strong></p>
-                    </div>
-                    <div>
-                      <input
-                        type="password"
-                        autoFocus
-                        placeholder="รหัสผ่าน..."
-                        className="w-full p-2 sm:p-3 tv:p-5 border-2 border-slate-300 rounded-lg focus:border-blue-500 outline-none text-center text-lg sm:text-xl tv:text-4xl tracking-[0.25em]"
-                        value={modalState.passwordInput || ''}
-                        onChange={(e) => setModalState({...modalState, passwordInput: e.target.value})}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            if (modalState.passwordInput === 'Amp888') {
-                              setModalState({...modalState, isAuthorized: true});
-                            } else {
-                              alert('รหัสผ่านไม่ถูกต้อง!');
-                            }
-                          }
-                        }}
-                      />
-                    </div>
-                    <div className="pt-2 flex gap-2 sm:gap-3 tv:gap-6">
-                      <button
-                        type="button"
-                        onClick={() => setModalState({...modalState, isOpen: false})}
-                        className="flex-1 py-2 sm:py-2.5 tv:py-5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors text-xs sm:text-sm tv:text-2xl"
-                      >
-                        ยกเลิก / 取消
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (modalState.passwordInput === 'Amp888') {
-                            setModalState({...modalState, isAuthorized: true});
-                          } else {
-                            alert('รหัสผ่านไม่ถูกต้อง!');
-                          }
-                        }}
-                        className="flex-1 py-2 sm:py-2.5 tv:py-5 text-white rounded-lg font-medium transition-colors text-xs sm:text-sm tv:text-2xl bg-blue-600 hover:bg-blue-700"
-                      >
-                        ยืนยันรหัสผ่าน / 确认
-                      </button>
-                    </div>
-                  </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {admin ? (
+                  <span className="flex items-center gap-2 rounded-md bg-white/10 py-1 pl-3 pr-1 text-sm">
+                    <i className="fas fa-user-shield text-signal"></i> แอดมิน: {admin.name}
+                    <button type="button" onClick={() => { setAdmin(null); notify('success', 'ออกจากระบบแอดมินแล้ว'); }}
+                      className="rounded px-2 py-1 text-xs hover:bg-white/20">ออก</button>
+                  </span>
                 ) : (
-                  <form onSubmit={handleTransactionSubmit} className="p-4 sm:p-5 lg:p-6 tv:p-10 space-y-3 sm:space-y-4 tv:space-y-8">
-                    <div>
-                      <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1">รหัสสินค้า / 物品代码</label>
-                      <input 
-                        type="text" 
-                        value={modalState.itemCode} 
-                        disabled
-                        className="w-full p-2 sm:p-2.5 tv:p-4 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 font-mono text-xs sm:text-sm tv:text-2xl"
-                      />
-                      <div className="text-xs sm:text-sm tv:text-2xl font-bold text-slate-800 mt-1">
-                        {inventory.find(i => i.id === modalState.itemCode)?.name}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1">จำนวนที่{modalState.type === 'IN' ? 'เติม' : 'เบิก'}</label>
-                      <input 
-                        type="number" 
-                        min="1"
-                        required
-                        value={modalState.qty}
-                        onChange={(e) => setModalState({...modalState, qty: e.target.value})}
-                        className="w-full p-2 sm:p-2.5 tv:p-4 border border-slate-300 rounded-lg focus:border-blue-500 outline-none text-base sm:text-lg tv:text-3xl font-bold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1 text-red-600">ชื่อผู้รับผิดชอบ / ผู้เบิก (บังคับ)*</label>
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="ระบุชื่อพนักงาน"
-                        value={modalState.person}
-                        onChange={(e) => setModalState({...modalState, person: e.target.value})}
-                        className="w-full p-2 sm:p-2.5 tv:p-4 border-2 border-slate-300 focus:border-red-500 rounded-lg outline-none text-xs sm:text-base tv:text-2xl" 
-                        autoFocus={modalState.type === 'OUT'}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs sm:text-sm tv:text-2xl font-medium text-slate-700 mb-1 text-red-600">Line / ไลน์การผลิต (บังคับ)*</label>
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="ระบุ Line (เช่น Line 1, Line A)"
-                        value={modalState.line}
-                        onChange={(e) => setModalState({...modalState, line: e.target.value})}
-                        className="w-full p-2 sm:p-2.5 tv:p-4 border-2 border-slate-300 focus:border-red-500 rounded-lg outline-none text-xs sm:text-base tv:text-2xl" 
-                      />
-                    </div>
-
-                    <div className="pt-3 sm:pt-4 tv:pt-6 flex gap-2 sm:gap-3 tv:gap-6">
-                      <button 
-                        type="button"
-                        onClick={() => setModalState({...modalState, isOpen: false})}
-                        className="flex-1 py-2 sm:py-2.5 tv:py-5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors text-xs sm:text-sm tv:text-2xl"
-                      >
-                        ยกเลิก / 取消
-                      </button>
-                      <button 
-                        type="submit"
-                        className={`flex-1 py-2 sm:py-2.5 tv:py-5 text-white rounded-lg font-medium transition-colors text-xs sm:text-sm tv:text-2xl ${modalState.type === 'IN' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-amber-500 hover:bg-amber-600'}`}
-                      >
-                        ยืนยันบันทึก / 确认
-                      </button>
-                    </div>
-                  </form>
+                  <button type="button" onClick={() => setModal({ type: 'login' })} className="flex items-center gap-2 rounded-md border border-white/30 px-3 py-2 text-sm hover:bg-white/10">
+                    <i className="fas fa-user-shield"></i> เข้าสู่ระบบแอดมิน
+                  </button>
                 )}
+                <button type="button" onClick={() => { loadAll(); fetchHistoryData(); }} disabled={loading || busy}
+                  className="flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-sm hover:bg-white/20 disabled:opacity-50">
+                  <i className={`fas fa-arrows-rotate ${loading || busy ? 'fa-spin' : ''}`}></i>
+                  รีเฟรช{lastSync ? ` (${lastSync.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })})` : ''}
+                </button>
+              </div>
+            </div>
+
+            <nav className="mx-auto flex max-w-[100rem] gap-1 overflow-x-auto px-2 sm:px-3" role="tablist">
+              {tabs.map(t => (
+                <button key={t.id} type="button" role="tab" aria-selected={activeTab === t.id} onClick={() => setActiveTab(t.id)}
+                  className={`flex shrink-0 items-center gap-2 border-b-4 px-3 py-3 text-sm font-semibold transition-colors sm:px-4 ${activeTab === t.id ? 'border-signal text-white' : 'border-transparent text-slate-400 hover:text-white'}`}>
+                  <i className={`fas ${t.icon}`}></i> {t.label}
+                  {t.badge > 0 && <span className="rounded-full bg-signal px-2 text-xs font-bold text-ink">{t.badge}</span>}
+                </button>
+              ))}
+            </nav>
+          </header>
+
+          <main className="mx-auto max-w-[100rem] space-y-3 p-3 sm:p-4">
+            {scriptOk === false && (
+              <div className="flex items-start gap-3 rounded-lg border border-bad/40 bg-bad-soft px-4 py-3 text-sm text-bad-dark" role="alert">
+                <i className="fas fa-triangle-exclamation mt-0.5"></i>
+                <div>
+                  เชื่อมต่อระบบอนุมัติไม่ได้ ตอนนี้ดูสต็อกจากชีตได้อย่างเดียว ปุ่มเติม / คืนของเสีย / เบิกจะใช้ไม่ได้ ตรวจสอบว่า Deploy Code.gs เวอร์ชันล่าสุดแล้ว (Execute as: Me, Access: Anyone) แล้วกดรีเฟรช
+                </div>
+              </div>
+            )}
+            {scriptOk === true && returnColMissing && (
+              <div className="flex items-start gap-3 rounded-lg border border-signal/50 bg-signal-soft px-4 py-3 text-sm text-signal-text">
+                <i className="fas fa-circle-info mt-0.5"></i>
+                <div>ชีต Stock ยังไม่มีคอลัมน์ "Return Required" ตอนนี้ระบบถือว่าทุกสินค้าต้องคืนของเสีย เพิ่มคอลัมน์นี้แล้วใส่ Y ในสินค้าที่ต้องคืน (เว้นว่างถ้าไม่ต้องคืน)</div>
+              </div>
+            )}
+
+            {activeTab === 'inventory' && (
+              <InventoryTab inventory={inventory} filtered={filteredInventory} reqInfo={reqInfo} flowReady={flowReady} loading={loading}
+                lowStockItems={lowStockItems} scannerCode={scannerCode} setScannerCode={setScannerCode} scannerInputRef={scannerInputRef}
+                onScan={handleScanSubmit} searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+                onRefill={handleRefillClick} onRequest={(item) => setModal({ type: 'request', itemCode: item.id })}
+                onIssue={(item) => setModal({ type: 'issue', itemCode: item.id })} onZoom={setZoom} />
+            )}
+            {activeTab === 'approvals' && (
+              <ApprovalsTab admin={admin} onLogin={handleAdminLogin} busy={busy} requests={requests} inventory={inventory}
+                onReview={handleReview} onZoom={setZoom} />
+            )}
+            {activeTab === 'summary' && <SummaryTab inventory={inventory} requests={requests} onZoom={setZoom} />}
+            {activeTab === 'dashboard' && (
+              <DashboardTab inventory={inventory} dashStats={dashStats} lineStats={lineStats} personInStats={personInStats}
+                personOutStats={personOutStats} recentHistory={recentHistory} lowStockItems={lowStockItems} />
+            )}
+          </main>
+
+          {toast.text && (
+            <div role="status" className={`pop fixed bottom-4 left-1/2 z-[60] flex max-w-[92vw] -translate-x-1/2 items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-xl ${toast.type === 'error' ? 'bg-bad text-white' : 'bg-ink text-white'}`}>
+              <i className={`fas ${toast.type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-check text-signal'}`}></i>
+              {toast.text}
+            </div>
+          )}
+
+          {modal && modal.type === 'login' && (
+            <Modal title="เข้าสู่ระบบแอดมิน / 管理员登录" tone="ink" icon="fa-user-shield" onClose={closeModal}>
+              {modal.after && <p className="mb-3 text-sm text-slate-600">ต้องใช้รหัสแอดมินเพื่อเติมสต็อก</p>}
+              <AdminLoginForm onLogin={handleAdminLogin} busy={busy} />
+            </Modal>
+          )}
+          {modal && modal.type === 'request' && modalItem && (
+            <RequestModal item={modalItem} defaults={store.get('fa_who') || {}} busy={busy} onSubmit={handleRequestSubmit} onClose={closeModal} onZoom={setZoom} />
+          )}
+          {modal && modal.type === 'issue' && modalItem && (
+            <IssueModal item={modalItem} requests={(reqInfo[modalItem.id] || EMPTY_INFO).approved} busy={busy} onConfirm={handleIssue} onClose={closeModal} onZoom={setZoom} />
+          )}
+          {modal && modal.type === 'refill' && modalItem && admin && (
+            <RefillModal item={modalItem} adminName={admin.name} busy={busy} onSubmit={handleRefillSubmit} onClose={closeModal} onZoom={setZoom} />
+          )}
+
+          {zoom && (
+            <div className="fixed inset-0 z-[70] flex cursor-zoom-out items-center justify-center bg-ink/80 p-4" onClick={() => setZoom(null)} role="dialog" aria-label={`รูป ${zoom.name}`}>
+              <div className="pop max-h-full max-w-2xl rounded-lg bg-white p-3">
+                <img src={zoom.src} alt={zoom.name} className="max-h-[80vh] w-full object-contain" />
+                <div className="mt-2 text-center text-sm font-medium">{zoom.name}</div>
               </div>
             </div>
           )}
