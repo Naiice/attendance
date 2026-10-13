@@ -172,18 +172,33 @@
       requireReturn: retKey ? isTrue(o[retKey]) : true
     });
 
-    const callScript = async (payload) => {
-      let res;
+    const TIMEOUT_MSG = 'รอเซิร์ฟเวอร์นานเกินไป';
+
+    // fetch + อ่านข้อความ พร้อมตัดเวลา กันหน้าเว็บค้างเมื่อเซิร์ฟเวอร์ไม่ตอบ
+    const fetchTextWithTimeout = async (url, options, ms) => {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), ms);
       try {
-        res = await fetch(SCRIPT_URL, {
+        const res = await fetch(url, { ...(options || {}), signal: ctl.signal });
+        return await res.text();
+      } catch (e) {
+        if (e && e.name === 'AbortError') throw new Error(TIMEOUT_MSG);
+        throw e;
+      } finally { clearTimeout(timer); }
+    };
+
+    const callScript = async (payload) => {
+      let text;
+      try {
+        text = await fetchTextWithTimeout(SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify(payload),
           headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-        });
+        }, 35000);
       } catch (e) {
-        throw new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง');
+        if (e.message === TIMEOUT_MSG) throw new Error(TIMEOUT_MSG + ' ระบบอาจบันทึกไปแล้ว กดรีเฟรชเพื่อตรวจสอบก่อนทำรายการซ้ำ');
+        throw new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง');
       }
-      const text = await res.text();
       let json;
       try { json = JSON.parse(text); }
       catch (e) { throw new Error('เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ — ตรวจสอบว่า Deploy Code.gs เวอร์ชันล่าสุดแล้ว'); }
@@ -992,6 +1007,11 @@
 
       const scannerInputRef = useRef(null);
       const toastTimer = useRef(null);
+      const inFlight = useRef(false);      // กันดึงข้อมูลซ้อนกัน
+      const queuedReload = useRef(false);  // มีคำขอรีโหลดเข้ามาระหว่างที่กำลังดึงอยู่
+      const failCount = useRef(0);
+      const hasGoodData = useRef(false);
+      const loadAllRef = useRef(null);
 
       const notify = useCallback((type, text, ms = 3500) => {
         setToast({ type, text });
@@ -1015,39 +1035,71 @@
       }, []);
 
       const loadAll = useCallback(async (silent = false) => {
+        if (inFlight.current) { queuedReload.current = true; return; }
+        inFlight.current = true;
         if (!silent) setLoading(true);
         try {
-          let res;
-          try { res = await fetch(`${SCRIPT_URL}?action=getAll`); }
-          catch (netErr) { throw new Error('เบราว์เซอร์ติดต่อ Apps Script ไม่ได้ (URL ผิด, Access ไม่ใช่ Anyone หรืออินเทอร์เน็ตมีปัญหา)'); }
-          const text = await res.text();
-          let json;
-          try { json = JSON.parse(text); }
-          catch (parseErr) { throw new Error('Apps Script ไม่ได้ตอบเป็น JSON (มักเกิดจาก Access ไม่ใช่ Anyone หรือ URL Deploy ไม่ถูกต้อง)'); }
-          if (!json.ok) {
-            const msg = json.error || json.message || 'getAll ไม่สำเร็จ';
-            if (/Unknown GET action/i.test(msg)) throw new Error('Apps Script ที่ Deploy อยู่ยังเป็นโค้ดเก่า (ไม่รู้จัก getAll) ต้อง Deploy เป็น New version ของ Deployment เดิม');
-            throw new Error(msg);
+          let json = null, lastErr = null;
+          for (let attempt = 0; attempt < 3 && !json; attempt++) {
+            try {
+              let text;
+              try { text = await fetchTextWithTimeout(`${SCRIPT_URL}?action=getAll`, {}, 25000); }
+              catch (netErr) {
+                throw new Error(netErr.message === TIMEOUT_MSG ? TIMEOUT_MSG
+                  : 'เบราว์เซอร์ติดต่อ Apps Script ไม่ได้ (URL ผิด, Access ไม่ใช่ Anyone หรืออินเทอร์เน็ตมีปัญหา)');
+              }
+              let parsed;
+              try { parsed = JSON.parse(text); }
+              catch (parseErr) { throw new Error('Apps Script ไม่ได้ตอบเป็น JSON (มักเกิดจาก Access ไม่ใช่ Anyone หรือ URL Deploy ไม่ถูกต้อง)'); }
+              if (!parsed.ok) {
+                const msg = parsed.error || parsed.message || 'getAll ไม่สำเร็จ';
+                if (/Unknown GET action/i.test(msg)) throw new Error('Apps Script ที่ Deploy อยู่ยังเป็นโค้ดเก่า (ไม่รู้จัก getAll) ต้อง Deploy เป็น New version ของ Deployment เดิม');
+                throw new Error(msg);
+              }
+              json = parsed;
+            } catch (err) {
+              lastErr = err;
+              const retryable = /กำลังยุ่ง|นานเกินไป|ติดต่อ Apps Script ไม่ได้/.test(err.message);
+              if (!retryable || attempt === 2) break;
+              await new Promise(r => setTimeout(r, 2000 * (attempt + 1))); // รอแล้วลองใหม่ 2 วิ, 4 วิ
+            }
           }
+          if (!json) throw lastErr;
+
           applyStock(json.stock || []);
           setRequests(json.requests || []);
+          failCount.current = 0;
+          hasGoodData.current = true;
           setScriptOk(true);
           setScriptError('');
           setLastSync(new Date());
         } catch (err) {
           console.error('Apps Script load failed:', err);
-          setScriptOk(false);
+          failCount.current += 1;
           setScriptError(err.message || String(err));
-          try {
-            applyStock(csvToObjects(await fetchWithFallback(CSV_URL)));
-            setLastSync(new Date());
-          } catch (err2) {
-            notify('error', 'โหลดข้อมูลสต็อกไม่สำเร็จ: ' + err2.message, 6000);
+          if (hasGoodData.current && failCount.current < 3) {
+            // สะดุดชั่วคราว: คงข้อมูลล่าสุดและปุ่มต่างๆ ไว้ แล้วลองใหม่รอบถัดไป
+          } else {
+            setScriptOk(false);
+            if (!hasGoodData.current) { // ไม่เคยโหลดสำเร็จเลย: แสดงสต็อกจากชีต (ดูได้อย่างเดียว)
+              try {
+                applyStock(csvToObjects(await fetchWithFallback(CSV_URL)));
+                setLastSync(new Date());
+              } catch (err2) {
+                notify('error', 'โหลดข้อมูลสต็อกไม่สำเร็จ: ' + err2.message, 6000);
+              }
+            }
           }
         } finally {
+          inFlight.current = false;
           setLoading(false);
+          if (queuedReload.current) {
+            queuedReload.current = false;
+            setTimeout(() => loadAllRef.current && loadAllRef.current(true), 0);
+          }
         }
       }, [applyStock, notify]);
+      loadAllRef.current = loadAll;
 
       const fetchHistoryData = useCallback(async () => {
         try {
@@ -1097,11 +1149,15 @@
       useEffect(() => {
         loadAll();
         fetchHistoryData();
-        const a = setInterval(() => { if (!document.hidden) loadAll(true); }, POLL_MS);
+        let stopped = false, pollTimer;
+        const tick = () => { // สุ่มเวลาเล็กน้อย กันหลายเครื่องยิงพร้อมกันเป๊ะ
+          pollTimer = setTimeout(() => { if (!document.hidden) loadAll(true); if (!stopped) tick(); }, POLL_MS + Math.random() * 5000);
+        };
+        tick();
         const b = setInterval(() => { if (!document.hidden) fetchHistoryData(); }, HISTORY_POLL_MS);
         const onVis = () => { if (!document.hidden) loadAll(true); };
         document.addEventListener('visibilitychange', onVis);
-        return () => { clearInterval(a); clearInterval(b); document.removeEventListener('visibilitychange', onVis); };
+        return () => { stopped = true; clearTimeout(pollTimer); clearInterval(b); document.removeEventListener('visibilitychange', onVis); };
       }, [loadAll, fetchHistoryData]);
 
       useEffect(() => {
@@ -1271,6 +1327,12 @@
                   <div>เชื่อมต่อระบบอนุมัติไม่ได้ ตอนนี้ดูสต็อกจากชีตได้อย่างเดียว ปุ่มเติม / คืนของเสีย / เบิกจะใช้ไม่ได้จนกว่าจะเชื่อมต่อได้</div>
                   {scriptError && <div className="mt-1 font-semibold">สาเหตุ: {scriptError}</div>}
                 </div>
+              </div>
+            )}
+            {scriptOk === true && scriptError && (
+              <div className="flex items-start gap-3 rounded-lg border border-signal/50 bg-signal-soft px-4 py-3 text-sm text-signal-text" role="status">
+                <i className="fas fa-hourglass-half mt-0.5"></i>
+                <div>ซิงก์ข้อมูลล่าช้า ({scriptError}) ข้อมูลที่เห็นอาจไม่ใช่ล่าสุด ระบบจะลองใหม่เอง</div>
               </div>
             )}
             {scriptOk === true && returnColMissing && (
