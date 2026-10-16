@@ -212,7 +212,7 @@
 
   function Factory3DView({ sections }) {
     const wrap = useRef(null), mount = useRef(null), api = useRef(null);
-    const I = window.HaierI18n;
+    const I = window.I18n;
     const tr = I ? I.tr : (s) => s;
     const lang = I ? I.getLanguage() : 'th';
     const list = sections || [];
@@ -470,14 +470,14 @@
             #root .suite-kpi { background: white; box-shadow: none; }
         }
 
-        /* Haier brothers: self-contained decorative mascot. */
-        .haier-companion { position: fixed; right: 18px; bottom: 16px; z-index: 30; width: 118px;
+        /*  brothers: self-contained decorative mascot. */
+        .-companion { position: fixed; right: 18px; bottom: 16px; z-index: 30; width: 118px;
             font-family: 'Sarabun', sans-serif; pointer-events: none; }
-        .haier-companion figure { margin: 0; position: relative; padding: 8px 4px 0; }
-        .haier-companion img { display: block; width: 110px; height: auto; transform-origin: 50% 95%;
-            filter: drop-shadow(0 5px 5px #14283f18); animation: haier-greeting 5s ease-in-out infinite; }
-        .haier-companion .mascot-shadow { height: 7px; width: 76px; margin: 0 auto 7px; border-radius: 50%;
-            background: #173c6520; filter: blur(2px); animation: haier-shadow 5s ease-in-out infinite; }
+        .-companion figure { margin: 0; position: relative; padding: 8px 4px 0; }
+        .-companion img { display: block; width: 110px; height: auto; transform-origin: 50% 95%;
+            filter: drop-shadow(0 5px 5px #14283f18); animation: -greeting 5s ease-in-out infinite; }
+        .-companion .mascot-shadow { height: 7px; width: 76px; margin: 0 auto 7px; border-radius: 50%;
+            background: #173c6520; filter: blur(2px); animation: -shadow 5s ease-in-out infinite; }
         .haier-companion .mascot-controls { pointer-events: auto; display: flex; justify-content: center; gap: 5px; }
         .haier-companion button { cursor: pointer; border: 1px solid #dce6f0; background: #fffffff2; color: #3b5571;
             border-radius: 9px; min-width: 34px; min-height: 32px; padding: 4px 9px; font: 600 11px 'Sarabun',sans-serif;
@@ -3893,7 +3893,7 @@
                         <div className="suite-brand flex items-center gap-3 shrink-0">
                             <div className="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100"><i className="fa-solid fa-industry text-base"></i></div>
                             <div>
-                                <h1 className="text-base font-black italic uppercase text-slate-800 tracking-tighter leading-none">Haier A01 Suite</h1>
+                                <h1 className="text-base font-black italic uppercase text-slate-800 tracking-tighter leading-none">FINAL ASSEMBLY</h1>
                                 <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase mt-0.5">{tr("Production Management")}</p>
                             </div>
                         </div>
