@@ -46,7 +46,8 @@
 
 /* glass surfaces */
 @T [class~="bg-white"]{background-color:var(--g-card)}
-@T [class~="bg-[#f8fafc]"]{background-color:var(--g-card)}
+@L [class~="bg-[#f8fafc]"]{background-color:rgba(255,255,255,.9)}
+@D [class~="bg-[#f8fafc]"]{background-color:rgba(30,42,58,.92)}
 @L [class~="bg-slate-50"],@L [class~="bg-slate-50/50"],@L [class~="bg-slate-50/30"],@L [class~="bg-slate-50/70"]{background-color:rgba(255,255,255,.38)}
 @L [class~="bg-slate-100"]{background-color:var(--g-seg)}
 @L [class~="bg-slate-200/50"]{background-color:rgba(20,32,48,.08)}
@@ -113,6 +114,13 @@
 @D .f3d-bar button[aria-pressed=true]{background:#2563eb;color:#fff;border-color:#2563eb}
 @D input::placeholder{color:#7b8da1}
 ` + gen + `
+/* mascot: fixed at the bottom-right, above the background layer (low-specificity defaults) */
+:where(#haier-companion){position:fixed;right:18px;bottom:16px;z-index:40;width:118px;pointer-events:none}
+:where(#haier-companion) figure{margin:0;position:relative;padding:8px 4px 0}
+:where(#haier-companion) img{display:block;width:110px;height:auto;transform-origin:50% 95%;filter:drop-shadow(0 5px 5px rgba(20,40,63,.18));animation:g-mascot 5s ease-in-out infinite}
+:where(#haier-companion) .mascot-shadow{height:7px;width:76px;margin:0 auto 7px;border-radius:50%;background:rgba(23,60,101,.13);filter:blur(2px)}
+@keyframes g-mascot{0%,100%{transform:translateY(0) rotate(0)}24%{transform:translateY(-7px) rotate(-3deg)}48%{transform:none}72%{transform:translateY(-5px) rotate(3deg)}}
+
 /* theme toggle button */
 .g-theme-btn{position:fixed;left:16px;bottom:16px;z-index:45;width:46px;height:46px;border-radius:50%;border:1px solid var(--g-edge);
 background:var(--g-pill);color:var(--g-ink);display:grid;place-items:center;cursor:pointer;box-shadow:var(--g-shadow);
