@@ -36,6 +36,11 @@
     --blur: blur(22px) saturate(140%);
     --page-bg: linear-gradient(#eceff3, #eceff3);
 
+    /* snow (Christmas): set --snow-display: none; to switch it off everywhere */
+    --snow-display: block;
+    --snow: #ffffff;
+    --snow-halo: rgba(110,140,180,.35);
+
     /* ---- names used by the Haier A01 Suite (glass-theme.js) ---- */
     --g-bg: #eceff3;
     --g-card: rgba(255,255,255,.62);
@@ -90,6 +95,8 @@
         radial-gradient(60% 60% at 82% 96%, rgba(20,130,140,.42) 0%, transparent 70%),
         radial-gradient(50% 50% at 6% 94%,  rgba(190,100,70,.30) 0%, transparent 70%),
         linear-gradient(135deg, #0a1120, #0d1626);
+    --snow: rgba(255,255,255,.92);
+    --snow-halo: transparent;
 
     /* ---- Haier A01 Suite ---- */
     --g-bg: #080d16;
@@ -127,3 +134,59 @@
         --g-card: rgba(24,34,48,.92); --g-nav: rgba(14,22,34,.94);
     }
 }
+
+/* ==========================================================
+   Snow - pure CSS, sits behind all content (z-index -1)
+   Switch off: --snow-display: none;   (in :root above)
+   Speed: animation durations below.  Amount: add/remove gradient dots.
+   ========================================================== */
+body::before, body::after {
+    content: ""; position: fixed; inset: -40px; pointer-events: none; z-index: -1;
+    display: var(--snow-display, block);
+    background-repeat: repeat;
+}
+/* far + mid flakes */
+body::before {
+    background-image:
+        radial-gradient(circle at 20px 30px,  var(--snow) 0 1.6px, var(--snow-halo) 2px 3px, transparent 3.5px),
+        radial-gradient(circle at 90px 120px, var(--snow) 0 1.6px, var(--snow-halo) 2px 3px, transparent 3.5px),
+        radial-gradient(circle at 160px 60px, var(--snow) 0 1.6px, var(--snow-halo) 2px 3px, transparent 3.5px),
+        radial-gradient(circle at 210px 180px,var(--snow) 0 1.6px, var(--snow-halo) 2px 3px, transparent 3.5px),
+        radial-gradient(circle at 50px 200px, var(--snow) 0 1.6px, var(--snow-halo) 2px 3px, transparent 3.5px),
+        radial-gradient(circle at 130px 220px,var(--snow) 0 1.6px, var(--snow-halo) 2px 3px, transparent 3.5px),
+        radial-gradient(circle at 190px 10px, var(--snow) 0 1.6px, var(--snow-halo) 2px 3px, transparent 3.5px),
+        radial-gradient(circle at 70px 80px,  var(--snow) 0 1.6px, var(--snow-halo) 2px 3px, transparent 3.5px),
+        radial-gradient(circle at 40px 60px,  var(--snow) 0 2.4px, var(--snow-halo) 2.8px 4px, transparent 4.5px),
+        radial-gradient(circle at 150px 200px,var(--snow) 0 2.4px, var(--snow-halo) 2.8px 4px, transparent 4.5px),
+        radial-gradient(circle at 260px 40px, var(--snow) 0 2.4px, var(--snow-halo) 2.8px 4px, transparent 4.5px),
+        radial-gradient(circle at 320px 250px,var(--snow) 0 2.4px, var(--snow-halo) 2.8px 4px, transparent 4.5px),
+        radial-gradient(circle at 90px 300px, var(--snow) 0 2.4px, var(--snow-halo) 2.8px 4px, transparent 4.5px),
+        radial-gradient(circle at 210px 330px,var(--snow) 0 2.4px, var(--snow-halo) 2.8px 4px, transparent 4.5px),
+        radial-gradient(circle at 300px 130px,var(--snow) 0 2.4px, var(--snow-halo) 2.8px 4px, transparent 4.5px);
+    background-size: 240px 240px,240px 240px,240px 240px,240px 240px,240px 240px,240px 240px,240px 240px,240px 240px,
+                     360px 360px,360px 360px,360px 360px,360px 360px,360px 360px,360px 360px,360px 360px;
+    animation: snow-fall-a 18s linear infinite, snow-sway 7s ease-in-out infinite alternate;
+}
+/* near (large) flakes */
+body::after {
+    background-image:
+        radial-gradient(circle at 80px 100px,  var(--snow) 0 3.6px, var(--snow-halo) 4px 5.5px, transparent 6px),
+        radial-gradient(circle at 300px 40px,  var(--snow) 0 3.6px, var(--snow-halo) 4px 5.5px, transparent 6px),
+        radial-gradient(circle at 450px 220px, var(--snow) 0 3.6px, var(--snow-halo) 4px 5.5px, transparent 6px),
+        radial-gradient(circle at 200px 360px, var(--snow) 0 3.6px, var(--snow-halo) 4px 5.5px, transparent 6px),
+        radial-gradient(circle at 60px 460px,  var(--snow) 0 3.6px, var(--snow-halo) 4px 5.5px, transparent 6px),
+        radial-gradient(circle at 380px 470px, var(--snow) 0 3.6px, var(--snow-halo) 4px 5.5px, transparent 6px);
+    background-size: 520px 520px;
+    opacity: .9;
+    animation: snow-fall-b 11s linear infinite, snow-sway 5s ease-in-out infinite alternate-reverse;
+}
+@keyframes snow-fall-a {
+    from { background-position: 0 0; }
+    to   { background-position: 0 240px, 0 240px, 0 240px, 0 240px, 0 240px, 0 240px, 0 240px, 0 240px,
+                               0 360px, 0 360px, 0 360px, 0 360px, 0 360px, 0 360px, 0 360px; }
+}
+@keyframes snow-fall-b { from { background-position: 0 0; } to { background-position: 0 520px; } }
+@keyframes snow-sway   { from { transform: translateX(-18px); } to { transform: translateX(18px); } }
+
+@media (prefers-reduced-motion: reduce) { body::before, body::after { display: none; } }
+@media print { body::before, body::after { display: none; } }
