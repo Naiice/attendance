@@ -743,7 +743,7 @@ function mapDown(rows) {
             Category: String(getColumnVal(row, ['category', 'หมวดหมู่', '类型']) || 'Unknown').trim(),
             Duration: toNum(getColumnVal(row, ['loss time', 'เวลาสูญเสีย', '损失时间'])),
             Problem: String(getColumnVal(row, ['problem', 'ปัญหา', '问题清单']) || '').trim(),
-            Dept: String(getColumnVal(row, ['dept', 'แผนก', '部门']) || 'Unknown').trim(),
+            Dept: String(getColumnVal(row, ['dept', 'แผนก', '部门']) ?? '').trim() || 'Other',
             Repeated: String(getColumnVal(row, ['repeated', 'ซ้ำ', '重复', 'occurred']) || '').trim()
         };
     }).filter(r => r.Date && r.Date.length >= 8 && r.Duration > 0);
@@ -1033,12 +1033,10 @@ function renderDowntime() {
         }
     });
 
-    // 3) Department (horizontal, top 8 + others)
-    let deptEntries = Object.entries(dept).sort((a, b) => b[1] - a[1]);
-    if (deptEntries.length > 8) {
-        const rest = deptEntries.slice(8).reduce((s, e) => s + e[1], 0);
-        deptEntries = deptEntries.slice(0, 8).concat([['Others', rest]]);
-    }
+    // 3) Department (horizontal, show ALL departments; "Other" only = blank in sheet)
+    const deptEntries = Object.entries(dept).sort((a, b) => b[1] - a[1]);
+    // grow the chart box with the number of departments so every label stays readable
+    $('dtDeptCanvas').parentElement.style.height = Math.max(280, deptEntries.length * 28 + 50) + 'px';
     mk('dtDept', $('dtDeptCanvas'), {
         type: 'bar',
         data: { labels: deptEntries.map(e => e[0]), datasets: [{ label: 'Loss time (mins)', data: deptEntries.map(e => e[1]), backgroundColor: C.accent, borderRadius: 3, maxBarThickness: 22 }] },
