@@ -1,0 +1,129 @@
+/* ==========================================================
+   glass-vars.css - THE ONLY place to edit theme colours.
+   Used by:  Production dashboard (links this file)
+             Haier A01 Suite    (glass-theme.js loads this file)
+   Light mode = flat white-grey (no gradient). Dark mode = soft tinted glow.
+   Theme switch = <html data-theme="light|dark">
+   ========================================================== */
+
+:root {
+    color-scheme: light;
+
+    /* ---- names used by the Production dashboard ---- */
+    --bg: #eceff3;
+    --surface: rgba(255,255,255,.62);
+    --surface-2: rgba(255,255,255,.50);
+    --line: rgba(20,32,48,.10);
+    --line-strong: rgba(20,32,48,.20);
+    --ink: #1a2330;
+    --ink-2: #465263;
+    --ink-3: #667383;
+    --brand: rgba(255,255,255,.60);
+    --brand-ink: #1a2330;
+    --accent: #0a64ad;
+    --accent-soft: rgba(10,100,173,.14);
+    --on-accent: #ffffff;
+    --plan: #a9b7c6;
+
+    --good: #1f9d62;  --good-soft: rgba(31,157,98,.17);  --good-ink: #0b6a3e;
+    --warn: #d99100;  --warn-soft: rgba(217,145,0,.18);  --warn-ink: #7a4d00;
+    --bad:  #d23f3f;  --bad-soft:  rgba(210,63,63,.16);  --bad-ink:  #9a1f1f;
+
+    --glass-edge: rgba(255,255,255,.90);
+    --glass-hi: rgba(255,255,255,.95);
+    --glass-pill: rgba(255,255,255,.85);
+    --shadow: 0 8px 28px rgba(30,41,59,.09);
+    --blur: blur(22px) saturate(140%);
+    --page-bg: linear-gradient(#eceff3, #eceff3);
+
+    /* ---- names used by the Haier A01 Suite (glass-theme.js) ---- */
+    --g-bg: #eceff3;
+    --g-card: rgba(255,255,255,.62);
+    --g-nav: rgba(255,255,255,.60);
+    --g-filter: rgba(255,255,255,.50);
+    --g-seg: rgba(20,32,48,.06);
+    --g-pill: rgba(255,255,255,.85);
+    --g-edge: rgba(255,255,255,.90);
+    --g-hi: rgba(255,255,255,.95);
+    --g-line: rgba(20,32,48,.10);
+    --g-ink: #1a2330;
+    --g-ink-2: #465263;
+    --g-ink-3: #667383;
+    --g-accent: #0a64ad;
+    --g-on-accent: #fff;
+    --g-shadow: 0 8px 28px rgba(30,41,59,.09);
+    --g-blur: blur(22px) saturate(140%);
+    --g-page: linear-gradient(#eceff3, #eceff3);
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    /* ---- Production dashboard ---- */
+    --bg: #080d16;
+    --surface: rgba(255,255,255,.075);
+    --surface-2: rgba(255,255,255,.07);
+    --line: rgba(255,255,255,.11);
+    --line-strong: rgba(255,255,255,.22);
+    --ink: #eef3f9;
+    --ink-2: #b6c3d1;
+    --ink-3: #8798ab;
+    --brand: rgba(255,255,255,.08);
+    --brand-ink: #eef3f9;
+    --accent: #5cc0ff;
+    --accent-soft: rgba(92,192,255,.18);
+    --on-accent: #04202f;
+    --plan: #5b6e84;
+
+    --good: #2fc07c;  --good-soft: rgba(47,192,124,.18);  --good-ink: #6be6a9;
+    --warn: #f0b02e;  --warn-soft: rgba(240,176,46,.18);  --warn-ink: #f7ca68;
+    --bad:  #ff6e6e;  --bad-soft:  rgba(255,110,110,.18); --bad-ink:  #ff9d9d;
+
+    --glass-edge: rgba(255,255,255,.17);
+    --glass-hi: rgba(255,255,255,.22);
+    --glass-pill: rgba(255,255,255,.16);
+    --shadow: 0 12px 40px rgba(0,0,0,.45);
+    --blur: blur(26px) saturate(170%);
+    --page-bg:
+        radial-gradient(55% 55% at 10% 6%,  rgba(70,110,200,.55) 0%, transparent 70%),
+        radial-gradient(50% 55% at 92% 14%, rgba(120,70,190,.45) 0%, transparent 70%),
+        radial-gradient(60% 60% at 82% 96%, rgba(20,130,140,.42) 0%, transparent 70%),
+        radial-gradient(50% 50% at 6% 94%,  rgba(190,100,70,.30) 0%, transparent 70%),
+        linear-gradient(135deg, #0a1120, #0d1626);
+
+    /* ---- Haier A01 Suite ---- */
+    --g-bg: #080d16;
+    --g-card: rgba(255,255,255,.07);
+    --g-nav: rgba(12,19,30,.60);
+    --g-filter: rgba(255,255,255,.06);
+    --g-seg: rgba(255,255,255,.07);
+    --g-pill: rgba(255,255,255,.16);
+    --g-edge: rgba(255,255,255,.14);
+    --g-hi: rgba(255,255,255,.18);
+    --g-line: rgba(255,255,255,.14);
+    --g-ink: #eef3f9;
+    --g-ink-2: #b6c3d1;
+    --g-ink-3: #8798ab;
+    --g-accent: #7cc7ff;
+    --g-on-accent: #04202f;
+    --g-shadow: 0 12px 40px rgba(0,0,0,.4);
+    --g-blur: blur(24px) saturate(160%);
+    --g-page:
+        radial-gradient(55% 55% at 10% 6%,  rgba(70,110,200,.55), transparent 70%),
+        radial-gradient(50% 55% at 92% 14%, rgba(120,70,190,.45), transparent 70%),
+        radial-gradient(60% 60% at 82% 96%, rgba(20,130,140,.42), transparent 70%),
+        radial-gradient(50% 50% at 6% 94%,  rgba(190,100,70,.30), transparent 70%),
+        linear-gradient(135deg, #0a1120, #0d1626);
+}
+
+/* Browsers without backdrop-filter: more opaque panels */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :root {
+        --surface: rgba(255,255,255,.88); --surface-2: rgba(240,244,248,.92); --brand: rgba(255,255,255,.92);
+        --g-card: rgba(255,255,255,.88); --g-nav: rgba(255,255,255,.92);
+    }
+    :root[data-theme="dark"] {
+        --surface: rgba(22,32,46,.92); --surface-2: rgba(30,42,58,.92); --brand: rgba(20,30,44,.95);
+        --g-card: rgba(24,34,48,.92); --g-nav: rgba(14,22,34,.94);
+    }
+}
