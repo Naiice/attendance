@@ -190,3 +190,7 @@ body::after {
 
 @media (prefers-reduced-motion: reduce) { body::before, body::after { display: none; } }
 @media print { body::before, body::after { display: none; } }
+
+/* ---- Haier A01 Suite: its own full-screen background layer would hide the snow, so make it transparent
+        (the page background still comes from body / --g-page, so the look is unchanged) ---- */
+#digital-background { background: transparent !important; }
