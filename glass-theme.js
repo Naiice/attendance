@@ -1,8 +1,20 @@
 /* Haier A01 Suite - Glassy theme (light + dark). Add ONE line before </head>:
-   <script src="glass-theme.js"></script>      (no layout / content changes) */
+   <script src="glass-theme.js"></script>      (no layout / content changes)
+   Colours are NOT stored here: this script loads glass-vars.css (same folder / same repo).
+   To change theme colours, edit glass-vars.css only. */
 (function () {
   'use strict';
   var KEY = 'haier-theme', root = document.documentElement, cur;
+
+  /* ---------- 0. load shared colour variables (glass-vars.css) ---------- */
+  (function loadVars() {
+    if (document.querySelector('link[href*="glass-vars.css"]')) return;   // page already links it
+    var sc = document.currentScript, href = 'glass-vars.css';
+    if (sc && sc.src) href = sc.src.replace(/glass-theme\.js(\?.*)?$/, 'glass-vars.css$1');
+    var l = document.createElement('link');
+    l.rel = 'stylesheet'; l.id = 'glass-vars-link'; l.href = href;
+    document.head.appendChild(l);
+  })();
 
   /* ---------- 1. generated colour rules (dark mode tints) ---------- */
   var T = {
@@ -25,19 +37,8 @@
     '064e3b': '#6fe3b0', '14532d': '#7ee8a6', '881337': '#ff9db4', '92400e': '#ffc46b' };
   Object.keys(HEX).forEach(function (h) { gen += '@D [class~="text-[#' + h + ']"]{color:' + HEX[h] + '}'; });
 
-  /* ---------- 2. stylesheet ---------- */
+  /* ---------- 2. stylesheet (rules only - colour variables live in glass-vars.css) ---------- */
   var CSS = `
-@L{--g-bg:#eceff3;--g-card:rgba(255,255,255,.62);--g-nav:rgba(255,255,255,.6);--g-filter:rgba(255,255,255,.5);
---g-seg:rgba(20,32,48,.06);--g-pill:rgba(255,255,255,.85);--g-edge:rgba(255,255,255,.9);--g-hi:rgba(255,255,255,.95);
---g-line:rgba(20,32,48,.10);--g-ink:#1a2330;--g-ink-2:#465263;--g-ink-3:#667383;--g-accent:#0a64ad;--g-on-accent:#fff;
---g-shadow:0 8px 28px rgba(30,41,59,.09);--g-blur:blur(22px) saturate(140%);
---g-page:linear-gradient(#eceff3,#eceff3)}
-@D{color-scheme:dark;--g-bg:#080d16;--g-card:rgba(255,255,255,.07);--g-nav:rgba(12,19,30,.6);--g-filter:rgba(255,255,255,.06);
---g-seg:rgba(255,255,255,.07);--g-pill:rgba(255,255,255,.16);--g-edge:rgba(255,255,255,.14);--g-hi:rgba(255,255,255,.18);
---g-line:rgba(255,255,255,.14);--g-ink:#eef3f9;--g-ink-2:#b6c3d1;--g-ink-3:#8798ab;--g-accent:#7cc7ff;--g-on-accent:#04202f;
---g-shadow:0 12px 40px rgba(0,0,0,.4);--g-blur:blur(24px) saturate(160%);
---g-page:radial-gradient(55% 55% at 10% 6%,rgba(70,110,200,.55),transparent 70%),radial-gradient(50% 55% at 92% 14%,rgba(120,70,190,.45),transparent 70%),radial-gradient(60% 60% at 82% 96%,rgba(20,130,140,.42),transparent 70%),radial-gradient(50% 50% at 6% 94%,rgba(190,100,70,.3),transparent 70%),linear-gradient(135deg,#0a1120,#0d1626)}
-
 /* page background */
 @T body{background-color:var(--g-bg);background-image:var(--g-page);background-attachment:fixed;background-size:cover;color:var(--g-ink)}
 @T #digital-background{background:var(--g-page)}
@@ -132,11 +133,6 @@ background:var(--g-pill);color:var(--g-ink);display:grid;place-items:center;curs
 @D .g-theme-btn .g-sun{display:block}
 @D .g-theme-btn .g-moon{display:none}
 
-/* browsers without backdrop-filter: more opaque panels */
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
- @L{--g-card:rgba(255,255,255,.88);--g-nav:rgba(255,255,255,.92)}
- @D{--g-card:rgba(24,34,48,.92);--g-nav:rgba(14,22,34,.94)}
-}
 @media print{
  @T body,@T #digital-background{background:#fff!important}
  @T [class~="bg-white"]{background:#fff!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
