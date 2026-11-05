@@ -27,11 +27,11 @@
 
   /* ---------- 2. stylesheet ---------- */
   var CSS = `
-@L{--g-bg:#e8ddd0;--g-card:rgba(255,255,255,.55);--g-nav:rgba(255,255,255,.5);--g-filter:rgba(255,255,255,.42);
---g-seg:rgba(20,32,48,.07);--g-pill:rgba(255,255,255,.75);--g-edge:rgba(255,255,255,.75);--g-hi:rgba(255,255,255,.85);
---g-line:rgba(20,32,48,.12);--g-ink:#17202c;--g-ink-2:#435061;--g-ink-3:#5d6b7b;--g-accent:#0a64ad;--g-on-accent:#fff;
---g-shadow:0 10px 32px rgba(60,40,20,.12);--g-blur:blur(22px) saturate(160%);
---g-page:radial-gradient(60% 55% at 12% 8%,rgba(255,214,170,.95),transparent 70%),radial-gradient(55% 60% at 90% 12%,rgba(190,215,240,.9),transparent 70%),radial-gradient(60% 60% at 80% 95%,rgba(236,190,160,.85),transparent 70%),radial-gradient(55% 55% at 8% 92%,rgba(200,185,160,.85),transparent 70%),linear-gradient(135deg,#efe6da,#dcd0c1)}
+@L{--g-bg:#eceff3;--g-card:rgba(255,255,255,.62);--g-nav:rgba(255,255,255,.6);--g-filter:rgba(255,255,255,.5);
+--g-seg:rgba(20,32,48,.06);--g-pill:rgba(255,255,255,.85);--g-edge:rgba(255,255,255,.9);--g-hi:rgba(255,255,255,.95);
+--g-line:rgba(20,32,48,.10);--g-ink:#1a2330;--g-ink-2:#465263;--g-ink-3:#667383;--g-accent:#0a64ad;--g-on-accent:#fff;
+--g-shadow:0 8px 28px rgba(30,41,59,.09);--g-blur:blur(22px) saturate(140%);
+--g-page:linear-gradient(#eceff3,#eceff3)}
 @D{color-scheme:dark;--g-bg:#080d16;--g-card:rgba(255,255,255,.07);--g-nav:rgba(12,19,30,.6);--g-filter:rgba(255,255,255,.06);
 --g-seg:rgba(255,255,255,.07);--g-pill:rgba(255,255,255,.16);--g-edge:rgba(255,255,255,.14);--g-hi:rgba(255,255,255,.18);
 --g-line:rgba(255,255,255,.14);--g-ink:#eef3f9;--g-ink-2:#b6c3d1;--g-ink-3:#8798ab;--g-accent:#7cc7ff;--g-on-accent:#04202f;
@@ -53,6 +53,7 @@
 @L [class~="bg-slate-200/50"]{background-color:rgba(20,32,48,.08)}
 @L .fixed [class~="bg-white"]{background-color:rgba(255,255,255,.84)}
 @L [class*="rounded-[2"].bg-white,@L [class*="rounded-3xl"].bg-white,@L [class*="rounded-2xl"].bg-white{border-color:var(--g-edge)}
+@L [class~="bg-white"]{box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 2px 10px rgba(30,41,59,.06)}
 @supports selector(:has(a)){
  @T .bg-white[class*="rounded-[2"]:not(#dashboard-capture-area):not(:has(.fixed)),
  @T .bg-white[class*="rounded-3xl"]:not(:has(.fixed)),@T .bg-white[class*="rounded-2xl"]:not(:has(.fixed)){-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur)}
