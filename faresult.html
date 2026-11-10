@@ -213,10 +213,10 @@ input[type="date"] {
 .btn:disabled { opacity: .6; cursor: wait; }
 
 /* ==========================================================
-   Layout + cards
+   Layout + cards (Full width matching topbar & filters)
    ========================================================== */
 main { flex: 1; overflow-y: auto; padding: 16px; }
-.view { max-width: 1760px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.view { width: 100%; max-width: none; margin: 0; display: flex; flex-direction: column; gap: 16px; }
 .card {
     background: var(--surface); border-radius: 24px;
     padding: 18px; display: flex; flex-direction: column; min-width: 0;
@@ -230,7 +230,7 @@ main { flex: 1; overflow-y: auto; padding: 16px; }
 .hint { margin: 10px 0 0; font-size: 12px; color: var(--ink-3); }
 
 .notice {
-    max-width: 1760px; margin: 0 auto 16px; padding: 10px 16px; border-radius: 16px;
+    width: 100%; max-width: none; margin: 0 0 16px; padding: 10px 16px; border-radius: 16px;
     background: var(--warn-soft); color: var(--warn-ink); border: 1px solid var(--warn); font-weight: 500;
     -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
 }
@@ -322,51 +322,6 @@ main { flex: 1; overflow-y: auto; padding: 16px; }
 .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 60;
     background: var(--glass-pill); color: var(--ink); padding: 10px 20px; border-radius: 999px; font-size: 13px;
-}
-
-/* Full-page capture mode: opaque glass fallback prevents SVG foreignObject backdrop-filter glitches */
-.is-capturing {
-    --surface: rgba(255,255,255,.82);
-    --surface-2: rgba(242,245,249,.88);
-    --brand: rgba(255,255,255,.86);
-    --glass-pill: rgba(255,255,255,.92);
-    background-attachment: scroll !important;
-}
-:root[data-theme="dark"] .is-capturing {
-    --surface: rgba(20,30,44,.88);
-    --surface-2: rgba(28,40,56,.90);
-    --brand: rgba(18,28,42,.90);
-    --glass-pill: rgba(36,50,68,.92);
-}
-.is-capturing,
-.is-capturing .app {
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-}
-.is-capturing .glass,
-.is-capturing .topbar,
-.is-capturing .filters,
-.is-capturing .card,
-.is-capturing .notice {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-}
-.is-capturing main {
-    flex: none !important;
-    height: auto !important;
-    overflow: visible !important;
-    margin: 0 auto !important;
-}
-.is-capturing .insights {
-    position: static !important;
-    max-height: none !important;
-    overflow: visible !important;
-}
-.is-capturing .dot,
-.is-capturing .prog i {
-    animation: none !important;
-    transition: none !important;
 }
 
 /* Browsers without backdrop-filter: fall back to more opaque panels */
@@ -1247,8 +1202,15 @@ async function captureDashboard() {
 
         const appEl = document.querySelector('.app');
         const mainEl = document.querySelector('main');
-        const appWidth = Math.ceil(appEl.getBoundingClientRect().width) || document.documentElement.clientWidth;
-        const mainWidth = Math.ceil(mainEl.clientWidth) || appWidth;
+        const topbarEl = document.querySelector('.topbar');
+        const filtersEl = document.querySelector('.filters');
+        const activeViewEl = document.querySelector('.view:not([hidden])');
+
+        // Exact current screen/viewport dimensions on the user's device (e.g. Notebook)
+        const appWidth = Math.round(appEl.getBoundingClientRect().width) || document.documentElement.clientWidth;
+        const topbarWidth = topbarEl ? Math.round(topbarEl.getBoundingClientRect().width) : appWidth - 32;
+        const filtersWidth = filtersEl ? Math.round(filtersEl.getBoundingClientRect().width) : appWidth - 32;
+        const viewWidth = activeViewEl ? Math.round(activeViewEl.getBoundingClientRect().width) : topbarWidth;
 
         // 1. Pre-snapshot all visible canvases and their exact bounding boxes before changing button text
         const canvasSnapshots = new Map();
@@ -1266,14 +1228,22 @@ async function captureDashboard() {
             }
         });
 
-        // Clone DOM before showing "Capturing..." on the live button so the screenshot keeps the clean button label
+        // Tag every visible .card with its exact live width so grid columns keep 1:1 proportions
+        const liveCards = Array.from(appEl.querySelectorAll('.card'));
+        const cardWidths = liveCards.map(c => Math.round(c.getBoundingClientRect().width));
+
+        // Clone DOM before showing "Capturing..." on the live button
         const appClone = appEl.cloneNode(true);
+        const clonedCards = Array.from(appClone.querySelectorAll('.card'));
+        clonedCards.forEach((c, idx) => {
+            if (cardWidths[idx] > 0) c.dataset.lockCardW = cardWidths[idx];
+        });
 
         btn.disabled = true;
         btnText.textContent = 'Capturing… 截图…';
         showToast('Capturing full dashboard… 正在生成高清长图…');
 
-        // 2. Build an offscreen container with exact viewport width
+        // 2. Build an offscreen container with exact device viewport width
         host = document.createElement('div');
         host.style.cssText = `position:fixed;left:-99999px;top:0;width:${appWidth}px;z-index:-1;pointer-events:none;overflow:visible;`;
 
@@ -1284,20 +1254,30 @@ async function captureDashboard() {
             width: ${appWidth}px;
             background-color: ${bodyStyle.backgroundColor};
             background-image: ${bodyStyle.backgroundImage};
-            background-size: cover;
-            background-position: top center;
+            background-size: 100% 100%;
+            background-position: top left;
+            background-attachment: scroll;
             color: ${bodyStyle.color};
             font-family: ${bodyStyle.fontFamily};
-            padding-bottom: 24px;
-            overflow: visible;
+            padding-bottom: 20px;
+            overflow: hidden;
         `;
 
-        // Lock <main> in the clone to its exact live clientWidth so card & chart widths match 1:1
+        // Lock topbar, filters, main, and active view to exact full-screen widths
+        const clonedTopbar = appClone.querySelector('.topbar');
+        if (clonedTopbar) clonedTopbar.dataset.lockContainerW = topbarWidth;
+        const clonedFilters = appClone.querySelector('.filters');
+        if (clonedFilters) clonedFilters.dataset.lockContainerW = filtersWidth;
         const clonedMain = appClone.querySelector('main');
         if (clonedMain) {
-            clonedMain.style.width = mainWidth + 'px';
-            clonedMain.style.maxWidth = mainWidth + 'px';
+            clonedMain.style.width = appWidth + 'px';
+            clonedMain.style.maxWidth = appWidth + 'px';
+            clonedMain.style.overflow = 'visible';
+            clonedMain.style.height = 'auto';
+            clonedMain.style.flex = 'none';
         }
+        const clonedView = appClone.querySelector('.view:not([hidden])');
+        if (clonedView) clonedView.dataset.lockContainerW = viewWidth;
 
         cloneWrapper.appendChild(appClone);
         host.appendChild(cloneWrapper);
@@ -1330,6 +1310,7 @@ async function captureDashboard() {
 
         const fullWidth = appWidth;
         const fullHeight = Math.ceil(cloneWrapper.scrollHeight);
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
         const captureOpts = {
             width: fullWidth,
@@ -1341,14 +1322,55 @@ async function captureDashboard() {
                 clonedRoot.style.width = fullWidth + 'px';
                 clonedRoot.style.inlineSize = fullWidth + 'px';
 
-                // Remove backdrop-filter on all elements in the SVG clone to prevent Chromium's grey-box bug
+                // Inject a high-priority style block inside the SVG clone to kill all box-shadow / backdrop-filter / filter
+                // (prevents Chromium's DPI-scaled box-shadow displacement bug on Notebooks)
+                const fixStyle = document.createElement('style');
+                fixStyle.textContent = `
+                    *, *::before, *::after {
+                        -webkit-backdrop-filter: none !important;
+                        backdrop-filter: none !important;
+                        box-shadow: none !important;
+                        filter: none !important;
+                        animation: none !important;
+                        transition: none !important;
+                    }
+                    .topbar, .filters, .card {
+                        background-color: ${isDark ? 'rgba(20, 30, 46, 0.94)' : 'rgba(255, 255, 255, 0.90)'} !important;
+                        border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(20, 32, 48, 0.10)'} !important;
+                    }
+                    .kpi.s-good {
+                        background: ${isDark
+                            ? 'linear-gradient(140deg, rgba(47,192,124,0.22), rgba(20,30,46,0.94) 70%)'
+                            : 'linear-gradient(140deg, rgba(31,157,98,0.18), rgba(255,255,255,0.92) 70%)'} !important;
+                    }
+                    .kpi.s-warn {
+                        background: ${isDark
+                            ? 'linear-gradient(140deg, rgba(240,176,46,0.22), rgba(20,30,46,0.94) 70%)'
+                            : 'linear-gradient(140deg, rgba(217,145,0,0.18), rgba(255,255,255,0.92) 70%)'} !important;
+                    }
+                    .kpi.s-bad {
+                        background: ${isDark
+                            ? 'linear-gradient(140deg, rgba(255,110,110,0.22), rgba(20,30,46,0.94) 70%)'
+                            : 'linear-gradient(140deg, rgba(210,63,63,0.18), rgba(255,255,255,0.92) 70%)'} !important;
+                    }
+                    .tab[aria-selected="true"],
+                    .seg button[aria-pressed="true"] {
+                        background-color: ${isDark ? 'rgba(255, 255, 255, 0.18)' : '#ffffff'} !important;
+                        border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(20, 32, 48, 0.14)'} !important;
+                    }
+                `;
+                clonedRoot.appendChild(fixStyle);
+
+                // Also strip inline boxShadow / backdropFilter / filter copied by modern-screenshot onto every element
                 clonedRoot.querySelectorAll('*').forEach(el => {
                     if (!(el instanceof HTMLElement)) return;
                     el.style.backdropFilter = 'none';
                     el.style.webkitBackdropFilter = 'none';
+                    el.style.boxShadow = 'none';
+                    el.style.filter = 'none';
                 });
 
-                // Unlock subpixel-rounded inline widths/heights copied by modern-screenshot on text, buttons & flex containers
+                // Unlock subpixel-rounded inline widths/heights on inner text, buttons & flex items
                 const unlockAutoWidthSel = [
                     '.topbar *:not(.brand-mark):not(.icon-btn):not(.dot):not(svg):not(path):not(circle)',
                     '.filters *:not(input):not(svg):not(path):not(circle)',
@@ -1371,7 +1393,7 @@ async function captureDashboard() {
                     el.style.maxBlockSize = 'none';
                 });
 
-                // Unlock container heights so bars/cards never clip or overflow onto neighbours
+                // Unlock container heights so bars/cards never clip vertically
                 const unlockHeightSel = '.topbar, .filters, .card, .view, main, .app, .insights, .ins, .ins-block, h1, h2, h3, h4, p, ul, li, small';
                 clonedRoot.querySelectorAll(unlockHeightSel).forEach(el => {
                     if (!(el instanceof HTMLElement)) return;
@@ -1380,6 +1402,24 @@ async function captureDashboard() {
                     el.style.maxHeight = 'none';
                     el.style.maxBlockSize = 'none';
                     el.style.overflow = 'visible';
+                });
+
+                // Lock topbar, filters, and active view to exact full-screen widths
+                clonedRoot.querySelectorAll('[data-lock-container-w]').forEach(el => {
+                    if (!(el instanceof HTMLElement)) return;
+                    const w = el.dataset.lockContainerW + 'px';
+                    el.style.width = w;
+                    el.style.inlineSize = w;
+                    el.style.maxWidth = w;
+                });
+
+                // Lock each card to its exact live width so grid columns match the screen 1:1
+                clonedRoot.querySelectorAll('[data-lock-card-w]').forEach(el => {
+                    if (!(el instanceof HTMLElement)) return;
+                    const w = el.dataset.lockCardW + 'px';
+                    el.style.width = w;
+                    el.style.inlineSize = w;
+                    el.style.maxWidth = w;
                 });
 
                 if (appWidth >= 1100) {
@@ -1402,7 +1442,7 @@ async function captureDashboard() {
                     el.style.flexShrink = '0';
                 });
 
-                // Re-enforce exact pixel dimensions on chart boxes and chart images so aspect ratio never distorts
+                // Re-enforce exact pixel dimensions on chart boxes and chart images
                 clonedRoot.querySelectorAll('[data-lock-w][data-lock-h]').forEach(el => {
                     if (!(el instanceof HTMLElement)) return;
                     const w = el.dataset.lockW + 'px';
