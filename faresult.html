@@ -140,28 +140,28 @@ main { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
     background: linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #7a5cff));
     display: grid; place-items: center; box-shadow: 0 4px 12px rgba(10,100,173,.35), inset 0 1px 0 rgba(255,255,255,.4);
 }
-.brand h1 { font-size: 16px; font-weight: 600; margin: 0; line-height: 1.2; }
-.brand small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 400; }
+.brand h1 { font-size: 16px; font-weight: 600; margin: 0; line-height: 1.2; white-space: nowrap; }
+.brand small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 400; white-space: nowrap; }
 
 .tabs { display: flex; gap: 4px; align-self: center; padding: 3px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); }
 .tab {
     background: none; border: 0; border-radius: 999px;
     color: var(--ink-2); font-size: 14px; font-weight: 500;
-    padding: 7px 18px; cursor: pointer; display: flex; align-items: center; transition: background .2s, color .2s;
+    padding: 7px 18px; cursor: pointer; display: flex; align-items: center; white-space: nowrap; transition: background .2s, color .2s;
 }
 .tab:hover { color: var(--ink); }
 .tab[aria-selected="true"] { color: var(--ink); background: var(--glass-pill); font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.12), inset 0 1px 0 var(--glass-hi); }
-.tab .zh { font-size: 12px; font-weight: 400; opacity: .75; margin-left: 6px; }
+.tab .zh { font-size: 12px; font-weight: 400; opacity: .75; margin-left: 6px; white-space: nowrap; }
 
-.top-right { margin-left: auto; display: flex; align-items: center; gap: 12px; padding: 8px 0; }
-.live { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-2); }
+.top-right { margin-left: auto; display: flex; align-items: center; gap: 12px; padding: 8px 0; flex-shrink: 0; }
+.live { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
 .live .zh { opacity: .75; margin-left: 2px; }
-.live-time { color: var(--ink-3); }
+.live-time { color: var(--ink-3); white-space: nowrap; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: #2fc07c; flex: none; animation: pulse 2.4s ease-out infinite; }
 .live.err .dot { background: #ff6b6b; animation: none; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(47,192,124,.55); } 70%,100% { box-shadow: 0 0 0 7px rgba(47,192,124,0); } }
 .icon-btn {
-    width: 36px; height: 36px; display: grid; place-items: center; cursor: pointer;
+    width: 36px; height: 36px; flex: none; display: grid; place-items: center; cursor: pointer;
     background: var(--glass-pill); color: var(--ink); border: 1px solid var(--glass-edge); border-radius: 50%;
     box-shadow: inset 0 1px 0 var(--glass-hi); transition: transform .15s;
 }
@@ -180,7 +180,7 @@ main { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
 .filters {
     flex: none; background: var(--surface);
     margin: 10px 16px 0; border-radius: 20px;
-    padding: 10px 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 28px;
+    padding: 10px 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px;
 }
 .fgroup { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .flabel { font-size: 12.5px; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
@@ -197,17 +197,17 @@ input[type="date"] {
 .seg button[aria-pressed="true"] { background: var(--glass-pill); color: var(--accent); font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.12), inset 0 1px 0 var(--glass-hi); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
-    font-size: 12.5px; font-weight: 600; min-width: 40px; padding: 5px 12px; cursor: pointer;
+    font-size: 12.5px; font-weight: 600; min-width: 40px; padding: 5px 12px; cursor: pointer; white-space: nowrap;
     border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink-3); border-radius: 999px; transition: all .15s;
 }
 .chip:hover { border-color: var(--accent); color: var(--accent); }
 .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 40%, transparent); }
-.linkbtn { background: none; border: 0; color: var(--accent); font-size: 12.5px; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+.linkbtn { background: none; border: 0; color: var(--accent); font-size: 12.5px; cursor: pointer; padding: 2px 4px; border-radius: 4px; white-space: nowrap; }
 .linkbtn:hover { text-decoration: underline; }
-.filter-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.filter-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
 .btn {
-    display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
-    padding: 7px 16px; border-radius: 999px; border: 1px solid var(--glass-edge); color: var(--ink); background: var(--glass-pill);
+    display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    padding: 7px 14px; border-radius: 999px; border: 1px solid var(--glass-edge); color: var(--ink); background: var(--glass-pill);
     box-shadow: inset 0 1px 0 var(--glass-hi); transition: background .15s, color .15s, opacity .15s;
 }
 .btn:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
@@ -223,8 +223,8 @@ main { flex: 1; overflow-y: auto; padding: 16px; }
     padding: 18px; display: flex; flex-direction: column; min-width: 0;
 }
 .card-h { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 12px; }
-.card-h h2, .section-h h2 { font-size: 15px; font-weight: 600; margin: 0; }
-.card-h h2 span, .section-h h2 span, .k-label span { font-weight: 400; color: var(--ink-3); margin-left: 6px; font-size: 13px; }
+.card-h h2, .section-h h2 { font-size: 15px; font-weight: 600; margin: 0; white-space: nowrap; }
+.card-h h2 span, .section-h h2 span, .k-label span { font-weight: 400; color: var(--ink-3); margin-left: 6px; font-size: 13px; white-space: nowrap; }
 .section-h { margin-top: 4px; padding-left: 6px; }
 .zh { color: var(--ink-3); font-size: 12.5px; }
 .muted { color: var(--ink-3); }
@@ -239,10 +239,10 @@ main { flex: 1; overflow-y: auto; padding: 16px; }
 /* KPI */
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .kpi { padding: 18px 20px; }
-.k-label { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+.k-label { font-size: 13px; color: var(--ink-2); font-weight: 500; white-space: nowrap; }
 .k-value { font-size: 32px; font-weight: 600; line-height: 1.15; margin-top: 6px; letter-spacing: -.3px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .k-value.text { font-size: 24px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.k-unit { font-size: 14px; font-weight: 500; color: var(--ink-3); letter-spacing: 0; }
+.k-unit { font-size: 14px; font-weight: 500; color: var(--ink-3); letter-spacing: 0; white-space: nowrap; }
 .k-sub { font-size: 13px; color: var(--ink-2); margin-top: 6px; min-height: 19px; }
 .prog { height: 8px; border-radius: 4px; background: var(--line); margin-top: 12px; overflow: hidden; }
 .prog i { display: block; height: 100%; border-radius: 4px; background: var(--c); transition: width .4s ease; }
@@ -252,13 +252,14 @@ main { flex: 1; overflow-y: auto; padding: 16px; }
     display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px;
     font-size: 12px; font-weight: 600; letter-spacing: 0; background: var(--cs); color: var(--ci); white-space: nowrap;
 }
-.badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+.badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c); flex: none; }
 /* status-tinted KPI card */
 .kpi.s-good, .kpi.s-warn, .kpi.s-bad { background: linear-gradient(140deg, var(--cs), var(--surface) 70%); }
 
 /* Row 2 */
 .row2 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); margin-bottom: 8px; }
+.legend span { white-space: nowrap; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .chart-box { position: relative; flex: 1; min-height: 320px; }
 .empty {
@@ -269,7 +270,7 @@ main { flex: 1; overflow-y: auto; padding: 16px; }
 .empty b { color: var(--ink-2); font-weight: 600; font-size: 14px; }
 .tag {
     display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding: 2px 10px; font-size: 12px; font-weight: 600;
-    background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; cursor: pointer;
+    background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; cursor: pointer; white-space: nowrap;
 }
 
 /* Ranking */
@@ -291,8 +292,8 @@ main { flex: 1; overflow-y: auto; padding: 16px; }
 /* Mini charts */
 .mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
 .mini-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
-.mini-h h3 { margin: 0; font-size: 14px; font-weight: 600; }
-.mini-h h3 span { color: var(--ink-3); font-weight: 400; font-size: 12.5px; margin-left: 6px; }
+.mini-h h3 { margin: 0; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.mini-h h3 span { color: var(--ink-3); font-weight: 400; font-size: 12.5px; margin-left: 6px; white-space: nowrap; }
 .mini-box { position: relative; height: 170px; }
 
 /* Downtime */
@@ -311,7 +312,7 @@ main { flex: 1; overflow-y: auto; padding: 16px; }
 .ln-row { display: grid; grid-template-columns: 52px minmax(40px, 1fr) 96px; gap: 8px; align-items: center; font-size: 13px; padding: 3px 0; }
 .ln-row .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
 .ln-row .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
-.ln-row .v { text-align: right; color: var(--ink-2); }
+.ln-row .v { text-align: right; color: var(--ink-2); white-space: nowrap; }
 
 /* Loading + toast */
 .loading {
@@ -324,20 +325,39 @@ main { flex: 1; overflow-y: auto; padding: 16px; }
     background: var(--glass-pill); color: var(--ink); padding: 10px 20px; border-radius: 999px; font-size: 13px;
 }
 
-/* Full-page capture mode (applied only on cloned DOM during screenshot) */
+/* Full-page capture mode: opaque glass fallback prevents SVG foreignObject backdrop-filter glitches */
+.is-capturing {
+    --surface: rgba(255,255,255,.82);
+    --surface-2: rgba(242,245,249,.88);
+    --brand: rgba(255,255,255,.86);
+    --glass-pill: rgba(255,255,255,.92);
+    background-attachment: scroll !important;
+}
+:root[data-theme="dark"] .is-capturing {
+    --surface: rgba(20,30,44,.88);
+    --surface-2: rgba(28,40,56,.90);
+    --brand: rgba(18,28,42,.90);
+    --glass-pill: rgba(36,50,68,.92);
+}
 .is-capturing,
 .is-capturing .app {
     height: auto !important;
     min-height: 0 !important;
     overflow: visible !important;
 }
-.is-capturing {
-    background-attachment: scroll !important;
+.is-capturing .glass,
+.is-capturing .topbar,
+.is-capturing .filters,
+.is-capturing .card,
+.is-capturing .notice {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
 }
 .is-capturing main {
     flex: none !important;
     height: auto !important;
     overflow: visible !important;
+    margin: 0 auto !important;
 }
 .is-capturing .insights {
     position: static !important;
@@ -1069,10 +1089,11 @@ function renderDowntime() {
         }
     });
 
-    // 3) Department (horizontal, show ALL departments; "Other" only = blank in sheet)
+    // 3) Department (horizontal, show ALL departments; match height with sibling card)
     const deptEntries = Object.entries(dept).sort((a, b) => b[1] - a[1]);
-    // grow the chart box with the number of departments so every label stays readable
-    $('dtDeptCanvas').parentElement.style.height = Math.max(280, deptEntries.length * 28 + 50) + 'px';
+    const row2Height = Math.max(280, deptEntries.length * 28 + 50);
+    $('dtDeptCanvas').parentElement.style.height = row2Height + 'px';
+    $('dtLineCanvas').parentElement.style.height = row2Height + 'px';
     mk('dtDept', $('dtDeptCanvas'), {
         type: 'bar',
         data: { labels: deptEntries.map(e => e[0]), datasets: [{ label: 'Loss time (mins)', data: deptEntries.map(e => e[1]), backgroundColor: C.accent, borderRadius: 3, maxBarThickness: 22 }] },
@@ -1220,11 +1241,7 @@ async function captureDashboard() {
     const btn = $('captureBtn');
     const btnText = $('captureBtnText');
     if (btn.disabled) return;
-
-    btn.disabled = true;
     const origText = btnText.textContent;
-    btnText.textContent = 'Capturing… 截图…';
-    showToast('Capturing full dashboard… 正在生成高清长图…');
 
     let host = null;
     try {
@@ -1234,32 +1251,42 @@ async function captureDashboard() {
 
         const appEl = document.querySelector('.app');
         const mainEl = document.querySelector('main');
-        // Lock to exact inner content width of <main> + its scrollbar reduction prevention
-        const lockedWidth = mainEl.clientWidth;
+        // Use full app width for topbar/filters, and exact main inner width for chart grids
+        const appWidth = Math.ceil(appEl.getBoundingClientRect().width) || document.documentElement.clientWidth;
+        const mainWidth = Math.ceil(mainEl.clientWidth) || appWidth;
 
-        // 1. Pre-snapshot all visible canvases and their exact pixel boxes from the live DOM
+        // 1. Pre-snapshot all visible canvases and their exact bounding boxes before changing any button text
         const canvasSnapshots = new Map();
         appEl.querySelectorAll('canvas').forEach(cv => {
             const rect = cv.getBoundingClientRect();
             if (rect.width > 0 && rect.height > 0 && cv.id) {
+                const pRect = cv.parentElement ? cv.parentElement.getBoundingClientRect() : rect;
                 canvasSnapshots.set(cv.id, {
                     dataUrl: cv.toDataURL('image/png', 1.0),
-                    width: rect.width,
-                    height: rect.height,
-                    parentHeight: cv.parentElement ? cv.parentElement.getBoundingClientRect().height : rect.height
+                    width: Math.round(rect.width),
+                    height: Math.round(rect.height),
+                    parentWidth: Math.round(pRect.width),
+                    parentHeight: Math.round(pRect.height)
                 });
             }
         });
 
-        // 2. Build an offscreen clone with identical width and expanded height so the live page never jumps
+        // Clone DOM before showing "Capturing..." on the live button so the screenshot keeps the clean button label
+        const appClone = appEl.cloneNode(true);
+
+        btn.disabled = true;
+        btnText.textContent = 'Capturing… 截图…';
+        showToast('Capturing full dashboard… 正在生成高清长图…');
+
+        // 2. Build an invisible offscreen container at (0, 0) with exact viewport width
         host = document.createElement('div');
-        host.style.cssText = `position:fixed;left:-99999px;top:0;width:${lockedWidth}px;z-index:-1;pointer-events:none;overflow:visible;`;
+        host.style.cssText = `position:fixed;left:0;top:0;width:${appWidth}px;z-index:-9999;opacity:0;pointer-events:none;overflow:visible;`;
 
         const cloneWrapper = document.createElement('div');
         cloneWrapper.className = 'is-capturing';
         const bodyStyle = getComputedStyle(document.body);
         cloneWrapper.style.cssText = `
-            width: ${lockedWidth}px;
+            width: ${appWidth}px;
             background-color: ${bodyStyle.backgroundColor};
             background-image: ${bodyStyle.backgroundImage};
             background-size: cover;
@@ -1270,38 +1297,132 @@ async function captureDashboard() {
             overflow: visible;
         `;
 
-        const appClone = appEl.cloneNode(true);
+        // Lock <main> in the clone to its exact live clientWidth so card & chart widths match 1:1
+        const clonedMain = appClone.querySelector('main');
+        if (clonedMain) {
+            clonedMain.style.width = mainWidth + 'px';
+            clonedMain.style.maxWidth = mainWidth + 'px';
+        }
+
         cloneWrapper.appendChild(appClone);
         host.appendChild(cloneWrapper);
         document.body.appendChild(host);
 
-        // 3. Replace cloned <canvas> elements with locked-dimension <img> snapshots so charts cannot shift or resize
+        // 3. Replace cloned <canvas> elements with locked-dimension <img> snapshots
         canvasSnapshots.forEach((snap, id) => {
             const clonedCanvas = appClone.querySelector('#' + CSS.escape(id));
             if (!clonedCanvas) return;
             const parent = clonedCanvas.parentElement;
             if (parent) {
-                parent.style.height = snap.parentHeight + 'px';
-                parent.style.minHeight = snap.parentHeight + 'px';
+                parent.dataset.lockW = snap.parentWidth;
+                parent.dataset.lockH = snap.parentHeight;
+                parent.style.cssText = `position:relative;width:${snap.parentWidth}px;height:${snap.parentHeight}px;min-height:${snap.parentHeight}px;max-height:${snap.parentHeight}px;flex:none;`;
             }
             const img = document.createElement('img');
+            img.className = 'chart-capture-img';
             img.src = snap.dataUrl;
-            img.style.cssText = `display:block;width:${snap.width}px;height:${snap.height}px;max-width:none;object-fit:contain;`;
+            img.width = snap.width;
+            img.height = snap.height;
+            img.dataset.lockW = snap.width;
+            img.dataset.lockH = snap.height;
+            img.style.cssText = `display:block;width:${snap.width}px;height:${snap.height}px;min-width:${snap.width}px;max-width:${snap.width}px;min-height:${snap.height}px;max-height:${snap.height}px;flex:none;`;
             clonedCanvas.replaceWith(img);
         });
 
-        // Wait for replaced chart images to decode in the clone
+        // Wait for replaced chart images to decode
         const imgs = Array.from(cloneWrapper.querySelectorAll('img'));
         await Promise.all(imgs.map(img => img.decode ? img.decode().catch(() => {}) : Promise.resolve()));
 
-        const fullWidth = Math.ceil(cloneWrapper.scrollWidth);
+        const fullWidth = appWidth;
         const fullHeight = Math.ceil(cloneWrapper.scrollHeight);
 
+        // 4. Render with modern-screenshot and fix inline styles in onCloneNode so text never wraps/overlaps
         const dataUrl = await modernScreenshot.domToPng(cloneWrapper, {
             width: fullWidth,
             height: fullHeight,
             scale: 2,
-            fetch: { requestInit: { mode: 'cors' }, bypassingCache: true }
+            fetch: { requestInit: { mode: 'cors' }, bypassingCache: true },
+            onCloneNode: (clonedRoot) => {
+                if (!(clonedRoot instanceof HTMLElement)) return;
+                clonedRoot.style.opacity = '1';
+                clonedRoot.style.width = fullWidth + 'px';
+                clonedRoot.style.inlineSize = fullWidth + 'px';
+
+                // Remove backdrop-filter on all elements in the SVG clone to prevent Chromium's grey-box bug
+                clonedRoot.querySelectorAll('*').forEach(el => {
+                    if (!(el instanceof HTMLElement)) return;
+                    el.style.backdropFilter = 'none';
+                    el.style.webkitBackdropFilter = 'none';
+                });
+
+                // Unlock subpixel-rounded inline widths/heights copied by modern-screenshot on text, buttons & flex containers
+                const unlockAutoWidthSel = [
+                    'h1', 'h2', 'h3', 'h4', 'small', 'p', 'b', 'li', 'ul', 'button', 'label',
+                    'span:not(.rk-bar):not(.bar):not(.dot)',
+                    '.brand', '. brand > div', '.tabs', '.tab', '.top-right', '.live',
+                    '.fgroup', '.seg', '.chips', '.chip', '.filter-actions', '.btn', '.linkbtn',
+                    '.card-h', '.section-h', '.mini-h', '.legend',
+                    '.k-label', '.k-value', '.k-unit', '.k-sub', '.badge'
+                ].join(',');
+
+                clonedRoot.querySelectorAll(unlockAutoWidthSel).forEach(el => {
+                    if (!(el instanceof HTMLElement)) return;
+                    el.style.width = 'auto';
+                    el.style.inlineSize = 'auto';
+                    el.style.maxWidth = 'none';
+                    el.style.maxInlineSize = 'none';
+                    el.style.height = 'auto';
+                    el.style.blockSize = 'auto';
+                    el.style.maxHeight = 'none';
+                    el.style.maxBlockSize = 'none';
+                });
+
+                // Unlock container heights so bars/cards never clip or overflow onto neighbours
+                clonedRoot.querySelectorAll('.topbar, .filters, .card, .view, main, .app, .insights, .ins, .ins-block').forEach(el => {
+                    if (!(el instanceof HTMLElement)) return;
+                    el.style.height = 'auto';
+                    el.style.blockSize = 'auto';
+                    el.style.maxHeight = 'none';
+                    el.style.maxBlockSize = 'none';
+                    el.style.overflow = 'visible';
+                });
+
+                if (appWidth >= 900) {
+                    const topbar = clonedRoot.querySelector('.topbar');
+                    if (topbar instanceof HTMLElement) topbar.style.flexWrap = 'nowrap';
+                }
+
+                // Enforce single-line rendering on pills, buttons, tabs, and headings
+                const nowrapSel = [
+                    '.brand h1', '.brand small', '.tab', '.tab .zh', '.live', '.live-time',
+                    '.flabel', '.seg button', '.chip', '.btn', '.linkbtn',
+                    '.card-h h2', '.card-h h2 span', '.section-h h2', '.section-h h2 span',
+                    '.mini-h h3', '.mini-h h3 span', '.k-label', '.k-label span', '.k-unit', '.badge',
+                    '.legend span', '.rank-head span', '.rank-row .ln', '.rank-row .r', '.rank-row .rk-rate', '.ln-row .v'
+                ].join(',');
+
+                clonedRoot.querySelectorAll(nowrapSel).forEach(el => {
+                    if (!(el instanceof HTMLElement)) return;
+                    el.style.whiteSpace = 'nowrap';
+                    el.style.flexShrink = '0';
+                });
+
+                // Re-enforce exact pixel dimensions on chart boxes and chart images so aspect ratio never distorts
+                clonedRoot.querySelectorAll('[data-lock-w][data-lock-h]').forEach(el => {
+                    if (!(el instanceof HTMLElement)) return;
+                    const w = el.dataset.lockW + 'px';
+                    const h = el.dataset.lockH + 'px';
+                    el.style.width = w;
+                    el.style.inlineSize = w;
+                    el.style.minWidth = w;
+                    el.style.maxWidth = w;
+                    el.style.height = h;
+                    el.style.blockSize = h;
+                    el.style.minHeight = h;
+                    el.style.maxHeight = h;
+                    el.style.flex = 'none';
+                });
+            }
         });
 
         const viewName = state.tab === 'prod' ? 'Production' : 'Downtime';
