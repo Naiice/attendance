@@ -5,6 +5,7 @@
      2. faresult.html       (Production Plan VS Result)
      3. FA Stock Management.html (FA-Stock Management)
      4. 6S Management       (Seamless in-app view so sidebar never disappears)
+     5. std-shelf.html      (STD Shelf — standard shelf 3D viewer)
    ========================================================================== */
 (function () {
   'use strict';
@@ -17,6 +18,7 @@
   function detectHostPage() {
     var p = decodeURIComponent(location.pathname || '').toLowerCase();
     var t = (document.title || '').toLowerCase();
+    if (p.indexOf('std-shelf') !== -1 || t.indexOf('std shelf') !== -1) return 'stdshelf';
     if (p.indexOf('faresult') !== -1 || t.indexOf('plan vs result') !== -1) return 'faresult';
     if (p.indexOf('stock') !== -1 || t.indexOf('stock') !== -1) return 'fastock';
     if (p.indexOf('dashboard') !== -1 || t.indexOf('wor map') !== -1 || t.indexOf('haier a01') !== -1) return 'dashboard';
@@ -100,6 +102,24 @@
           '<path d="m3.3 7 8.7 5 8.7-5"/>' +
           '<path d="M12 22V12"/>' +
           '<path class="box-tape" d="m7.5 4.6 8.7 5" stroke-opacity="0.75"/>' +
+        '</svg>'
+    },
+    {
+      id: 'stdshelf',
+      title: 'STD Shelf',
+      desc: 'ชั้นวางมาตรฐาน ดูแบบ 3D หมุนได้',
+      badge: '3D VIEW',
+      href: './std-shelf.html',
+      accent: '#8b5cf6',
+      accent2: '#6366f1',
+      glow: 'rgba(139, 92, 246, 0.42)',
+      tint: 'linear-gradient(135deg, rgba(139,92,246,0.24), rgba(99,102,241,0.12))',
+      svg:
+        '<svg class="hmd-svg hmd-svg-shelf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<path d="M4 3v18M20 3v18"/>' +
+          '<path d="M4 9.5h16M4 16h16" stroke-opacity="0.8"/>' +
+          '<rect class="shelf-box-1" x="6.5" y="11.5" width="5" height="4.5" rx="0.9" fill="currentColor" fill-opacity="0.25"/>' +
+          '<rect class="shelf-box-2" x="12.5" y="5" width="5" height="4.5" rx="0.9" fill="currentColor" fill-opacity="0.25"/>' +
         '</svg>'
     }
   ];
@@ -430,6 +450,8 @@
     .hmd-item:hover .hmd-svg-trend .trend-dot { animation: hmdPing 0.9s ease infinite; }
     .hmd-item:hover .hmd-svg-6s .sparkle-1 { transform-origin: 19.5px 3.7px; animation: hmdSpin 1.4s linear infinite; }
     .hmd-item:hover .hmd-svg-box { animation: hmdFloat 0.8s ease-in-out infinite alternate; }
+    .hmd-item:hover .hmd-svg-shelf .shelf-box-1 { animation: hmdRoll 0.9s ease-in-out infinite alternate; }
+    .hmd-item:hover .hmd-svg-shelf .shelf-box-2 { animation: hmdRoll 0.9s 0.2s ease-in-out infinite alternate-reverse; }
 
     @keyframes hmdBarPulse {
       from { transform: translateY(0); }
@@ -441,6 +463,10 @@
     }
     @keyframes hmdSpin {
       to { transform: rotate(180deg); }
+    }
+    @keyframes hmdRoll {
+      from { transform: translateX(-1px); }
+      to   { transform: translateX(1.5px); }
     }
     @keyframes hmdFloat {
       from { transform: translateY(0); }

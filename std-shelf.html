@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>STD Shelf — Standard Shelf 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="glass-theme.js"></script>
+<style>
+  /* Colours come from glass-vars.css (loaded by glass-theme.js); the values after each comma are fallbacks. */
+  :root {
+    --s-bg: var(--g-bg, #eceff3);
+    --s-card: var(--g-card, rgba(255,255,255,.62));
+    --s-ink: var(--g-ink, #1a2330);
+    --s-ink-2: var(--g-ink-2, #465263);
+    --s-ink-3: var(--g-ink-3, #667383);
+    --s-line: var(--line, rgba(20,32,48,.10));
+    --s-edge: var(--g-edge, rgba(255,255,255,.9));
+    --s-accent: #6d5dfc;
+    --s-hl: #e8590c;
+    --s-scene: #e4e8ee;
+    --font: "Sarabun", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+  html[data-theme="dark"] { --s-accent: #9d92ff; --s-hl: #ff8a4c; --s-scene: #0d131d; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { margin: 0; font-family: var(--font); font-size: 14px; line-height: 1.5; color: var(--s-ink); background: var(--s-bg); }
+
+  .shell { height: 100vh; display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 14px; padding: 14px 14px 14px 0; }
+  .panel {
+    background: var(--s-card); border: 1px solid var(--s-edge); border-radius: 22px; overflow-y: auto;
+    padding: 20px 18px; display: flex; flex-direction: column; gap: 18px;
+    box-shadow: 0 8px 28px rgba(30,41,59,.09); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-ic { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; color: #fff; flex: none;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1); box-shadow: 0 6px 16px rgba(99,102,241,.35); }
+  .brand-ic svg { width: 22px; height: 22px; }
+  h1 { margin: 0; font-size: 19px; font-weight: 700; line-height: 1.2; letter-spacing: .2px; }
+  .sub { margin: 0; color: var(--s-ink-3); font-size: 12px; letter-spacing: .4px; }
+  .label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--s-ink-3); margin: 0 0 8px; font-weight: 600; }
+
+  .shelves { display: flex; flex-direction: column; gap: 6px; }
+  .shelf-btn { text-align: left; display: flex; flex-direction: column; gap: 1px; padding: 10px 12px; }
+  .shelf-btn b { font-size: 14px; }
+  .shelf-btn span { font-size: 12px; color: var(--s-ink-3); }
+  .shelf-btn[aria-pressed="true"] span { color: rgba(255,255,255,.85); }
+  .about { margin: 6px 0 0; font-size: 13px; color: var(--s-ink-2); }
+
+  .dims { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .dim { border: 1px solid var(--s-line); border-radius: 10px; padding: 8px; }
+  .dim b { display: block; font-family: var(--mono); font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .dim span { font-size: 11px; color: var(--s-ink-3); }
+
+  .views { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  button {
+    font: inherit; font-size: 13px; color: var(--s-ink); background: transparent; border: 1px solid var(--s-line);
+    border-radius: 10px; padding: 7px 6px; cursor: pointer; line-height: 1.3;
+  }
+  button:hover { border-color: var(--s-accent); }
+  button:focus-visible, .tg input:focus-visible + .sw { outline: 2px solid var(--s-accent); outline-offset: 2px; }
+  button[aria-pressed="true"] { background: var(--s-accent); border-color: var(--s-accent); color: #fff; }
+
+  .toggles { display: flex; flex-direction: column; gap: 2px; }
+  .tg { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 0; position: relative; }
+  .tg input { position: absolute; opacity: 0; pointer-events: none; }
+  .sw { width: 30px; height: 18px; border-radius: 9px; background: var(--s-line); position: relative; flex: none; transition: background .15s; }
+  .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .15s; }
+  .tg input:checked + .sw { background: var(--s-accent); }
+  .tg input:checked + .sw::after { transform: translateX(12px); }
+  .chip { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .tg .n { margin-left: auto; color: var(--s-ink-3); font-family: var(--mono); font-size: 12px; }
+
+  .pick { border: 1px solid var(--s-line); border-radius: 12px; padding: 12px; min-height: 84px; }
+  .pick .empty { color: var(--s-ink-3); font-size: 13px; margin: 0; }
+  .pick h2 { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
+  .pick .size { font-family: var(--mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .pick .meta { color: var(--s-ink-3); font-size: 12px; margin-top: 4px; }
+  .help { color: var(--s-ink-3); font-size: 12px; margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+
+  .stage { position: relative; min-width: 0; border-radius: 22px; overflow: hidden; background: var(--s-scene);
+    border: 1px solid var(--s-edge); box-shadow: 0 8px 28px rgba(30,41,59,.09); }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--s-ink-3); font-family: var(--mono); font-size: 13px; pointer-events: none; text-align: center; padding: 16px; }
+  .bar { width: 200px; height: 3px; background: var(--s-line); margin: 8px auto 0; border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--s-accent); }
+  .tag { position: absolute; right: 12px; bottom: 12px; font-family: var(--mono); font-size: 11px; color: var(--s-ink-3);
+    background: var(--s-card); border: 1px solid var(--s-line); border-radius: 8px; padding: 4px 8px; }
+
+  @media (max-width: 768px) {
+    html, body { height: auto; }
+    .shell { height: auto; grid-template-columns: minmax(0, 1fr); padding: 12px; }
+    .stage { order: -1; height: 62vh; min-height: 340px; }
+    .panel { overflow: visible; padding-bottom: 90px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .sw, .sw::after { transition: none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="panel">
+    <header class="brand">
+      <div class="brand-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v18M20 3v18M4 9h16M4 15h16"/><rect x="7" y="11" width="5" height="4" rx=".8" fill="currentColor" fill-opacity=".35"/><rect x="12.5" y="5" width="5" height="4" rx=".8" fill="currentColor" fill-opacity=".35"/></svg>
+      </div>
+      <div>
+        <h1>STD Shelf</h1>
+        <p class="sub">STANDARD SHELF · ชั้นวางมาตรฐาน / 标准货架</p>
+      </div>
+    </header>
+
+    <section>
+      <p class="label">เลือกชั้นวาง / 选择货架</p>
+      <div class="shelves" id="shelves"></div>
+      <p class="about" id="about"></p>
+    </section>
+
+    <section>
+      <p class="label">ขนาดโดยรวม / 外形尺寸 (mm)</p>
+      <div class="dims">
+        <div class="dim"><b id="dL">—</b><span>ยาว / 长</span></div>
+        <div class="dim"><b id="dD">—</b><span>ลึก / 深</span></div>
+        <div class="dim"><b id="dH">—</b><span>สูง / 高</span></div>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">มุมมอง / 视图</p>
+      <div class="views">
+        <button type="button" id="v-iso" data-view="iso" aria-pressed="true">มุมเอียง<br>等轴</button>
+        <button type="button" id="v-front" data-view="front">ด้านหน้า<br>正面</button>
+        <button type="button" id="v-side" data-view="side">ด้านข้าง<br>侧面</button>
+        <button type="button" id="v-top" data-view="top">ด้านบน<br>俯视</button>
+        <button type="button" id="v-back" data-view="back">มุมหลัง<br>背面</button>
+        <button type="button" id="v-spin" aria-pressed="false">หมุนอัตโนมัติ<br>自动旋转</button>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">แสดงชิ้นส่วน / 显示部件</p>
+      <div class="toggles">
+        <label class="tg"><input type="checkbox" id="t-frame" checked><span class="sw"></span><span class="chip" style="background:#c3c8cf"></span>โครงอลูมิเนียม / 铝型材<span class="n" id="n-frame"></span></label>
+        <label class="tg"><input type="checkbox" id="t-roller" checked><span class="sw"></span><span class="chip" style="background:#3b4048"></span>รางลูกกลิ้ง / 滚轮条<span class="n" id="n-roller"></span></label>
+        <label class="tg"><input type="checkbox" id="t-bin" checked><span class="sw"></span><span class="chip" style="background:#2f4fd8"></span>กล่อง / 周转箱<span class="n" id="n-bin"></span></label>
+        <label class="tg"><input type="checkbox" id="t-ghost"><span class="sw"></span>กล่องโปร่งใส / 箱体透明</label>
+        <label class="tg"><input type="checkbox" id="t-edge" checked><span class="sw"></span>เส้นขอบ / 边线</label>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">ชิ้นที่เลือก / 选中部件</p>
+      <div class="pick" id="pick" aria-live="polite"></div>
+    </section>
+
+    <ul class="help">
+      <li>ลากเพื่อหมุน · 拖动旋转</li>
+      <li>สกรอลล์ / ถ่าง 2 นิ้ว เพื่อซูม · 滚轮或双指缩放</li>
+      <li>คลิกขวาลาก / ลาก 2 นิ้ว เพื่อเลื่อน · 右键或双指平移</li>
+      <li>ดับเบิลคลิกพื้นว่าง เพื่อยกเลิกการเลือก · 双击空白处取消选择</li>
+    </ul>
+  </aside>
+
+  <main class="stage" id="stage">
+    <canvas id="c" aria-label="โมเดล 3 มิติของชั้นวางมาตรฐาน หมุนได้"></canvas>
+    <div class="loading" id="loading"><div>กำลังโหลดโมเดล / 正在加载模型 <span id="pct">0%</span><div class="bar"><i id="barI"></i></div></div></div>
+    <div class="tag">หน่วย mm · 单位 mm</div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(async function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const fmt = (v) => Math.round(v).toLocaleString('en-US');
+  const stage = $('stage'), canvas = $('c');
+  const EMPTY_PICK = '<p class="empty">แตะหรือคลิกที่ชิ้นงานเพื่อดูขนาด<br>点击部件查看尺寸</p>';
+  $('pick').innerHTML = EMPTY_PICK;
+
+  /* ---------- three.js scene ---------- */
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 1, 1, 5000);
+  const controls = new THREE.OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.autoRotateSpeed = 1.2;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 0.75); key.position.set(300, 500, 250); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.3); fill.position.set(-300, 200, -300); scene.add(fill);
+  const grid = new THREE.GridHelper(400, 40, 0xc6ced8, 0xc6ced8);
+  grid.material.transparent = true;
+  grid.position.y = -0.05;
+  scene.add(grid);
+
+  function applyTheme() {
+    const css = getComputedStyle(document.documentElement);
+    scene.background = new THREE.Color(css.getPropertyValue('--s-scene').trim() || '#e4e8ee');
+    const dark = scene.background.getHSL({}).l < 0.4;
+    grid.material.color.set(dark ? 0x253041 : 0xc6ced8);
+    grid.material.opacity = dark ? 0.9 : 0.8;
+  }
+  applyTheme();
+  new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / Math.max(h, 1);
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage);
+  resize();
+
+  const CLASSES = {
+    frame:  { color: 0xc3c8cf, metal: 0.35, rough: 0.45, edge: 0x4a525c, edgeOp: 0.55 },
+    roller: { color: 0x3b4048, metal: 0.10, rough: 0.60, edge: 0x4a525c, edgeOp: 0.55 },
+    bin:    { color: 0x2f4fd8, metal: 0.00, rough: 0.55, edge: 0x1a2d8a, edgeOp: 0.50 },
+  };
+  const VIEWS = { iso: [1, 0.85, 1.25], front: [1, 0, 0], side: [0, 0, 1], top: [0.02, 1, 0], back: [-1, 0.85, -1.25] };
+
+  let model = null;       // { pos, parts, groups, center, radius }
+  let helper = null, anim = null, edgesOn = true;
+  const vis = { frame: true, roller: true, bin: true };
+
+  /* ---------- shelf list ---------- */
+  const shelves = await (await fetch('std-shelf/shelves.json', { cache: 'no-cache' })).json();
+  const list = $('shelves');
+  shelves.forEach((s) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'shelf-btn'; b.dataset.id = s.id;
+    const t = document.createElement('b'); t.textContent = s.name;
+    const d = document.createElement('span'); d.textContent = s.type + ' · ' + s.profile;
+    b.append(t, d);
+    b.addEventListener('click', () => { if (location.hash !== '#' + s.id) location.hash = s.id; else loadShelf(s); });
+    list.appendChild(b);
+  });
+  function shelfFromHash() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    return shelves.find((s) => s.id === id) || shelves[0];
+  }
+  // sidebar.js uses #6s for its 6S view, so only react to hashes that name a shelf
+  window.addEventListener('hashchange', () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const s = shelves.find((x) => x.id === id);
+    if (s && s.id !== currentId) loadShelf(s);
+  });
+
+  /* ---------- load one shelf ---------- */
+  let loadToken = 0, currentId = null;
+  async function loadShelf(shelf) {
+    const token = ++loadToken;
+    currentId = shelf.id;
+    list.querySelectorAll('.shelf-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === shelf.id)));
+    $('about').textContent = shelf.desc_th + ' / ' + shelf.desc_zh;
+    $('loading').hidden = false;
+    $('pct').textContent = '0%'; $('barI').style.width = '0%';
+
+    const info = await (await fetch(shelf.folder + 'parts.json', { cache: 'no-cache' })).json();
+    const res = await fetch(shelf.folder + 'model.bin');
+    if (!res.ok) throw new Error('model.bin HTTP ' + res.status);
+    const size = info.tris * 36;
+    const buf = new Uint8Array(size);
+    const reader = res.body.getReader();
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf.set(value, got); got += value.length;
+      const p = Math.min(100, Math.round(got / size * 100));
+      $('pct').textContent = p + '%'; $('barI').style.width = p + '%';
+    }
+    if (token !== loadToken) return;            // a newer selection started meanwhile
+    unloadModel();
+    buildModel(info, new Float32Array(buf.buffer, 0, info.tris * 9));
+    $('loading').hidden = true;
+  }
+
+  function unloadModel() {
+    select(null);
+    if (!model) return;
+    Object.values(model.groups).forEach((g) => {
+      scene.remove(g.mesh, g.edges);
+      g.mesh.geometry.dispose(); g.mesh.material.dispose();
+      g.edges.geometry.dispose(); g.edges.material.dispose();
+    });
+    model = null;
+  }
+
+  function buildModel(info, pos) {
+    const [ex, ey, ez] = info.extent_mm;   // x = depth, y = length, z = height (source axes)
+    $('dL').textContent = fmt(ey); $('dD').textContent = fmt(ex); $('dH').textContent = fmt(ez);
+    const parts = info.parts, groups = {};
+    Object.keys(CLASSES).forEach((c) => {
+      const ps = parts.filter((p) => p.c === c);
+      const label = $('t-' + c).closest('.tg');
+      label.hidden = ps.length === 0;
+      $('n-' + c).textContent = ps.length || '';
+      if (!ps.length) return;
+      const start = ps[0].s, end = ps[ps.length - 1].s + ps[ps.length - 1].n;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos.subarray(start * 9, end * 9), 3));
+      g.computeVertexNormals();
+      const k = CLASSES[c];
+      const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+        color: k.color, metalness: k.metal, roughness: k.rough, side: THREE.DoubleSide,
+        polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+      }));
+      mesh.userData = { start };
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(g, 35),
+        new THREE.LineBasicMaterial({ color: k.edge, transparent: true, opacity: k.edgeOp }));
+      scene.add(mesh, edges);
+      groups[c] = { mesh, edges };
+    });
+    $('t-ghost').closest('.tg').hidden = !groups.bin;
+    const box = new THREE.Box3().setFromBufferAttribute(new THREE.BufferAttribute(pos, 3));
+    model = { pos, parts, groups, center: box.getCenter(new THREE.Vector3()), radius: box.getSize(new THREE.Vector3()).length() / 2 };
+    syncVis(); applyGhost();
+    goView('iso', true);
+  }
+
+  /* ---------- views ---------- */
+  function fitDist() {
+    const v = THREE.MathUtils.degToRad(camera.fov / 2);
+    const h = Math.atan(Math.tan(v) * camera.aspect);
+    return model.radius / Math.sin(Math.min(v, h)) * 1.05;
+  }
+  function goView(name, instant) {
+    if (!model) return;
+    const toPos = model.center.clone().add(new THREE.Vector3(...VIEWS[name]).normalize().multiplyScalar(fitDist()));
+    document.querySelectorAll('[data-view]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+    if (instant || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      anim = null; camera.position.copy(toPos); controls.target.copy(model.center); controls.update(); return;
+    }
+    anim = { t: 0, fromPos: camera.position.clone(), toPos, fromT: controls.target.clone(), toT: model.center.clone() };
+  }
+  document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => goView(b.dataset.view)));
+  $('v-spin').addEventListener('click', (e) => {
+    controls.autoRotate = !controls.autoRotate;
+    e.currentTarget.setAttribute('aria-pressed', String(controls.autoRotate));
+  });
+  controls.addEventListener('start', () => {
+    anim = null;
+    document.querySelectorAll('[data-view]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+  });
+
+  /* ---------- toggles ---------- */
+  function syncVis() {
+    if (!model) return;
+    Object.entries(model.groups).forEach(([c, g]) => { g.mesh.visible = vis[c]; g.edges.visible = vis[c] && edgesOn; });
+  }
+  function applyGhost() {
+    if (!model || !model.groups.bin) return;
+    const on = $('t-ghost').checked, g = model.groups.bin;
+    g.mesh.material.transparent = on; g.mesh.material.opacity = on ? 0.18 : 1;
+    g.mesh.material.depthWrite = !on; g.mesh.material.needsUpdate = true;
+    g.edges.material.opacity = on ? 0.25 : CLASSES.bin.edgeOp;
+  }
+  ['frame', 'roller', 'bin'].forEach((c) => $('t-' + c).addEventListener('change', (e) => { vis[c] = e.target.checked; syncVis(); }));
+  $('t-edge').addEventListener('change', (e) => { edgesOn = e.target.checked; syncVis(); });
+  $('t-ghost').addEventListener('change', applyGhost);
+
+  /* ---------- picking ---------- */
+  const ray = new THREE.Raycaster();
+  let down = null;
+  function partAt(tri) {
+    const parts = model.parts;
+    let lo = 0, hi = parts.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (parts[mid].s <= tri) lo = mid; else hi = mid - 1; }
+    return lo;
+  }
+  function describe(p) {
+    const s = [...p.d].sort((a, b) => b - a);
+    if (p.c === 'frame') {
+      return s[1] > 60 ? ['ชุดโครงประกอบ / 框架组件', 'หลายท่อนต่อกันในโมเดล / 模型中多根型材组合']
+                       : ['โปรไฟล์อลูมิเนียม / 铝型材', 'ท่อนเดี่ยว / 单根型材'];
+    }
+    if (p.c === 'roller') {
+      if (s[0] > 45) return ['รางรองลูกกลิ้ง / 滚轮导轨', ''];
+      if (s[2] > 2) return ['ลูกกลิ้งพลาสติก / 塑料滚轮', ''];
+      return ['แกนลูกกลิ้ง / 滚轮轴', ''];
+    }
+    return s[2] > 300 ? ['กล่องพลาสติก / 塑料周转箱', ''] : ['ชิ้นส่วนกล่อง / 箱体部件', ''];
+  }
+  function select(i) {
+    if (helper) { scene.remove(helper); helper.geometry.dispose(); helper = null; }
+    if (i == null || !model) { $('pick').innerHTML = EMPTY_PICK; return; }
+    const p = model.parts[i];
+    const b = new THREE.Box3().setFromBufferAttribute(new THREE.BufferAttribute(model.pos.subarray(p.s * 9, (p.s + p.n) * 9), 3));
+    b.expandByScalar(0.4);
+    const hl = getComputedStyle(document.documentElement).getPropertyValue('--s-hl').trim() || '#e8590c';
+    helper = new THREE.Box3Helper(b, new THREE.Color(hl));
+    helper.material.depthTest = false; helper.renderOrder = 10;
+    scene.add(helper);
+    const sig = (q) => q.c + ':' + [...q.d].sort((a, b) => b - a).map(Math.round).join('x');
+    const same = model.parts.filter((q) => sig(q) === sig(p)).length;
+    const [name, note] = describe(p);
+    const h = document.createElement('h2'); h.textContent = name;
+    const sz = document.createElement('div'); sz.className = 'size';
+    sz.textContent = [...p.d].sort((a, b) => b - a).map(fmt).join(' × ') + ' mm';
+    const meta = document.createElement('div'); meta.className = 'meta';
+    meta.textContent = 'แบบเดียวกันทั้งหมด ' + same + ' ชิ้น / 同型共 ' + same + ' 件' + (note ? ' · ' + note : '');
+    $('pick').replaceChildren(h, sz, meta);
+  }
+  canvas.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY]; });
+  canvas.addEventListener('pointerup', (e) => {
+    if (!model || !down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+    const r = canvas.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+    const targets = Object.entries(model.groups)
+      .filter(([c, g]) => g.mesh.visible && !(c === 'bin' && g.mesh.material.transparent))
+      .map(([, g]) => g.mesh);
+    const hit = ray.intersectObjects(targets, false)[0];
+    if (hit) select(partAt(hit.object.userData.start + hit.faceIndex));
+  });
+  canvas.addEventListener('dblclick', () => select(null));
+
+  /* ---------- render loop ---------- */
+  (function tick() {
+    if (anim) {
+      anim.t = Math.min(1, anim.t + 0.06);
+      const k = 1 - Math.pow(1 - anim.t, 3);
+      camera.position.lerpVectors(anim.fromPos, anim.toPos, k);
+      controls.target.lerpVectors(anim.fromT, anim.toT, k);
+      if (anim.t >= 1) anim = null;
+    }
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  })();
+
+  await loadShelf(shelfFromHash());
+})().catch((err) => {
+  const l = document.getElementById('loading');
+  l.hidden = false;
+  l.textContent = 'โหลดโมเดลไม่สำเร็จ / 模型加载失败: ' + err.message;
+});
+</script>
+<script src="./sidebar.js"></script>
+</body>
+</html>

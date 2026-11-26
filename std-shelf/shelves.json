@@ -1,0 +1,12 @@
+[
+  {
+    "id": "indoor-rack",
+    "name": "Indoor Rack",
+    "type": "Flow Rack",
+    "desc_th": "ชั้นวางลูกกลิ้ง 2 ชั้น สำหรับกล่องชิ้นส่วน Indoor",
+    "desc_zh": "两层流利架，用于室内机零件周转箱",
+    "profile": "Bosch Rexroth 40×40",
+    "folder": "std-shelf/indoor-rack/",
+    "updated": "2026-11-26"
+  }
+]
